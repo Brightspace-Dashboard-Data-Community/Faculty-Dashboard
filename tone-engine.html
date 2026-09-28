@@ -1,0 +1,3269 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discussion Tone Dashboard</title>
+<!-- Privacy mask must load before engine fetches so classlist names are harvested -->
+<script src="js/pii-mask.js"></script>
+<script src="js/pdf-brand.js"></script>
+<!-- Training-mode interceptor. The engine runs as an iframe inside the BSP shell,
+     so the parent's training.js doesn't reach our fetch. Loading it here installs
+     the wrapper in THIS window. The script is iframe-aware (banner + keystroke
+     suppressed in non-top frames; fetch wrapper installs unconditionally). -->
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&amp;family=Open+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+:root {
+  --db: #0f5b46;
+  --lb: #2d9d7a;
+  --gd: #10b981;
+  --dg: #111111;
+  --lg: #555555;
+  --bg: #f9fafb;
+  --success: #2E7D32;
+  --warning: #F57C00;
+  --danger: #D32F2F;
+  --radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
+  --transition: all 0.2s ease;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── SKIP LINK ── */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--gd);
+  color: var(--db);
+  padding: 8px 16px;
+  font-weight: 700;
+  font-family: 'Open Sans', sans-serif;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.skip-link:focus {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ── SCREEN READER ONLY ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+
+/* ── GLOBAL FOCUS VISIBLE ── */
+:focus-visible {
+  outline: 3px solid var(--gd);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: clamp(13px, 1.4vw, 15px);
+  color: var(--dg);
+  background: var(--bg);
+  line-height: 1.5;
+}
+
+h1, h2, h3 { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-weight: 700; }
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* ── HEADER ── */
+/* The engine's own header used to be a full dark-blue ribbon with
+   a Institution logo + "Discussion Tone Dashboard" title + course subtitle.
+   The BSP shell wrapper already provides that title (and the engine
+   is also accessed standalone by developers, who don't need the
+   branding). The header is now a slim light-background controls bar
+   that contains ONLY the Analyzing dropdown, mode indicators, and
+   PDF button — no duplicate title chrome. */
+.header {
+  background: transparent;
+  color: var(--dg);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #E5E9EE;
+}
+
+/* Branding chrome is hidden — the wrapper provides it. We keep the
+   nodes in the DOM so any JS that touches them doesn't crash. */
+.logo-circle,
+.header-text,
+.dashboard-title,
+.dashboard-subtitle {
+  display: none !important;
+}
+
+.poster-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.poster-label {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dg, #4D4D4F);
+  white-space: nowrap;
+}
+.poster-select {
+  background: #fff;
+  color: var(--dg, #4D4D4F);
+  border: 1px solid #D4D6D9;
+  border-radius: var(--radius);
+  padding: 5px 10px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 180px;
+  max-width: 300px;
+}
+.poster-select:focus-visible { outline: 2px solid var(--gd); outline-offset: 2px; }
+.poster-select option { background: #fff; color: var(--dg, #4D4D4F); }
+/* Empty-course state: dropdown stays visible but greyed out so the
+   header layout (mode indicators + PDF button on the right) doesn't
+   shift when there's no discussion activity yet. */
+.poster-select:disabled {
+  background: #FCFFFD;
+  color: #9CA3AF;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.demo-pill {
+  background: var(--danger);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  animation: pulse 2s infinite;
+  display: none;
+}
+
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+/* ── MODE INDICATOR (shared) ── */
+.mode-indicator {
+  display: none;
+  position: relative;
+  cursor: pointer;
+  color: white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.mode-indicator svg { display: block; }
+.mode-indicator.active { display: flex; }
+.mode-indicator.mobile { background: var(--lb); }
+.mode-indicator.desktop { background: var(--success); }
+.mode-indicator.lowmem { background: var(--warning); }
+.mode-tooltip {
+  display: none;
+  position: absolute;
+  top: 38px;
+  right: 0;
+  width: 280px;
+  background: var(--db);
+  color: white;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  line-height: 1.5;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 400;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  z-index: 50;
+  pointer-events: none;
+}
+.mode-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 10px;
+  width: 12px;
+  height: 12px;
+  background: var(--db);
+  transform: rotate(45deg);
+}
+.mode-indicator:hover .mode-tooltip,
+.mode-indicator:focus .mode-tooltip,
+.mode-indicator.show-tip .mode-tooltip { display: block; }
+
+/* ── PRIVACY NOTICE ── */
+.privacy-banner {
+  background: #E8F5E9;
+  border-bottom: 1px solid #A5D6A7;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--dg);
+}
+.privacy-banner svg { flex-shrink: 0; }
+.privacy-banner strong { color: var(--success); }
+
+/* ── MODEL LOADING ── */
+.model-bar-wrap {
+  padding: 16px 24px;
+  background: var(--bg);
+  display: none;
+}
+.model-bar-wrap.active { display: block; }
+.model-bar-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--db);
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+.model-bar-track {
+  width: 100%;
+  height: 10px;
+  background: #E8EDF2;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.model-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--lb), var(--db));
+  border-radius: 5px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+.model-bar-detail {
+  font-size: 11px;
+  color: #6B6D70;
+  margin-top: 4px;
+}
+
+/* ── KPI ROW ── */
+.kpi-row {
+  display: flex;
+  gap: 16px;
+  padding: 16px 24px;
+  background: var(--bg);
+}
+
+.kpi-card {
+  flex: 1;
+  background: white;
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  border-top: 3px solid var(--lb);
+  transition: var(--transition);
+}
+
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+
+.kpi-value {
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(22px, 3vw, 32px);
+  font-weight: 700;
+  color: var(--db);
+}
+
+.kpi-label {
+  font-size: 12px;
+  color: #6B6D70;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.kpi-sub {
+  font-size: 11px;
+  color: #6B6D70;
+  margin-top: 2px;
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  background: #E8EDF2;
+  border-bottom: 1px solid #D0D5DD;
+  overflow-x: auto;
+}
+
+.tabs button {
+  background: none;
+  border: none;
+  padding: 10px 18px;
+  color: var(--dg);
+  font-family: 'Open Sans', sans-serif;
+  font-size: clamp(12px, 1.2vw, 13px);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.tabs button.active {
+  color: var(--db);
+  border-bottom-color: var(--lb);
+  font-weight: 600;
+}
+
+/* ── PANELS ── */
+.panel {
+  display: none;
+  padding: 24px;
+  overflow-x: auto;
+}
+.panel.active { display: block; }
+
+.panel h2 {
+  font-size: clamp(16px, 2vw, 20px);
+  color: var(--db);
+  margin-bottom: 16px;
+  border-bottom: 2px solid var(--gd);
+  padding-bottom: 8px;
+}
+
+.section-desc {
+  color: #6B6D70;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ── ATTRIBUTE SUMMARY ── */
+.attr-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.attr-col {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.attr-col-header {
+  padding: 10px 16px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+.attr-col-header.positive { background: var(--success); }
+.attr-col-header.negative { background: var(--danger); }
+.attr-col-body { padding: 12px 16px; }
+.attr-category {
+  margin-bottom: 10px;
+}
+.attr-category-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--db);
+  margin-bottom: 4px;
+}
+.attr-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.attr-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.attr-tag.pos { background: #E8F5E9; color: var(--success); }
+.attr-tag.neg { background: #FFEBEE; color: var(--danger); }
+.attr-tag.zero { background: #F5F5F5; color: #6B6D70; }
+.view-link {
+  display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600;
+  text-decoration: none; color: var(--db); border: 1px solid var(--db); transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.view-link:hover, .view-link:focus-visible { background: var(--db); color: #fff; }
+.attr-count {
+  font-size: 10px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 8px;
+  padding: 0 5px;
+  min-width: 16px;
+  text-align: center;
+}
+
+/* ── TIMELINE CHART ── */
+/* ── CALENDAR ── */
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.cal-nav-btn {
+  background: var(--db);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+.cal-nav-btn:hover { background: var(--lb); }
+.cal-nav-btn:focus-visible { outline: 2px solid var(--gd); outline-offset: 2px; }
+.cal-nav-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  color: var(--db);
+  min-width: 160px;
+  text-align: center;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.cal-hdr {
+  text-align: center;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--db);
+  padding: 6px 0;
+  background: #EDF1F5;
+  border-radius: 4px;
+}
+.cal-cell {
+  min-height: 80px;
+  background: white;
+  border: 1px solid #E8EDF2;
+  border-radius: 6px;
+  padding: 4px;
+  font-size: 11px;
+  transition: var(--transition);
+  overflow: hidden;
+}
+.cal-cell:hover { box-shadow: var(--shadow-hover); }
+.cal-cell.has-posts { cursor: pointer; }
+.cal-cell.has-posts:hover { border-color: var(--lb); box-shadow: 0 0 0 1px var(--lb); }
+.cal-cell.has-posts.selected { border-color: var(--db); box-shadow: 0 0 0 2px rgba(15,91,70,.25); }
+.cal-cell.empty {
+  background: #FAFBFC;
+  border-color: transparent;
+  min-height: auto;
+}
+.cal-cell.today { border-color: var(--lb); border-width: 2px; }
+.cal-cell.day-pos { background: #E8F5E9; }
+.cal-cell.day-neg { background: #FFEBEE; }
+.cal-cell.day-neutral { background: #F5F7FA; }
+.cal-day {
+  font-weight: 700;
+  color: var(--db);
+  font-size: 12px;
+  margin-bottom: 3px;
+}
+.cal-attrs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.cal-day-detail {
+  margin-top: 14px;
+  border-top: 1px solid #E8EDF2;
+  padding-top: 12px;
+  display: none;
+}
+.cal-day-detail.active { display: block; }
+.cal-day-detail h3 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 15px;
+  color: var(--db);
+  margin: 0 0 10px;
+}
+.cal-day-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 4px;
+  border-bottom: 1px solid #F0F2F5;
+  font-size: 13px;
+}
+.cal-day-item:last-child { border-bottom: none; }
+.cal-day-item .cdi-main { flex: 1; min-width: 0; }
+.cal-day-item .cdi-meta { color: #6B6D70; font-size: 12px; margin-top: 3px; }
+.cal-day-item a { color: var(--db); font-weight: 600; text-decoration: none; }
+.cal-day-item a:hover { color: var(--lb); text-decoration: underline; }
+.cal-day-item .cdi-attrs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+a.tone-link { color: var(--db); text-decoration: none; font-weight: 600; }
+a.tone-link:hover { color: var(--lb); text-decoration: underline; }
+a.tone-link-muted { color: inherit; text-decoration: none; }
+a.tone-link-muted:hover { color: var(--lb); text-decoration: underline; }
+.cal-attr {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.cal-attr.pos { background: #E8F5E9; color: var(--success); }
+.cal-attr.neg { background: #FFEBEE; color: var(--danger); }
+.cal-post-count {
+  font-size: 9px;
+  color: var(--lg);
+  margin-bottom: 2px;
+}
+@media (max-width: 600px) {
+  .cal-cell { min-height: 60px; padding: 3px; }
+  .cal-attr { font-size: 8px; padding: 1px 3px; }
+  .cal-day { font-size: 10px; }
+  .loading-overlay {
+    justify-content: flex-start;
+    padding: 24px 20px;
+  }
+}
+
+/* ── FORUM CARDS ── */
+.forum-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+.forum-card {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: var(--transition);
+}
+.forum-card:hover { box-shadow: var(--shadow-hover); }
+.forum-card-header {
+  background: var(--db);
+  color: white;
+  padding: 12px 16px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.forum-card-body { padding: 16px; }
+.forum-stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid #F0F0F0;
+  font-size: 13px;
+}
+.forum-stat:last-child { border-bottom: none; }
+.forum-stat-label { color: #6B6D70; }
+.forum-stat-value { font-weight: 600; color: var(--db); }
+.forum-top-attrs {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #E8EDF2;
+}
+.forum-top-attrs-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #6B6D70;
+  margin-bottom: 4px;
+}
+
+/* ── TABLES ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: clamp(12px, 1.2vw, 13px);
+  margin-top: 12px;
+}
+
+th {
+  background: var(--db);
+  color: white;
+  padding: 10px 10px;
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+th[role="columnheader"][aria-sort] {
+  cursor: pointer;
+  user-select: none;
+}
+th:hover { background: #003357; }
+th .sort-arrow { margin-left: 6px; font-size: 10px; opacity: 0.6; }
+th.sorted .sort-arrow { opacity: 1; }
+
+td {
+  padding: 10px 10px;
+  border-bottom: 1px solid #E8EDF2;
+  vertical-align: middle;
+}
+
+tr:nth-child(even) { background: #F8FAFB; }
+tr:hover { background: #EDF2F7; }
+
+.tone-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.tone-positive { background: #E8F5E9; color: var(--success); }
+.tone-mixed { background: #E3F2FD; color: #1565C0; }
+.tone-neutral { background: #FFF8E1; color: #9E7C00; }
+.tone-negative { background: #FFEBEE; color: #B71C1C; }
+
+.post-preview {
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #6B6D70;
+  font-size: 12px;
+}
+
+.detected-attrs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: 220px;
+}
+
+/* ── SCORE METER ── */
+.score-meter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.meter-track {
+  flex: 1;
+  height: 8px;
+  background: #E8EDF2;
+  border-radius: 4px;
+  overflow: hidden;
+  max-width: 100px;
+}
+.meter-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+/* ── LOADING ── */
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px; height: 40px;
+  border: 4px solid #E8EDF2;
+  border-top-color: var(--lb);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-message {
+  margin-top: 16px;
+  color: var(--dg);
+  font-size: 14px;
+  transition: opacity 0.5s ease;
+}
+
+/* ── ALERT BANNER ── */
+.alert-banner {
+  display: none;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 20px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  border-radius: var(--radius);
+  margin: 0 16px 12px;
+}
+.alert-banner.active { display: flex; }
+.alert-banner.alert-warn {
+  background: #FFF3E0;
+  border: 1px solid #FFB74D;
+  color: #B84600;
+}
+.alert-banner.alert-error {
+  background: #FFEBEE;
+  border: 1px solid #EF9A9A;
+  color: #B71C1C;
+}
+.alert-banner.alert-info {
+  background: #E3F2FD;
+  border: 1px solid #90CAF9;
+  color: #0D47A1;
+}
+.alert-banner svg { flex-shrink: 0; margin-top: 1px; }
+.alert-banner-content { flex: 1; }
+.alert-banner-title { font-weight: 700; margin-bottom: 2px; }
+.alert-banner-dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.6;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.alert-banner-dismiss:hover { opacity: 1; }
+.lowmem-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  background: rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: inherit;
+  font-family: 'Open Sans', sans-serif;
+}
+.lowmem-toggle:hover { background: rgba(0,0,0,0.1); }
+
+/* ── PDF EXPORT BUTTON ── */
+.pdf-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--db);
+  color: #fff;
+  border: 1px solid var(--db);
+  border-radius: var(--radius);
+  padding: 5px 12px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+  position: relative;
+}
+.pdf-btn:hover { background: #0a4536; border-color: #0a4536; color: #fff; }
+.pdf-btn:focus-visible { outline: 2px solid var(--gd); outline-offset: 2px; }
+.pdf-btn .pdf-duck {
+  width: 15px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+  filter: drop-shadow(0 0 1px rgba(0,0,0,.25));
+}
+.pdf-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  background: #fff;
+  color: var(--db);
+  border-color: #D4D6D9;
+}
+.pdf-btn.disabled-tip {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #fff;
+  color: var(--db);
+  border-color: #D4D6D9;
+}
+.pdf-btn-tooltip {
+  display: none;
+  position: absolute;
+  top: 38px;
+  right: 0;
+  width: 220px;
+  background: var(--dg);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 400;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 50;
+  pointer-events: none;
+}
+.pdf-btn-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  right: 14px;
+  width: 10px;
+  height: 10px;
+  background: var(--dg);
+  transform: rotate(45deg);
+}
+.pdf-btn.disabled-tip:hover .pdf-btn-tooltip { display: block; }
+.pdf-btn.generating {
+  pointer-events: none;
+}
+.pdf-btn .pdf-spinner {
+  display: none;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.pdf-btn.generating .pdf-spinner { display: inline-block; }
+.pdf-btn.generating .pdf-icon,
+.pdf-btn.generating .pdf-duck { display: none; }
+
+/* ── FOOTER ── */
+.footer {
+  background: var(--db);
+  color: rgba(255,255,255,0.85);
+  padding: 12px 24px;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+/* ── TOOLTIP ── */
+[data-tooltip] { position: relative; cursor: help; }
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dg);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 100;
+}
+[data-tooltip]:hover::after { opacity: 1; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .kpi-row { flex-wrap: wrap; }
+  .kpi-card { min-width: 140px; flex: 1 1 45%; }
+  .forum-grid { grid-template-columns: 1fr; }
+  .privacy-banner { flex-direction: column; text-align: center; }
+  .attr-summary { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .header { flex-wrap: wrap; }
+  .kpi-card { flex: 1 1 100%; }
+  table { display: block; overflow-x: auto; }
+}
+
+/* ── PRINT ── */
+@media print {
+  body { background: white; }
+  .tabs, .header-right, .demo-pill, .privacy-banner, .model-bar-wrap { display: none; }
+  .container { box-shadow: none; }
+  .panel { display: none !important; }
+  .panel.active { display: block !important; }
+  th { background: var(--db) !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ── EMBED MODE (?embed=1) ─────────────────────────────────
+   When this dashboard is loaded inside the BSP shell as an
+   iframe, the BSP wrapper provides the dashboard title in its own
+   outer header. The engine's title chrome is already hidden
+   globally (see .logo-circle / .header-text rules above), so the
+   only thing the engine's header still renders is the slim row of
+   controls on the right (Analyzing dropdown, mode indicator, PDF
+   button). We KEEP that header visible in embed mode — those
+   controls live there and the user expects to see them. */
+body.embed { background: transparent; overflow: hidden; }
+/* Make the engine's own .container disappear visually when embedded.
+   The BSP wrapper page already wraps the iframe in a .card with its
+   own white background + rounded corners, so leaving the engine's
+   container styled as a card too produced a "card inside a card" look
+   that didn't match the other dashboards. In embed mode the container
+   is now just a layout shell — transparent, square, no shadow. */
+body.embed > .container {
+  box-shadow: none;
+  padding-top: 0;
+  max-width: 100%;
+  background: transparent;
+  border-radius: 0;
+}
+body.embed > .container > .privacy-banner { display: none !important; }
+body.embed > .container > .footer,
+body.embed > .container > footer.footer,
+body.embed footer.footer { display: none !important; }
+body.embed > .container > main { padding-top: 0; }
+body.embed .demo-pill { display: none !important; }
+
+/* ── Institution Faculty Dashboard theme (embed) ── */
+body.embed {
+  --db: #0f5b46;
+  --lb: #2d9d7a;
+  --gd: #10b981;
+  --dg: #111111;
+  --lg: #555555;
+  --bg: transparent;
+  --success: #0f5b46;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --radius: 12px;
+  --shadow: none;
+  --shadow-hover: none;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--dg);
+  background: transparent !important;
+}
+body.embed h1,
+body.embed h2,
+body.embed h3,
+body.embed .kpi-value,
+body.embed .attr-col-header {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+}
+body.embed .header {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: none;
+  margin-bottom: 12px;
+}
+body.embed .mode-pill,
+body.embed .pdf-btn {
+  border-radius: 8px;
+}
+body.embed .pdf-btn:not(.disabled) {
+  background: var(--db);
+  border-color: var(--db);
+  color: #fff;
+}
+body.embed .pdf-btn:not(.disabled):hover {
+  background: #0a4536;
+  border-color: #0a4536;
+  color: #fff;
+}
+body.embed .pdf-btn.disabled,
+body.embed .pdf-btn.disabled-tip {
+  background: #fff;
+  color: var(--db);
+  border-color: #d1d5db;
+}
+body.embed .section,
+body.embed .card,
+body.embed .kpi-card,
+body.embed .attr-col {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: none;
+}
+body.embed .kpi-card {
+  border-top: 3px solid var(--lb);
+}
+body.embed thead th {
+  background: var(--db) !important;
+  color: #fff !important;
+}
+body.embed tbody th {
+  background: #fff !important;
+}
+body.embed .privacy-banner {
+  background: #e8f5f0;
+  border-color: #bfe5d7;
+  color: #0a4536;
+}
+body.embed :focus-visible {
+  outline: 3px solid var(--lb);
+}
+</style>
+</head><body><script>/* Embed-mode toggle + parent-iframe bridge.
+   When ?embed=1 is set, the BSP wrapper hides the engine's own chrome
+   (header, footer, redundant dropdown) and provides its own PDF button
+   and AI-mode indicator. This script:
+     1. Adds the .embed body class so the CSS rules above kick in.
+     2. Posts the engine's content height to the parent on every layout
+        change so the parent can resize the iframe and avoid the
+        nested scrollbar.
+     3. Listens for a {type:'BSP_TONE_ACTION', action:'generatePDF'}
+        message from the parent and runs generatePDF() when received.
+     4. Posts {type:'BSP_TONE_PDF_READY', ready:true|false} whenever
+        the engine's own PDF button toggles between disabled/enabled,
+        so the parent can mirror that state in its own button. */
+(function(){
+  try {
+    var params = new URLSearchParams(location.search);
+    if (params.get('embed') !== '1') return;
+    document.body.classList.add('embed');
+
+    function post(msg){ try{ parent.postMessage(Object.assign({source:'bsp-tone-engine'}, msg), '*'); } catch(e){} }
+
+    // Auto-resize: post height every time the document grows or shrinks.
+    function reportHeight(){
+      var h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight, 480);
+      post({ type:'BSP_TONE_HEIGHT', height: h });
+    }
+    window.addEventListener('load', function(){
+      reportHeight();
+      // Re-measure as content streams in.
+      try {
+        var ro = new ResizeObserver(function(){ reportHeight(); });
+        ro.observe(document.body);
+      } catch(e) {}
+      // Also poll for the first 30s in case ResizeObserver misses something.
+      var pollUntil = Date.now() + 30000, t = setInterval(function(){
+        reportHeight();
+        if (Date.now() > pollUntil) clearInterval(t);
+      }, 1000);
+    });
+
+    // Listen for parent-issued actions.
+    window.addEventListener('message', function(e){
+      var d = e.data || {};
+      if (!d || d.source !== 'bsp-tone-wrapper') return;
+      if (d.type === 'BSP_TONE_ACTION' && d.action === 'generatePDF') {
+        try { if (typeof window.generatePDF === 'function') window.generatePDF(); } catch(err){}
+      }
+    });
+
+    // Mirror the engine's PDF-button state to the wrapper.
+    var lastPdfReady = null;
+    function reportPdfState(){
+      var btn = document.getElementById('pdfBtn');
+      var ready = !!btn && !btn.classList.contains('disabled');
+      if (ready !== lastPdfReady) {
+        lastPdfReady = ready;
+        post({ type:'BSP_TONE_PDF_READY', ready: ready });
+      }
+    }
+    setInterval(reportPdfState, 750);
+
+    // Mirror mode (ai/mobile/lowmem) — reads the visible mode-indicator
+    // each second and reports any changes.
+    var lastMode = null;
+    function reportMode(){
+      var ai     = document.getElementById('aiIndicator');
+      var mobile = document.getElementById('mobileIndicator');
+      var lowmem = document.getElementById('lowMemIndicator');
+      var mode = 'unknown';
+      if (mobile && mobile.offsetParent !== null) mode = 'mobile';
+      else if (lowmem && lowmem.offsetParent !== null) mode = 'lowmem';
+      else if (ai && ai.offsetParent !== null) mode = 'ai';
+      if (mode !== lastMode) {
+        lastMode = mode;
+        post({ type:'BSP_TONE_MODE', mode: mode });
+      }
+    }
+    setInterval(reportMode, 1000);
+  } catch(e) {}
+})();
+</script><p><a href="#main-content" class="skip-link">Skip to main content</a></p>
+<div class="container"><!-- HEADER --><header class="header">
+<div class="logo-circle" role="img" aria-label="Your Institution">Institution</div>
+<div class="header-text">
+<div class="dashboard-title">Discussion Tone Dashboard</div>
+<div class="dashboard-subtitle" id="courseName">Loading course...</div>
+</div>
+<div class="poster-select-wrap" id="posterSelectWrap"><label for="posterSelect" class="poster-label">Analyzing:</label><select id="posterSelect" class="poster-select" aria-label="Select user to analyze" disabled><option>Loading discussion data&hellip;</option></select></div>
+<div class="header-right">
+<div class="mode-indicator desktop" id="desktopIndicator" role="button" aria-label="Desktop AI mode information" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.663 17h4.674M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l.548 2.193a.25.25 0 01-.243.307H9.88a.25.25 0 01-.242-.307l.547-2.193z"></path></svg>
+<div class="mode-tooltip" role="tooltip"><strong>AI-Enhanced Analysis</strong><br>A full sentiment analysis language model is running locally in your browser. Posts are analyzed using both AI sentiment scoring and keyword detection for the most accurate results.</div>
+</div>
+<div class="mode-indicator mobile" id="mobileIndicator" role="button" aria-label="Mobile mode information" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+<div class="mode-tooltip" role="tooltip"><strong>Mobile Mode</strong><br>A mobile device was detected. To conserve memory and prevent crashes, this dashboard uses keyword-based analysis instead of the full AI model. Results may vary by as much as 50% compared to running this report from a computer.</div>
+</div>
+<div class="mode-indicator lowmem" id="lowmemIndicator" role="button" aria-label="Low memory mode information" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+<div class="mode-tooltip" role="tooltip"><strong>Low Memory Mode</strong><br>The AI model has been disabled to conserve browser memory. Analysis uses keyword detection only. Results may vary by as much as 50% compared to AI-enhanced mode.</div>
+</div>
+<button class="pdf-btn disabled" id="pdfBtn" aria-label="Export PDF report" onclick="generatePDF()"> <img class="pdf-duck" src="assets/institution-mark.svg" alt="" width="15" height="18" aria-hidden="true"> <svg xmlns="http://www.w3.org/2000/svg" class="pdf-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> <span class="pdf-spinner"></span> <span class="pdf-label">PDF</span></button>
+<div class="pdf-btn-tooltip" id="pdfTooltip">Not available in low memory mode or on mobile.</div>
+<div class="demo-pill" id="demoPill">DEMO DATA</div>
+</div>
+</header><!-- PRIVACY BANNER -->
+<div class="privacy-banner" role="note"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> <span><strong>Local Processing Only</strong> — This dashboard uses a language model that runs entirely in your browser. No discussion content is sent to any external server. All analysis happens on your device.</span></div>
+<!-- ALERT BANNER -->
+<div class="alert-banner" id="alertBanner" role="alert" aria-live="polite"><svg xmlns="http://www.w3.org/2000/svg" id="alertIcon" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+<div class="alert-banner-content" id="alertContent"></div>
+<button class="alert-banner-dismiss" id="alertDismiss" aria-label="Dismiss alert">×</button></div>
+<main id="main-content"><!-- MODEL LOADING BAR -->
+<div class="model-bar-wrap" id="modelBar">
+<div class="model-bar-label"><span id="modelLabel">Loading AI model...</span> <span id="modelPercent">0%</span></div>
+<div class="model-bar-track">
+<div class="model-bar-fill" id="modelFill" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="AI model loading progress"></div>
+</div>
+<div class="model-bar-detail" id="modelDetail">Downloading sentiment analysis model (first visit only, cached after)...</div>
+</div>
+<!-- KPI ROW -->
+<div class="kpi-row">
+<div class="kpi-card">
+<div class="kpi-value" id="kpiPositive">—</div>
+<div class="kpi-label">Positive Tone</div>
+<div class="kpi-sub" id="kpiPositiveSub"></div>
+</div>
+<div class="kpi-card">
+<div class="kpi-value" id="kpiNegative">—</div>
+<div class="kpi-label">Negative Flags</div>
+<div class="kpi-sub" id="kpiNegativeSub"></div>
+</div>
+<div class="kpi-card">
+<div class="kpi-value" id="kpiPosts">—</div>
+<div class="kpi-label">Posts Analyzed</div>
+<div class="kpi-sub" id="kpiPostsSub"></div>
+</div>
+<div class="kpi-card">
+<div class="kpi-value" id="kpiTopAttr">—</div>
+<div class="kpi-label">Top Attribute</div>
+<div class="kpi-sub" id="kpiTopAttrSub"></div>
+</div>
+</div>
+<!-- TABS -->
+<div class="tabs" role="tablist" aria-label="Dashboard views"><button role="tab" aria-selected="true" aria-controls="panelOverview" id="tabOverview" class="active" tabindex="0" onclick="switchTab('Overview')">Tone Overview</button> <button role="tab" aria-selected="false" aria-controls="panelTimeline" id="tabTimeline" tabindex="-1" onclick="switchTab('Timeline')">Timeline</button> <button role="tab" aria-selected="false" aria-controls="panelForums" id="tabForums" tabindex="-1" onclick="switchTab('Forums')">Forums</button> <button role="tab" aria-selected="false" aria-controls="panelFlagged" id="tabFlagged" tabindex="-1" onclick="switchTab('Flagged')">Flagged Posts</button> <button role="tab" aria-selected="false" aria-controls="panelAll" id="tabAll" tabindex="-1" onclick="switchTab('All')">All Posts</button> <button role="tab" aria-selected="false" aria-controls="panelStudents" id="tabStudents" tabindex="-1" onclick="switchTab('Students')">Neg. by Recipient</button> <button role="tab" aria-selected="false" aria-controls="panelStudentsPos" id="tabStudentsPos" tabindex="-1" onclick="switchTab('StudentsPos')">Pos. by Recipient</button></div>
+<!-- PANEL: OVERVIEW -->
+<div class="panel active" id="panelOverview" role="tabpanel" aria-labelledby="tabOverview">
+<h2>Tone Attribute Overview</h2>
+<p class="section-desc">Discussion replies are analyzed for positive and negative tone attributes. Positive attributes build trust, motivation, and engagement. Negative attributes may damage confidence or classroom climate.<a href="assets/docs/tone-sources.pdf" target="_blank" rel="noopener" title="Open the research basis for these tone attribute classifications (PDF, opens in new tab)" style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:2px 8px;background:rgba(15,91,70,.08);color:#0f5b46;text-decoration:none;border-radius:3px;font-size:11px;font-weight:500;border:1px solid rgba(15,91,70,.18);vertical-align:baseline"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Sources</a></p>
+<div class="attr-summary" id="attrSummary"><!-- Rendered by JS --></div>
+</div>
+<!-- PANEL: TIMELINE -->
+<div class="panel" id="panelTimeline" role="tabpanel" aria-labelledby="tabTimeline">
+<h2>Tone Calendar</h2>
+<p class="section-desc">Attributes detected each day. <span class="attr-tag pos" style="font-size: 10px;">Positive</span> and <span class="attr-tag neg" style="font-size: 10px;">Negative</span> tone attributes are shown on the date they were observed. Click a day to see who posted, who they replied to, and open the discussion post.</p>
+<div class="cal-nav"><button class="cal-nav-btn" id="calPrev" aria-label="Previous month">«</button> <span class="cal-nav-title" id="calTitle"></span> <button class="cal-nav-btn" id="calNext" aria-label="Next month">»</button></div>
+<div class="cal-grid" id="calGrid" role="grid" aria-label="Tone attribute calendar"></div>
+<div class="cal-day-detail" id="calDayDetail" aria-live="polite"></div>
+</div>
+<!-- PANEL: FORUMS -->
+<div class="panel" id="panelForums" role="tabpanel" aria-labelledby="tabForums">
+<h2>Per-Forum Breakdown</h2>
+<div class="forum-grid" id="forumGrid"></div>
+</div>
+<!-- PANEL: FLAGGED -->
+<div class="panel" id="panelFlagged" role="tabpanel" aria-labelledby="tabFlagged">
+<h2>Flagged Posts — Negative Tone Detected</h2>
+<p class="section-desc">Posts where one or more negative teacher tone attributes were detected. Review these for opportunities to reframe with encouragement, warmth, or constructive guidance.</p>
+<div id="flaggedContent"></div>
+</div>
+<!-- PANEL: ALL POSTS -->
+<div class="panel" id="panelAll" role="tabpanel" aria-labelledby="tabAll">
+<h2>All Analyzed Posts</h2>
+<div id="allContent"></div>
+</div>
+<div class="panel" id="panelStudents" role="tabpanel" aria-labelledby="tabStudents">
+<h2>Recipients by Negative Tone Received</h2>
+<p style="color: #6b6d70; font-size: 13px; margin-bottom: 12px;">Recipients who received replies with negative tone attributes, sorted by total negative attributes received.</p>
+<div id="studentsContent"></div>
+</div>
+<div class="panel" id="panelStudentsPos" role="tabpanel" aria-labelledby="tabStudentsPos">
+<h2>Recipients by Positive Tone Received</h2>
+<p style="color: #6b6d70; font-size: 13px; margin-bottom: 12px;">Recipients who received replies with positive tone attributes, sorted by total positive attributes received.</p>
+<div id="studentsPosContent"></div>
+</div>
+<!-- LOADING -->
+<div id="loadingOverlay" class="loading-overlay">
+<div class="spinner" role="status"><span class="sr-only">Loading...</span></div>
+<div class="loading-message" id="loadMsg" aria-live="polite" aria-atomic="true">Connecting to Brightspace...</div>
+</div>
+<!-- Live region -->
+<div id="liveAnnounce" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+</main><!-- FOOTER --><footer class="footer"><span>Institution · Instructional Technology · Discussion Tone Dashboard (Beta)</span> <span id="footerTime"></span></footer></div>
+<p><script>
+// ════════════════════════════════════════════
+// LOGGING & ACCESSIBILITY
+// ════════════════════════════════════════════
+function dbg(msg) { console.log('[ToneDash] ' + msg); }
+
+function announce(msg) {
+  const el = document.getElementById('liveAnnounce');
+  if (el) { el.textContent = ''; setTimeout(() => { el.textContent = msg; }, 100); }
+}
+
+// ════════════════════════════════════════════
+// BRIGHTSPACE ORG UNIT DETECTION
+// ════════════════════════════════════════════
+function detectOU() {
+  // Accept any identifier-shaped value so training-mode course IDs
+  // (e.g. tCourse001) work alongside real numeric Brightspace OUs.
+  // Without this relaxation, training course IDs failed the previous
+  // /^\d+$/ check, OU became null, DEMO=true, and the dashboard
+  // rendered an empty state instead of fetching mocked data.
+  const OK = /^[A-Za-z0-9_-]+$/;
+  const params = new URLSearchParams(window.location.search);
+  const ouParam = params.get('ou');
+  if (ouParam && OK.test(ouParam)) return ouParam;
+  const pathMatch = window.location.pathname.match(/\/content\/enforced\/(\d+)-/);
+  if (pathMatch) return pathMatch[1];
+  try {
+    const pp = new URLSearchParams(window.parent.location.search);
+    const pou = pp.get('ou');
+    if (pou && OK.test(pou)) return pou;
+  } catch (e) {}
+  return null;
+}
+
+const OU = detectOU();
+const DEMO = !OU;
+
+// Check for ?instructor= URL parameter to analyze a different user's posts
+function detectInstructorParam() {
+  const params = new URLSearchParams(window.location.search);
+  const ip = params.get('instructor');
+  if (ip && /^\d+$/.test(ip)) return parseInt(ip);
+  return null;
+}
+const instructorOverride = detectInstructorParam();
+
+dbg('OU=' + OU + ' DEMO=' + DEMO + (instructorOverride ? ' instructor=' + instructorOverride : ''));
+
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+let courseName = '';
+let myUserId = null;
+let targetUserId = null;
+let targetUserName = '';
+let analyzedPosts = [];
+let allRawPosts = []; // ALL reply posts from ALL users — stored for re-analysis
+let allForums = [];
+let forumMap = {};
+let modelReady = false;
+let lowMemoryMode = false;
+let classifier = null;
+let globalAttrCounts = { positive: {}, negative: {} };
+let userMap = {}; // userId -> display name
+let posterMap = {}; // userId -> { name, replyCount } for dropdown
+
+// ════════════════════════════════════════════
+// TEACHER TONE ATTRIBUTE FRAMEWORK
+// ════════════════════════════════════════════
+const POSITIVE_CATEGORIES = {
+  'Encouraging & Supportive': {
+    encouraging: ['great job', 'well done', 'excellent', 'wonderful', 'fantastic', 'amazing', 'outstanding', 'superb', 'bravo', 'kudos', 'nice work', 'good work', 'good job', 'awesome', 'terrific', 'magnificent'],
+    supportive: ['i support', 'here to help', 'i am here', 'you are not alone', 'lean on', 'count on me', 'we are in this', 'here for you', 'support you'],
+    affirming: ['you are right', 'exactly', 'absolutely', 'precisely', 'spot on', 'well said', 'you nailed', 'correct', 'thats right', 'i agree'],
+    reassuring: ['dont worry', 'it is okay', 'perfectly normal', 'no pressure', 'take your time', 'totally fine', 'not a problem', 'all good', 'its okay'],
+    motivational: ['you can do', 'believe in you', 'i know you can', 'capable of', 'you have what it takes', 'rise to', 'push through', 'reach your potential'],
+    uplifting: ['proud of you', 'impressed', 'inspiring', 'remarkable', 'brightened', 'lifted', 'exceptional', 'extraordinary']
+  },
+  'Respectful & Professional': {
+    respectful: ['i respect', 'i appreciate your', 'valued', 'honor your', 'thank you for sharing', 'i value'],
+    professional: ['well articulated', 'thorough analysis', 'scholarly', 'academically', 'rigorous', 'well researched', 'comprehensive'],
+    considerate: ['i understand that', 'considering your', 'mindful of', 'keeping in mind', 'acknowledging'],
+    patient: ['take your time', 'no rush', 'whenever you are ready', 'at your own pace', 'when you feel comfortable']
+  },
+  'Helpful & Instructional': {
+    constructive: ['consider trying', 'one suggestion', 'you might try', 'to strengthen this', 'to improve', 'to build on this', 'for next time', 'going forward'],
+    clarifying: ['to clarify', 'what i mean is', 'in other words', 'let me explain', 'to elaborate', 'put another way'],
+    guiding: ['think about', 'consider how', 'explore the idea', 'reflect on', 'look into', 'dig deeper', 'investigate'],
+    insightful: ['insightful', 'thoughtful', 'perceptive', 'astute', 'keen observation', 'sharp analysis', 'deep thinking', 'nuanced']
+  },
+  'Relational & Human': {
+    empathetic: ['i understand', 'i hear you', 'that must be', 'i can see how', 'makes sense that you feel', 'understandably'],
+    compassionate: ['i care about', 'your wellbeing', 'take care of yourself', 'be kind to yourself'],
+    approachable: ['feel free to', 'dont hesitate', 'my door is open', 'reach out', 'happy to help', 'come see me', 'stop by'],
+    warm: ['glad you', 'happy to see', 'love how you', 'enjoy reading', 'pleasure to read', 'delighted', 'so glad', 'love that you'],
+    friendly: ['hey', 'hope you are well', 'hope your week', 'looking forward', 'great to hear', 'good to see']
+  },
+  'Growth-Oriented': {
+    inspiring: ['imagine what', 'picture this', 'envision', 'the possibilities', 'transformative'],
+    challenging: ['push yourself', 'stretch beyond', 'challenge yourself', 'next level', 'go further', 'raise the bar'],
+    'growth-oriented': ['you are growing', 'real progress', 'improvement', 'you have come so far', 'development', 'evolution in your thinking', 'getting stronger', 'making strides'],
+    'confidence-building': ['trust yourself', 'you have the skills', 'already shown', 'proven that you', 'demonstrated', 'capability'],
+    'solution-focused': ['lets figure', 'we can work', 'heres a strategy', 'one approach', 'try this method', 'a path forward']
+  }
+};
+
+const NEGATIVE_CATEGORIES = {
+  'Condescending or Dismissive': {
+    condescending: ['as i already explained', 'as i said before', 'clearly you did not', 'obviously you', 'i already told you', 'as i have said'],
+    patronizing: ['let me spell it out', 'i will try to simplify', 'to put it simply for you', 'even a beginner'],
+    dismissive: ['not relevant', 'beside the point', 'that is not important', 'not worth discussing', 'irrelevant', 'does not matter', 'who cares'],
+    sarcastic: ['oh really', 'how surprising', 'brilliant idea', 'what a concept', 'genius', 'clearly the best'],
+    mocking: ['you actually think', 'laughable', 'ridiculous', 'absurd']
+  },
+  'Harsh or Discouraging': {
+    harsh: ['terrible', 'awful', 'dreadful', 'abysmal', 'pathetic', 'appalling', 'horrendous'],
+    'non-constructive criticism': ['this is wrong', 'this is bad', 'this makes no sense', 'completely off', 'totally wrong', 'entirely incorrect', 'makes no sense', 'nonsensical'],
+    judgmental: ['you should have known', 'you should know', 'should be obvious', 'anyone would know', 'common knowledge'],
+    scolding: ['unacceptable', 'inexcusable', 'i am disappointed in you', 'this is not okay', 'you need to do better'],
+    discouraging: ['you will never', 'not cut out for', 'not capable', 'give up', 'waste of time', 'hopeless', 'pointless']
+  },
+  'Disrespectful': {
+    impatient: ['hurry up', 'i dont have time', 'how many times', 'how hard is it', 'just do it', 'seriously'],
+    irritable: ['frustrated with', 'tired of', 'sick of', 'annoyed', 'exasperated'],
+    defensive: ['thats not my fault', 'i did my part', 'not my problem', 'blame yourself', 'dont blame me']
+  },
+  'Indifferent or Detached': {
+    cold: ['if you say so', 'i suppose so', 'whatever', 'fine', 'sure whatever', 'if you want', 'okay then'],
+    uninterested: ['not really relevant', 'i dont really care', 'doesnt concern me', 'not my problem', 'doesnt matter', 'dont worry about it', 'not important'],
+    detached: ['figure it out yourself', 'not my job', 'up to you i guess', 'do what you want', 'its your call', 'thats on you', 'not my responsibility'],
+    apathetic: ['who cares', 'whatever you say', 'it is what it is', 'doesnt make a difference', 'no opinion', 'i have no preference']
+  },
+  'Controlling or Authoritarian': {
+    authoritarian: ['because i said so', 'no discussion', 'end of story', 'no excuses', 'case closed'],
+    demanding: ['you need to immediately', 'i demand', 'no exceptions', 'non-negotiable'],
+    dogmatic: ['the only answer', 'the only way', 'there is no other', 'without question'],
+    'dismissive of questions': ['stop asking', 'no more questions', 'you should already know', 'look it up yourself']
+  }
+};
+
+// ════════════════════════════════════════════
+// API HELPERS
+// ════════════════════════════════════════════
+function norm(d) {
+  if (!d) return [];
+  if (Array.isArray(d)) return d;
+  if (d.Items) return d.Items;
+  if (d.Objects) return d.Objects;
+  if (d.objects) return d.objects;
+  return [d];
+}
+
+async function api(path, fallback) {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    const r = await fetch(path, { credentials: 'include', signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!r.ok) { dbg('API ' + r.status + ': ' + path); return fallback !== undefined ? fallback : []; }
+    return await r.json();
+  } catch (e) {
+    const msg = e.name === 'AbortError' ? 'TIMEOUT (15s)' : e;
+    dbg('API error: ' + path + ' → ' + msg);
+    return fallback !== undefined ? fallback : [];
+  }
+}
+
+// ════════════════════════════════════════════
+// TAB MANAGEMENT
+// ════════════════════════════════════════════
+const tabNames = ['Overview', 'Timeline', 'Forums', 'Flagged', 'All', 'Students', 'StudentsPos'];
+
+function switchTab(name) {
+  tabNames.forEach(t => {
+    const tab = document.getElementById('tab' + t);
+    const panel = document.getElementById('panel' + t);
+    if (t === name) {
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      tab.setAttribute('tabindex', '0');
+      panel.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+      tab.setAttribute('aria-selected', 'false');
+      tab.setAttribute('tabindex', '-1');
+      panel.classList.remove('active');
+    }
+  });
+  announce(name + ' panel active');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const tabBtns = tabNames.map(t => document.getElementById('tab' + t));
+  tabBtns.forEach((btn, i) => {
+    btn.addEventListener('keydown', (e) => {
+      let next;
+      if (e.key === 'ArrowRight') next = (i + 1) % tabBtns.length;
+      else if (e.key === 'ArrowLeft') next = (i - 1 + tabBtns.length) % tabBtns.length;
+      if (next !== undefined) {
+        e.preventDefault();
+        tabBtns[next].focus();
+        tabBtns[next].click();
+      }
+    });
+  });
+});
+
+// ════════════════════════════════════════════
+// ALERT BANNER SYSTEM
+// ════════════════════════════════════════════
+function showAlert(type, title, message, persistent) {
+  const banner = document.getElementById('alertBanner');
+  const content = document.getElementById('alertContent');
+  const dismiss = document.getElementById('alertDismiss');
+  if (!banner || !content) return;
+  banner.className = 'alert-banner active alert-' + type;
+  content.innerHTML = '<div class="alert-banner-title">' + title + '</div><div>' + message + '</div>';
+  dbg('ALERT [' + type.toUpperCase() + ']: ' + title + ' — ' + message.replace(/<[^>]+>/g, ''));
+  dismiss.onclick = function() { banner.classList.remove('active'); };
+  if (!persistent) {
+    setTimeout(function() { banner.classList.remove('active'); }, 12000);
+  }
+}
+
+// ════════════════════════════════════════════
+// MEMORY AWARENESS
+// ════════════════════════════════════════════
+function checkMemoryPressure() {
+  // performance.memory is Chrome-only but best available browser API
+  if (performance && performance.memory) {
+    const used = performance.memory.usedJSHeapSize;
+    const limit = performance.memory.jsHeapSizeLimit;
+    const pct = Math.round((used / limit) * 100);
+    const usedMB = Math.round(used / 1048576);
+    const limitMB = Math.round(limit / 1048576);
+    dbg('Memory check: ' + usedMB + 'MB / ' + limitMB + 'MB (' + pct + '% used)');
+    if (pct > 85) {
+      dbg('⚠ HIGH MEMORY PRESSURE (' + pct + '%) — recommending low-memory mode');
+      return { pressure: 'critical', pct: pct, usedMB: usedMB, limitMB: limitMB };
+    }
+    if (pct > 65) {
+      dbg('⚠ Elevated memory usage: ' + pct + '%');
+      return { pressure: 'elevated', pct: pct, usedMB: usedMB, limitMB: limitMB };
+    }
+    return { pressure: 'normal', pct: pct, usedMB: usedMB, limitMB: limitMB };
+  }
+  // Safari/Firefox: no API — use deviceMemory hint if available
+  if (navigator.deviceMemory && navigator.deviceMemory <= 4) {
+    dbg('Low device memory detected: ' + navigator.deviceMemory + ' GB');
+    return { pressure: 'elevated', pct: -1, usedMB: -1, limitMB: -1 };
+  }
+  dbg('Memory API not available — cannot detect pressure');
+  return { pressure: 'unknown', pct: -1, usedMB: -1, limitMB: -1 };
+}
+
+function enableLowMemoryMode(reason) {
+  lowMemoryMode = true;
+  modelReady = false;
+  classifier = null;
+  dbg('═══ LOW MEMORY MODE ENABLED ═══ Reason: ' + reason);
+  // Activate the low-memory mode indicator
+  var el = document.getElementById('lowmemIndicator');
+  if (el) {
+    el.classList.add('active');
+    el.addEventListener('click', function() { this.classList.toggle('show-tip'); });
+    el.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.classList.toggle('show-tip'); } });
+    document.addEventListener('click', function(e) { if (!el.contains(e.target)) el.classList.remove('show-tip'); });
+  }
+  // Deactivate the desktop AI indicator
+  var deskEl = document.getElementById('desktopIndicator');
+  if (deskEl) deskEl.classList.remove('active');
+  // Disable PDF export in low memory mode
+  disablePdfButton('PDF export is not available in low memory mode.');
+}
+
+function detectLowMemoryParam() {
+  var params = new URLSearchParams(window.location.search);
+  return params.get('lowmem') === '1' || params.get('lowmem') === 'true';
+}
+
+// ════════════════════════════════════════════
+// TRANSFORMERS.JS MODEL
+// ════════════════════════════════════════════
+function isMobileDevice() {
+  const ua = navigator.userAgent || '';
+  return /iPad|iPhone|iPod|Android|Mobile|Tablet/i.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua));
+}
+
+async function loadModel() {
+  const barWrap = document.getElementById('modelBar');
+  const fill = document.getElementById('modelFill');
+  const label = document.getElementById('modelLabel');
+  const percent = document.getElementById('modelPercent');
+  const detail = document.getElementById('modelDetail');
+
+  function activateIndicator(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('active');
+    el.addEventListener('click', function() { this.classList.toggle('show-tip'); });
+    el.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.classList.toggle('show-tip'); } });
+    document.addEventListener('click', function(e) { if (!el.contains(e.target)) el.classList.remove('show-tip'); });
+  }
+
+  // Skip AI model on mobile/tablet — too memory-intensive for Safari WebContent
+  if (isMobileDevice()) {
+    dbg('Mobile device detected — using keyword analysis (AI model skipped)');
+    activateIndicator('mobileIndicator');
+    disablePdfButton('PDF export is not available on mobile devices.');
+    barWrap.classList.add('active');
+    label.textContent = 'Using keyword analysis (mobile mode)';
+    detail.textContent = 'AI model skipped on mobile devices to prevent crashes.';
+    fill.style.width = '100%';
+    fill.style.background = 'var(--lb)';
+    percent.textContent = '—';
+    setTimeout(() => { barWrap.classList.remove('active'); }, 2500);
+    return false;
+  }
+
+  // Check for URL parameter ?lowmem=1
+  if (detectLowMemoryParam()) {
+    dbg('Low memory mode requested via URL parameter');
+    enableLowMemoryMode('URL parameter ?lowmem=1');
+    barWrap.classList.add('active');
+    label.textContent = 'Low Memory Mode — keyword analysis only';
+    detail.textContent = 'AI model disabled by URL parameter. Remove ?lowmem=1 to re-enable.';
+    fill.style.width = '100%';
+    fill.style.background = 'var(--warning)';
+    percent.textContent = '—';
+    showAlert('warn', 'Low Memory Mode Active', 'The AI model has been disabled via URL parameter. Analysis will use keyword detection only, which may vary by up to 50%. Remove <code>?lowmem=1</code> from the URL to re-enable the full AI model.', true);
+    setTimeout(() => { barWrap.classList.remove('active'); }, 2500);
+    return false;
+  }
+
+  // Check for low memory mode (user toggled)
+  if (lowMemoryMode) {
+    dbg('Low memory mode already active — skipping model load');
+    barWrap.classList.add('active');
+    label.textContent = 'Low Memory Mode — keyword analysis only';
+    detail.textContent = 'AI model disabled to conserve memory.';
+    fill.style.width = '100%';
+    fill.style.background = 'var(--warning)';
+    percent.textContent = '—';
+    setTimeout(() => { barWrap.classList.remove('active'); }, 2500);
+    return false;
+  }
+
+  // Check memory pressure before loading model
+  var memCheck = checkMemoryPressure();
+  if (memCheck.pressure === 'critical') {
+    enableLowMemoryMode('Critical memory pressure (' + memCheck.pct + '%)');
+    barWrap.classList.add('active');
+    label.textContent = 'Low Memory Mode — keyword analysis only';
+    detail.textContent = 'Browser memory at ' + memCheck.pct + '%. AI model skipped to prevent crashes.';
+    fill.style.width = '100%';
+    fill.style.background = 'var(--warning)';
+    percent.textContent = '—';
+    showAlert('warn', 'Low Memory Mode Auto-Enabled',
+      'Your browser is using ' + memCheck.pct + '% of available memory (' + memCheck.usedMB + ' MB / ' + memCheck.limitMB + ' MB). The AI model has been skipped to prevent crashes. Analysis will use keyword detection only.' +
+      '<br><button class="lowmem-toggle" onclick="forceLoadAIModel()">Load AI model anyway</button>', true);
+    setTimeout(() => { barWrap.classList.remove('active'); }, 3000);
+    return false;
+  }
+
+  barWrap.classList.add('active');
+
+  try {
+    dbg('Loading AI model...');
+    const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.1');
+    env.allowLocalModels = false;
+
+    // Check if model is already cached in browser Cache API
+    var modelCached = false;
+    var modelLoadStart = Date.now();
+    try {
+      var cache = await caches.open('transformers-cache');
+      var cachedKeys = await cache.keys();
+      modelCached = cachedKeys.some(function(k) { return k.url && k.url.indexOf('distilbert') !== -1; });
+      dbg('Cache check: ' + cachedKeys.length + ' entries, model ' + (modelCached ? 'FOUND in cache' : 'not cached — will download'));
+    } catch (cacheErr) { dbg('Cache API not available: ' + cacheErr.message); }
+
+    fill.style.width = '30%';
+    fill.setAttribute('aria-valuenow', '30');
+    percent.textContent = '30%';
+    if (modelCached) {
+      label.textContent = 'Loading model from cache...';
+      detail.textContent = 'distilbert-base-uncased-finetuned-sst-2-english (cached)';
+    } else {
+      label.textContent = 'Downloading sentiment model...';
+      detail.textContent = 'distilbert-base-uncased-finetuned-sst-2-english (~67 MB, first visit only)';
+    }
+
+    var downloadTriggered = false;
+    classifier = await pipeline('sentiment-analysis', 'Xenova/distilbert-base-uncased-finetuned-sst-2-english', {
+      progress_callback: (progress) => {
+        if (progress.status === 'download' && progress.total) {
+          downloadTriggered = true;
+          const pct = Math.min(95, 30 + Math.round((progress.loaded / progress.total) * 60));
+          fill.style.width = pct + '%';
+          fill.setAttribute('aria-valuenow', String(pct));
+          percent.textContent = pct + '%';
+          detail.textContent = 'Downloading: ' + (progress.loaded / 1048576).toFixed(1) + ' / ' + (progress.total / 1048576).toFixed(1) + ' MB';
+        } else if (progress.status === 'ready') {
+          fill.style.width = '100%';
+          fill.setAttribute('aria-valuenow', '100');
+          percent.textContent = '100%';
+        }
+      }
+    });
+
+    var loadMs = Date.now() - modelLoadStart;
+    fill.style.width = '100%';
+    fill.setAttribute('aria-valuenow', '100');
+    percent.textContent = '100%';
+    label.textContent = 'Model ready!';
+    if (downloadTriggered) {
+      detail.textContent = 'Downloaded and cached (' + (loadMs / 1000).toFixed(1) + 's). Next visit will load from cache.';
+    } else {
+      detail.textContent = 'Loaded from cache in ' + (loadMs / 1000).toFixed(1) + 's.';
+    }
+    modelReady = true;
+    dbg('✓ Model loaded and ready (' + (loadMs / 1000).toFixed(1) + 's, ' + (downloadTriggered ? 'downloaded' : 'from cache') + ')');
+    activateIndicator('desktopIndicator');
+    enablePdfButton();
+
+    // Post-load memory check — warn if memory elevated after model load
+    var postMem = checkMemoryPressure();
+    if (postMem.pressure === 'elevated' || postMem.pressure === 'critical') {
+      showAlert('warn', 'Elevated Memory Usage',
+        'Browser memory is at ' + postMem.pct + '% after loading the AI model. If you experience slowdowns or crashes, consider reloading with <code>?lowmem=1</code> in the URL to use keyword-only analysis.', true);
+    }
+
+    setTimeout(() => { barWrap.classList.remove('active'); }, 2000);
+    return true;
+  } catch (e) {
+    var errMsg = e.message || String(e);
+    dbg('✗ Model error: ' + errMsg);
+
+    // Detect out-of-memory errors
+    var isOOM = /out of memory|oom|memory|allocation|wasm/i.test(errMsg) || e.name === 'RangeError';
+    if (isOOM) {
+      enableLowMemoryMode('Model load OOM: ' + errMsg);
+      showAlert('error', 'Out of Memory',
+        'The AI model could not load because the browser ran out of memory. Analysis will use keyword detection only. ' +
+        'Try closing other tabs to free memory, or add <code>?lowmem=1</code> to the URL to skip the model automatically.', true);
+    } else {
+      showAlert('error', 'AI Model Unavailable',
+        'The sentiment analysis model failed to load: ' + errMsg.substring(0, 120) + '. Analysis will use keyword detection only, which may vary by up to 50%.', true);
+    }
+
+    label.textContent = 'Model unavailable — using keyword analysis';
+    detail.textContent = isOOM ? 'Out of memory. Using keyword detection.' : (errMsg.substring(0, 80) || 'Falling back to attribute keyword detection.');
+    fill.style.width = '100%';
+    fill.style.background = 'var(--danger)';
+    percent.textContent = '—';
+    setTimeout(() => { barWrap.classList.remove('active'); }, 3000);
+    return false;
+  }
+}
+
+// ════════════════════════════════════════════
+// PDF EXPORT
+// ════════════════════════════════════════════
+function enablePdfButton() {
+  var btn = document.getElementById('pdfBtn');
+  if (!btn) return;
+  btn.classList.remove('disabled', 'disabled-tip');
+  btn.setAttribute('aria-disabled', 'false');
+}
+
+function disablePdfButton(reason) {
+  var btn = document.getElementById('pdfBtn');
+  if (!btn) return;
+  btn.classList.add('disabled-tip');
+  btn.classList.remove('disabled');
+  btn.setAttribute('aria-disabled', 'true');
+  var tip = document.getElementById('pdfTooltip');
+  if (tip) tip.textContent = reason || 'Not available in low memory mode or on mobile.';
+}
+
+var _pdfBrandLogoPromise = null;
+function loadPdfBrandLogo() {
+  var Brand = window.FacultyDashboardPdfBrand;
+  if (!Brand) return Promise.resolve(null);
+  if (_pdfBrandLogoPromise) return _pdfBrandLogoPromise;
+  _pdfBrandLogoPromise = Brand.loadDuckLogo();
+  return _pdfBrandLogoPromise;
+}
+
+async function generatePDF() {
+  var btn = document.getElementById('pdfBtn');
+  if (!btn || btn.classList.contains('disabled') || btn.classList.contains('disabled-tip') || btn.classList.contains('generating')) return;
+
+  btn.classList.add('generating');
+  var labelEl = btn.querySelector('.pdf-label');
+  if (labelEl) labelEl.textContent = 'Loading...';
+  dbg('═══ PDF EXPORT START ═══');
+
+  try {
+    // Dynamically load jsPDF if not already loaded
+    if (!window.jspdf) {
+      dbg('Loading jsPDF library...');
+      await new Promise(function(resolve, reject) {
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        s.onload = function() { dbg('✓ jsPDF loaded'); resolve(); };
+        s.onerror = function() { reject(new Error('Failed to load jsPDF library from CDN. Check your internet connection.')); };
+        document.head.appendChild(s);
+      });
+    }
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      throw new Error('jsPDF library did not initialize correctly.');
+    }
+    if (labelEl) labelEl.textContent = 'Generating...';
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+    var W = 215.9; // letter width mm
+    var H = 279.4;
+    var margin = 18;
+    var contentW = W - margin * 2;
+    var y = 0;
+
+    // Your Institution brand colors
+    var deltaGreen = [15, 91, 70];
+    var deltaTeal = [45, 157, 122];
+    var deltaMint = [184, 240, 216];
+    var deltaGray = [77, 77, 79];
+    var deltaLightGray = [107, 109, 112];
+    var white = [255, 255, 255];
+    var successGreen = [15, 91, 70];
+    var dangerRed = [211, 47, 47];
+    var bgLight = [242, 248, 245];
+
+    var logoData = await loadPdfBrandLogo();
+
+    // ── HEADER BAR ──
+    doc.setFillColor.apply(doc, deltaGreen);
+    doc.rect(0, 0, W, 32, 'F');
+
+    // Teal accent line
+    doc.setFillColor.apply(doc, deltaTeal);
+    doc.rect(0, 32, W, 2.2, 'F');
+
+    var textX = margin;
+    if (logoData) {
+      var Brand = window.FacultyDashboardPdfBrand;
+      var logoH = 20;
+      var logoY = 6;
+      var logoW = Brand ? Brand.drawDuck(doc, logoData, margin, logoY, logoH) : 0;
+      if (logoW) {
+        textX = margin + logoW + 5;
+      } else {
+        try {
+          doc.addImage(logoData, 'PNG', margin, logoY, 16.5, logoH);
+          textX = margin + 16.5 + 5;
+        } catch (logoErr) {
+          dbg('PDF logo embed skipped: ' + (logoErr && logoErr.message));
+        }
+      }
+    }
+
+    // Title
+    doc.setFontSize(15);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor.apply(doc, white);
+    doc.text("Discussion Tone Report", textX, 12);
+
+    // Subtitle — person name
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor.apply(doc, deltaMint);
+    doc.text('for ' + targetUserName, textX, 19);
+
+    // Course name, date
+    doc.setFontSize(8);
+    doc.setTextColor(200, 230, 218);
+    var courseText = courseName || 'Course';
+    var dateText = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    doc.text(courseText + '  |  ' + dateText, textX, 25.5);
+
+    y = 40;
+
+    // ── KPI TILES ──
+    var total = analyzedPosts.length;
+    var positivePosts = analyzedPosts.filter(function(p) { return p.toneLabel === 'positive'; }).length;
+    var negativePosts = analyzedPosts.filter(function(p) { return p.negCount > 0; }).length;
+    var pdfTotalNegFlags = analyzedPosts.reduce(function(sum, p) { return sum + p.negCount; }, 0);
+    var positivePct = total > 0 ? Math.round(positivePosts / total * 100) : 0;
+    var allAttrs = Object.entries(globalAttrCounts.positive).sort(function(a, b) { return b[1].count - a[1].count; });
+    var topAttrName = allAttrs.length > 0 ? capitalize(allAttrs[0][0]) : '—';
+    var topAttrCount = allAttrs.length > 0 ? allAttrs[0][1].count : 0;
+
+    var tileW = (contentW - 9) / 4; // 3 gaps of 3mm
+    var tileH = 24;
+    var tiles = [
+      { value: positivePct + '%', label: 'Positive Tone', sub: positivePosts + ' of ' + total + ' posts', color: successGreen },
+      { value: String(pdfTotalNegFlags), label: 'Negative Flags', sub: pdfTotalNegFlags > 0 ? pdfTotalNegFlags + ' flags in ' + negativePosts + ' post' + (negativePosts !== 1 ? 's' : '') : 'no negative attrs found', color: dangerRed },
+      { value: String(total), label: 'Posts Analyzed', sub: 'discussion replies', color: deltaTeal },
+      { value: topAttrName, label: 'Top Attribute', sub: topAttrCount > 0 ? 'detected ' + topAttrCount + ' times' : '', color: deltaGreen }
+    ];
+
+    tiles.forEach(function(tile, i) {
+      var tx = margin + i * (tileW + 3);
+      // Card background
+      doc.setFillColor.apply(doc, bgLight);
+      doc.roundedRect(tx, y, tileW, tileH, 2, 2, 'F');
+      // Left color accent
+      doc.setFillColor.apply(doc, tile.color);
+      doc.rect(tx, y, 1.5, tileH, 'F');
+      // Value
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(tile.value.length > 12 ? 10 : 14);
+      doc.setTextColor.apply(doc, deltaGreen);
+      doc.text(tile.value, tx + tileW / 2, y + 10, { align: 'center' });
+      // Label
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor.apply(doc, deltaLightGray);
+      doc.text(tile.label, tx + tileW / 2, y + 15.5, { align: 'center' });
+      // Sub
+      if (tile.sub) {
+        doc.setFontSize(6);
+        doc.text(tile.sub, tx + tileW / 2, y + 19.5, { align: 'center' });
+      }
+    });
+
+    y += tileH + 8;
+
+    // ── SECTION: Tone Attribute Overview ──
+    doc.setFillColor.apply(doc, deltaGreen);
+    doc.roundedRect(margin, y, contentW, 8, 1.5, 1.5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor.apply(doc, white);
+    doc.text('Tone Attribute Overview', margin + 4, y + 5.5);
+    y += 12;
+
+    // Positive attributes
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor.apply(doc, successGreen);
+    doc.text('Positive Attributes Detected', margin, y);
+    y += 5;
+
+    for (var catName in POSITIVE_CATEGORIES) {
+      if (!POSITIVE_CATEGORIES.hasOwnProperty(catName)) continue;
+      var attrs = POSITIVE_CATEGORIES[catName];
+      var catAttrs = Object.keys(attrs).map(function(a) {
+        return { name: a, count: (globalAttrCounts.positive[a] || {}).count || 0 };
+      }).filter(function(a) { return a.count > 0; }).sort(function(a, b) { return b.count - a.count; });
+      if (catAttrs.length === 0) continue;
+
+      // Check page break
+      if (y > H - 30) { doc.addPage(); y = margin; }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor.apply(doc, deltaGray);
+      doc.text(catName, margin + 2, y);
+      y += 4;
+
+      // Render attribute tags in a row
+      var tagX = margin + 2;
+      catAttrs.forEach(function(a) {
+        var tagText = capitalize(a.name) + ' (' + a.count + ')';
+        var tagW = doc.getTextWidth(tagText) + 5;
+        if (tagX + tagW > margin + contentW) { tagX = margin + 2; y += 5; }
+        // Tag background
+        doc.setFillColor(232, 245, 233);
+        doc.roundedRect(tagX, y - 3, tagW, 4.5, 1, 1, 'F');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor.apply(doc, successGreen);
+        doc.text(tagText, tagX + 2.5, y);
+        tagX += tagW + 2;
+      });
+      y += 6;
+    }
+
+    y += 3;
+
+    // Negative attributes
+    if (y > H - 30) { doc.addPage(); y = margin; }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor.apply(doc, dangerRed);
+    doc.text('Negative Attributes Detected', margin, y);
+    y += 5;
+
+    var hasNegAttrs = false;
+    for (var nCatName in NEGATIVE_CATEGORIES) {
+      if (!NEGATIVE_CATEGORIES.hasOwnProperty(nCatName)) continue;
+      var nAttrs = NEGATIVE_CATEGORIES[nCatName];
+      var nCatAttrs = Object.keys(nAttrs).map(function(a) {
+        return { name: a, count: (globalAttrCounts.negative[a] || {}).count || 0 };
+      }).filter(function(a) { return a.count > 0; }).sort(function(a, b) { return b.count - a.count; });
+      if (nCatAttrs.length === 0) continue;
+      hasNegAttrs = true;
+
+      if (y > H - 30) { doc.addPage(); y = margin; }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor.apply(doc, deltaGray);
+      doc.text(nCatName, margin + 2, y);
+      y += 4;
+
+      var nTagX = margin + 2;
+      nCatAttrs.forEach(function(a) {
+        var tagText = capitalize(a.name) + ' (' + a.count + ')';
+        var tagW = doc.getTextWidth(tagText) + 5;
+        if (nTagX + tagW > margin + contentW) { nTagX = margin + 2; y += 5; }
+        doc.setFillColor(255, 235, 238);
+        doc.roundedRect(nTagX, y - 3, tagW, 4.5, 1, 1, 'F');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor.apply(doc, dangerRed);
+        doc.text(tagText, nTagX + 2.5, y);
+        nTagX += tagW + 2;
+      });
+      y += 6;
+    }
+    if (!hasNegAttrs) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor.apply(doc, successGreen);
+      doc.text('No negative tone attributes detected.', margin + 2, y);
+      y += 5;
+    }
+
+    y += 6;
+
+    // ── SECTION: Flagged Posts ──
+    if (y > H - 40) { doc.addPage(); y = margin; }
+    doc.setFillColor.apply(doc, dangerRed);
+    doc.roundedRect(margin, y, contentW, 8, 1.5, 1.5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor.apply(doc, white);
+    doc.text('Flagged Posts \u2014 Negative Tone Detected', margin + 4, y + 5.5);
+    y += 12;
+
+    var flagged = analyzedPosts.filter(function(p) { return p.negCount > 0; }).sort(function(a, b) { return b.negCount - a.negCount; });
+
+    if (flagged.length === 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor.apply(doc, successGreen);
+      doc.text('No negative tone attributes detected. Discussion tone looks great!', margin + 2, y);
+      y += 8;
+    } else {
+      // Table header
+      var colX = [margin, margin + 8, margin + 28, margin + 68, margin + 108, margin + 124];
+      var colLabels = ['#', 'Date', 'Forum', 'Reply To', 'Neg.', 'Attributes'];
+
+      doc.setFillColor.apply(doc, deltaGreen);
+      doc.rect(margin, y - 3.5, contentW, 6, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor.apply(doc, white);
+      colLabels.forEach(function(lbl, ci) { doc.text(lbl, colX[ci] + 1, y); });
+      y += 5;
+
+      flagged.forEach(function(p, idx) {
+        if (y > H - 20) {
+          // Footer before page break
+          addPdfFooter(doc, W, H, margin);
+          doc.addPage();
+          y = margin;
+          // Re-draw header row
+          doc.setFillColor.apply(doc, deltaGreen);
+          doc.rect(margin, y - 3.5, contentW, 6, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(6.5);
+          doc.setTextColor.apply(doc, white);
+          colLabels.forEach(function(lbl, ci) { doc.text(lbl, colX[ci] + 1, y); });
+          y += 5;
+        }
+
+        // Zebra stripe
+        if (idx % 2 === 0) {
+          doc.setFillColor(255, 248, 248);
+          doc.rect(margin, y - 3.5, contentW, 5.5, 'F');
+        }
+
+        var date = new Date(p.DatePosted).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        var negAttrs = Object.keys(p.attrs.negative).map(function(a) { return capitalize(a); }).join(', ');
+        var forum = (p.ForumName || '').substring(0, 22);
+        var replyTo = (p.ReplyToStudent || '').substring(0, 22);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor.apply(doc, deltaGray);
+        doc.text(String(idx + 1), colX[0] + 1, y);
+        doc.text(date, colX[1] + 1, y);
+        doc.text(forum, colX[2] + 1, y);
+        doc.text(replyTo, colX[3] + 1, y);
+        doc.setTextColor.apply(doc, dangerRed);
+        doc.setFont('helvetica', 'bold');
+        doc.text(String(p.negCount), colX[4] + 1, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor.apply(doc, deltaGray);
+        var attrsText = negAttrs.substring(0, 50);
+        doc.text(attrsText, colX[5] + 1, y);
+        y += 5.5;
+      });
+    }
+
+    // ── FOOTER ──
+    addPdfFooter(doc, W, H, margin);
+
+    // Save
+    var fileName = 'Tone_Report_' + (targetUserName || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
+    doc.save(fileName);
+    dbg('✓ PDF exported: ' + fileName);
+
+  } catch (err) {
+    dbg('✗ PDF export error: ' + err.message);
+    showAlert('error', 'PDF Export Failed', 'Could not generate the PDF: ' + (err.message || String(err)).substring(0, 120), false);
+  }
+
+  btn.classList.remove('generating');
+  if (labelEl) labelEl.textContent = 'PDF';
+}
+
+function addPdfFooter(doc, W, H, margin) {
+  // Teal accent line
+  doc.setFillColor(45, 157, 122);
+  doc.rect(0, H - 14, W, 1.2, 'F');
+  // Institution green footer bar
+  doc.setFillColor(15, 91, 70);
+  doc.rect(0, H - 12.8, W, 12.8, 'F');
+  // Footer text
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(200, 230, 218);
+  doc.text("Your Institution  |  Discussion Tone Dashboard", margin, H - 6);
+  doc.text('Generated ' + new Date().toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }), W - margin, H - 6, { align: 'right' });
+  doc.setFontSize(5.5);
+  doc.setTextColor(168, 210, 190);
+  doc.text('Your Institution · Instructional Technology · Faculty Dashboard', W / 2, H - 2.5, { align: 'center' });
+}
+
+// Force-load AI model (user override from alert banner)
+async function forceLoadAIModel() {
+  dbg('═══ USER OVERRIDE: Force-loading AI model ═══');
+  lowMemoryMode = false;
+  var el = document.getElementById('lowmemIndicator');
+  if (el) el.classList.remove('active');
+  document.getElementById('alertBanner').classList.remove('active');
+  await loadModel();
+  // Re-analyze current poster if we have data
+  if (allRawPosts.length > 0 && targetUserId) {
+    var filtered = allRawPosts.filter(function(p) { return p.PostingUserId == targetUserId; });
+    if (filtered.length > 0) {
+      dbg('Re-analyzing ' + filtered.length + ' posts with AI model...');
+      var overlay = document.getElementById('loadingOverlay');
+      if (overlay) overlay.style.display = 'flex';
+      await analyzeAndRender(filtered, allForums.length ? allForums : Object.keys(forumMap).map(function(id) { return { ForumId: parseInt(id), Name: forumMap[id].name }; }), overlay);
+    }
+  }
+}
+
+// ════════════════════════════════════════════
+// TONE ANALYSIS ENGINE
+// ════════════════════════════════════════════
+function stripHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
+function detectAttributes(text) {
+  const lower = text.toLowerCase().replace(/[''\']/g, '').replace(/[""]/g, '"');
+  const positiveHits = {};
+  const negativeHits = {};
+
+  // Scan positive categories
+  for (const [catName, attrs] of Object.entries(POSITIVE_CATEGORIES)) {
+    for (const [attrName, phrases] of Object.entries(attrs)) {
+      for (const phrase of phrases) {
+        const regex = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        const matches = lower.match(regex);
+        if (matches && matches.length > 0) {
+          if (!positiveHits[attrName]) positiveHits[attrName] = { category: catName, count: 0 };
+          positiveHits[attrName].count += matches.length;
+        }
+      }
+    }
+  }
+
+  // Scan negative categories
+  for (const [catName, attrs] of Object.entries(NEGATIVE_CATEGORIES)) {
+    for (const [attrName, phrases] of Object.entries(attrs)) {
+      for (const phrase of phrases) {
+        const regex = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        const matches = lower.match(regex);
+        if (matches && matches.length > 0) {
+          if (!negativeHits[attrName]) negativeHits[attrName] = { category: catName, count: 0 };
+          negativeHits[attrName].count += matches.length;
+        }
+      }
+    }
+  }
+
+  return { positive: positiveHits, negative: negativeHits };
+}
+
+async function analyzeText(text) {
+  const clean = stripHtml(text).trim();
+  if (!clean || clean.length < 5) {
+    return { sentiment: 0.5, sentLabel: 'NEUTRAL', attrs: { positive: {}, negative: {} }, posCount: 0, negCount: 0, toneLabel: 'neutral' };
+  }
+
+  // Attribute detection
+  const attrs = detectAttributes(clean);
+  const posCount = Object.values(attrs.positive).reduce((s, a) => s + a.count, 0);
+  const negCount = Object.values(attrs.negative).reduce((s, a) => s + a.count, 0);
+
+  // AI sentiment
+  let sentiment = 0.5;
+  let sentLabel = 'NEUTRAL';
+
+  if (modelReady && classifier) {
+    try {
+      const truncated = clean.split(/\s+/).slice(0, 400).join(' ');
+      const result = await classifier(truncated);
+      if (result && result[0]) {
+        sentLabel = result[0].label;
+        sentiment = result[0].label === 'POSITIVE' ? result[0].score : (1 - result[0].score);
+      }
+    } catch (e) { dbg('classify err: ' + e); }
+  } else {
+    // Fallback
+    const total = posCount + negCount;
+    sentiment = total > 0 ? posCount / total : 0.5;
+    sentLabel = sentiment > 0.6 ? 'POSITIVE' : sentiment < 0.4 ? 'NEGATIVE' : 'NEUTRAL';
+  }
+
+  // Overall tone label
+  let toneLabel = 'neutral';
+  if (negCount > 0 && posCount === 0) toneLabel = 'negative';
+  else if (negCount > 0 && posCount > 0) toneLabel = 'mixed';
+  else if (posCount > 2 || sentiment > 0.7) toneLabel = 'positive';
+  else if (posCount > 0) toneLabel = 'positive';
+
+  return { sentiment, sentLabel, attrs, posCount, negCount, toneLabel };
+}
+
+// ════════════════════════════════════════════
+// EMPTY STATE
+// ════════════════════════════════════════════
+// Returns an empty data shape so the dashboard renders its "no data
+// yet" state when no real course context is present. Previous versions
+// of this file returned a hand-crafted demo dataset with generic
+// student names (Noah F. / Emma A. / Olivia E.) — that fallback was
+// removed because it leaked non-LOTR placeholder names into screenshots
+// and reviewer demos. If you need sample data for development, turn on
+// training mode (type "training~" outside any input field).
+function getDemoData() {
+  courseName = 'No course context — pick a course to load tone analysis';
+  myUserId = 0;
+  return { forums: [], posts: [] };
+}
+
+/* Legacy demo replies — function intentionally removed. Previously
+   returned a hand-crafted reply set with generic placeholder student
+   names (Noah F. / Emma A. / Olivia E. etc.). Removed June 2026 so
+   the hardcoded names cannot appear in any rendered panel. If you
+   need sample data for development, turn on training mode (type
+   "training~" anywhere outside an input field). */
+
+// ════════════════════════════════════════════
+// LOADING
+// ════════════════════════════════════════════
+const loadMsgs = ['Connecting to Brightspace...', 'Loading discussion posts...', 'Preparing tone analysis...', 'Scanning for teacher tone attributes...'];
+let msgIdx = 0, msgTimer = null;
+
+function startLoadMsgs() {
+  msgIdx = 0;
+  const el = document.getElementById('loadMsg');
+  if (el) el.textContent = loadMsgs[0];
+  msgTimer = setInterval(() => {
+    msgIdx = (msgIdx + 1) % loadMsgs.length;
+    const el = document.getElementById('loadMsg');
+    if (el) { el.style.opacity = '0'; setTimeout(() => { el.textContent = loadMsgs[msgIdx]; el.style.opacity = '1'; }, 300); }
+  }, 2500);
+}
+function stopLoadMsgs() { if (msgTimer) { clearInterval(msgTimer); msgTimer = null; } }
+
+// ════════════════════════════════════════════
+// DATA LOADING
+// ════════════════════════════════════════════
+async function loadData() {
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.style.display = 'flex';
+  tabNames.forEach(t => document.getElementById('panel' + t).classList.remove('active'));
+  startLoadMsgs();
+ try {
+
+  let forums = [];
+  let instructorPosts = [];
+
+  if (DEMO) {
+    document.getElementById('demoPill').style.display = 'inline-block';
+    const demo = getDemoData();
+    forums = demo.forums;
+    instructorPosts = demo.posts;
+    document.getElementById('courseName').textContent = courseName;
+    await new Promise(r => setTimeout(r, 600));
+  } else {
+    dbg('Live mode — OU=' + OU);
+    var apiStart = Date.now();
+
+    // ── PARALLEL INITIAL CALLS ──
+    // Fire course info, whoami, classlist, and forums simultaneously instead of sequentially
+    var [courseResult, whoamiResult, classlistResult, forumsResult] = await Promise.allSettled([
+      api('/d2l/api/lp/1.45/courses/' + OU),
+      api('/d2l/api/lp/1.45/users/whoami'),
+      api('/d2l/api/le/1.74/' + OU + '/classlist/'),
+      api('/d2l/api/le/1.74/' + OU + '/discussions/forums/')
+    ]);
+
+    // Process course info
+    if (courseResult.status === 'fulfilled' && courseResult.value && courseResult.value.Name) {
+      courseName = courseResult.value.Name;
+      dbg('Course: ' + courseName);
+    } else { courseName = 'Course #' + OU; dbg('course fetch fail'); }
+    document.getElementById('courseName').textContent = courseName;
+
+    // Process whoami
+    // Identifier is kept as a STRING so alphanumeric training IDs
+    // (e.g. "tInst001") work alongside numeric Brightspace IDs.
+    // Filters downstream use `==` loose equality which handles both.
+    if (whoamiResult.status === 'fulfilled' && whoamiResult.value && whoamiResult.value.Identifier) {
+      myUserId = String(whoamiResult.value.Identifier);
+      dbg('whoami OK — userId=' + myUserId + ' (' + (whoamiResult.value.FirstName || '') + ' ' + (whoamiResult.value.LastName || '') + ')');
+    } else { dbg('whoami FAIL'); }
+
+    // Process classlist and detect instructor role
+    let detectedInstructorId = null;
+    let detectedInstructorName = '';
+    if (classlistResult.status === 'fulfilled') {
+      var classlist = norm(classlistResult.value);
+      classlist.forEach(u => {
+        const name = (u.FirstName || '') + ' ' + (u.LastName || '').charAt(0) + '.';
+        userMap[u.Identifier] = name;
+        const role = (u.RoleName || u.Role || u.ClasslistRoleName || '').toLowerCase();
+        if (role.includes('instructor') || role.includes('teacher') || role.includes('faculty')) {
+          dbg('  Instructor role detected: ' + name + ' (userId=' + u.Identifier + ', role="' + (u.RoleName || u.Role || u.ClasslistRoleName || '') + '")');
+          if (!detectedInstructorId) {
+            // Keep as STRING — same reasoning as myUserId above.
+            detectedInstructorId = String(u.Identifier);
+            detectedInstructorName = (u.FirstName || '') + ' ' + (u.LastName || '');
+          }
+        }
+      });
+      dbg('Classlist: ' + Object.keys(userMap).length + ' users');
+    } else { dbg('classlist FAIL'); }
+
+    // Determine which userId to analyze
+    if (instructorOverride) {
+      targetUserId = instructorOverride;
+      targetUserName = userMap[targetUserId] || 'User ' + targetUserId;
+      dbg('✓ Using instructor override from URL: userId=' + targetUserId + ' (' + targetUserName + ')');
+    } else if (detectedInstructorId && detectedInstructorId !== myUserId) {
+      targetUserId = detectedInstructorId;
+      targetUserName = detectedInstructorName;
+      dbg('✓ Auto-detected instructor: userId=' + targetUserId + ' (' + targetUserName + ') — switching from logged-in user');
+    } else {
+      targetUserId = myUserId;
+      targetUserName = 'You';
+      dbg('Analyzing logged-in user\'s own posts (userId=' + targetUserId + ')');
+    }
+
+    // Process forums (already fetched in parallel above)
+    var rawForums = forumsResult.status === 'fulfilled' ? norm(forumsResult.value) : [];
+    dbg('Raw forums returned: ' + rawForums.length + ' (including hidden)');
+    rawForums.forEach(f => dbg('  Forum: "' + f.Name + '" [' + f.ForumId + '] hidden=' + !!f.IsHidden));
+    forums = rawForums.filter(f => !f.IsHidden);
+    dbg(forums.length + ' visible forums after filter');
+    dbg('Initial API calls completed in ' + ((Date.now() - apiStart) / 1000).toFixed(1) + 's (parallel)');
+
+    // ── PARALLEL TOPIC FETCHING ──
+    // Fetch ALL topics for ALL forums in one parallel batch instead of batching by 5
+    let totalTopics = 0;
+    let totalRawPosts = 0;
+    const sampleUserIds = new Set();
+
+    var topicRequests = forums.map(f => api('/d2l/api/le/1.74/' + OU + '/discussions/forums/' + f.ForumId + '/topics/'));
+    var topicResults = await Promise.allSettled(topicRequests);
+
+    // Build flat list of all {forum, topic} pairs for parallel post fetching
+    var allTopicPairs = [];
+    for (var fi = 0; fi < forums.length; fi++) {
+      if (topicResults[fi].status !== 'fulfilled') { dbg('Topics FAILED: ' + forums[fi].Name); continue; }
+      var topics = norm(topicResults[fi].value);
+      totalTopics += topics.length;
+      topics.forEach(function(t) { allTopicPairs.push({ forum: forums[fi], topic: t }); });
+    }
+    dbg(totalTopics + ' topics found across ' + forums.length + ' forums');
+
+    // ── PARALLEL POST FETCHING ──
+    // Fetch all posts for all topics in batches of 10 (larger batch since these are lightweight calls)
+    var POST_BATCH = 10;
+    for (var tpi = 0; tpi < allTopicPairs.length; tpi += POST_BATCH) {
+      var tpBatch = allTopicPairs.slice(tpi, tpi + POST_BATCH);
+      var pResults = await Promise.allSettled(tpBatch.map(function(tp) {
+        return api('/d2l/api/le/1.74/' + OU + '/discussions/forums/' + tp.forum.ForumId + '/topics/' + tp.topic.TopicId + '/posts/');
+      }));
+
+      for (var pi = 0; pi < tpBatch.length; pi++) {
+        if (pResults[pi].status !== 'fulfilled') { dbg('Posts FAILED: ' + tpBatch[pi].topic.Name); continue; }
+        var posts = norm(pResults[pi].value);
+        var forum = tpBatch[pi].forum;
+        var topic = tpBatch[pi].topic;
+        totalRawPosts += posts.length;
+        var posterIds = [...new Set(posts.map(p => p.PostingUserId))];
+        posterIds.forEach(id => sampleUserIds.add(id));
+        dbg('  Topic "' + topic.Name + '": ' + posts.length + ' posts, ' + posterIds.length + ' unique posters');
+        try {
+        posts.forEach(post => {
+          posterIds.forEach(id => sampleUserIds.add(id));
+          if (post.ParentPostId !== null) {
+            const pid = post.PostingUserId;
+            if (!posterMap[pid]) posterMap[pid] = { name: userMap[pid] || 'User ' + pid, replyCount: 0 };
+            posterMap[pid].replyCount++;
+          }
+          if (post.ParentPostId !== null) {
+            const parent = posts.find(pp => pp.PostId === post.ParentPostId);
+            const msg = post.Message || {};
+            allRawPosts.push({
+              PostId: post.PostId, ForumId: forum.ForumId, TopicId: topic.TopicId, ForumName: forum.Name,
+              TopicName: topic.Name || '',
+              PostingUserId: post.PostingUserId,
+              AuthorName: userMap[post.PostingUserId] || ('User ' + post.PostingUserId),
+              Subject: post.Subject || '',
+              Message: { Html: msg.Html || msg.html || '', Text: msg.Text || msg.text || '' },
+              DatePosted: post.DatePosted,
+              ReplyToStudent: parent ? (userMap[parent.PostingUserId] || 'User ' + parent.PostingUserId) : 'Unknown',
+              ReplyToStudentId: parent ? parent.PostingUserId : null
+            });
+          }
+        });
+        } catch(err) { dbg('Post processing error: ' + err.message); }
+      }
+    }
+
+    var totalApiTime = ((Date.now() - apiStart) / 1000).toFixed(1);
+    dbg('═══════════════════════════════════════');
+    dbg('─── DATA COLLECTION SUMMARY ───');
+    dbg('  Course: ' + courseName + ' (OU=' + OU + ')');
+    dbg('  Logged-in userId: ' + myUserId);
+    dbg('  Forums: ' + forums.length + ' visible, Topics: ' + totalTopics);
+    dbg('  Total raw posts across all topics: ' + totalRawPosts);
+    dbg('  Total reply posts stored: ' + allRawPosts.length);
+    dbg('  Total API time: ' + totalApiTime + 's');
+    dbg('  Unique posters with replies: ' + Object.keys(posterMap).length);
+    Object.entries(posterMap).sort((a,b) => b[1].replyCount - a[1].replyCount).forEach(([id, p]) => {
+      dbg('    ' + p.name + ' (userId=' + id + '): ' + p.replyCount + ' replies');
+    });
+    if (totalRawPosts === 0) {
+      dbg('⚠ WARNING: Zero raw posts found. The forums may be empty or API access may be restricted.');
+    }
+    dbg('═══════════════════════════════════════');
+
+    // Build poster dropdown. The wrap is always visible — when there
+    // are no posters yet (empty course), we show a greyed-out
+    // placeholder option instead of hiding the dropdown, so the
+    // header layout stays stable. The PDF button + mode indicators
+    // no longer shift left when the course is empty.
+    const posterEntries = Object.entries(posterMap).sort((a,b) => b[1].replyCount - a[1].replyCount);
+    const sel = document.getElementById('posterSelect');
+    sel.innerHTML = '';
+    if (posterEntries.length > 0) {
+      sel.disabled = false;
+      posterEntries.forEach(([id, p]) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = p.name + ' (' + p.replyCount + ' replies)';
+        sel.appendChild(opt);
+      });
+      // Auto-select: instructor override > detected instructor > first poster
+      if (instructorOverride && posterMap[instructorOverride]) {
+        sel.value = String(instructorOverride);
+      } else if (detectedInstructorId && posterMap[detectedInstructorId]) {
+        sel.value = String(detectedInstructorId);
+      } else {
+        sel.value = posterEntries[0][0];
+      }
+      // Keep selected userId as STRING so alphanumeric training IDs work.
+      targetUserId = sel.value;
+      targetUserName = posterMap[targetUserId] ? posterMap[targetUserId].name : 'User ' + targetUserId;
+      dbg('✓ Selected poster for analysis: ' + targetUserName + ' (userId=' + targetUserId + ')');
+    } else {
+      // Empty course — dropdown stays visible but disabled, with a
+      // placeholder so the instructor sees why nothing's loaded.
+      sel.disabled = true;
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'No discussion activity yet';
+      sel.appendChild(opt);
+      dbg('No discussion posts found — dropdown shown in disabled state.');
+    }
+
+    // Filter posts for the selected user
+    instructorPosts = allRawPosts.filter(p => p.PostingUserId == targetUserId);
+    dbg('Filtered ' + instructorPosts.length + ' reply posts for ' + targetUserName);
+  }
+  dbg('Proceeding to model loading...');
+  stopLoadMsgs();
+  const loadEl = document.getElementById('loadMsg');
+  if (loadEl) loadEl.textContent = 'Loading AI model...';
+
+  // Yield so UI repaints before potentially-blocking model import
+  await new Promise(r => setTimeout(r, 50));
+
+  await loadModel();
+
+  await analyzeAndRender(instructorPosts, forums, overlay);
+
+  // Wire up dropdown change handler
+  const posterSel = document.getElementById('posterSelect');
+  if (posterSel) {
+    posterSel.addEventListener('change', async function() {
+      // Keep dropdown value as STRING so alphanumeric training IDs work.
+      targetUserId = this.value;
+      targetUserName = posterMap[targetUserId] ? posterMap[targetUserId].name : 'User ' + targetUserId;
+      dbg('═══ SWITCHING TO: ' + targetUserName + ' (userId=' + targetUserId + ') ═══');
+      // Clear previous data immediately so stale results don't linger
+      clearDashboard();
+      const filtered = allRawPosts.filter(p => p.PostingUserId == targetUserId);
+      dbg('Filtered ' + filtered.length + ' reply posts for ' + targetUserName);
+      overlay.style.display = 'flex';
+      const loadEl2 = document.getElementById('loadMsg');
+      if (loadEl2) loadEl2.textContent = 'Analyzing ' + filtered.length + ' posts for ' + targetUserName + '...';
+      await new Promise(r => setTimeout(r, 50));
+      await analyzeAndRender(filtered, forums, overlay);
+    });
+  }
+
+ } catch (fatalErr) {
+  dbg('FATAL: ' + fatalErr.message);
+  console.error(fatalErr);
+  const loadEl = document.getElementById('loadMsg');
+  if (loadEl) loadEl.textContent = 'Error loading dashboard — check browser console (F12)';
+  stopLoadMsgs();
+  var isMemErr = /out of memory|oom|memory|allocation|wasm|rangeerror/i.test(fatalErr.message || '') || fatalErr.name === 'RangeError';
+  if (isMemErr) {
+    showAlert('error', 'Out of Memory',
+      'The dashboard ran out of browser memory. Try closing other tabs and reloading, or add <code>?lowmem=1</code> to the URL to run in low-memory mode.', true);
+  } else {
+    showAlert('error', 'Dashboard Error',
+      'A fatal error occurred: ' + (fatalErr.message || String(fatalErr)).substring(0, 150) + '. Check the browser console (F12) for details.', true);
+  }
+ }
+}
+
+function clearDashboard() {
+  // Clear KPIs
+  ['kpiPositive','kpiNegative','kpiPosts','kpiTopAttr'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = '—';
+  });
+  ['kpiPositiveSub','kpiNegativeSub','kpiPostsSub','kpiTopAttrSub'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = '';
+  });
+  // Clear specific content containers (not the whole panels — preserves headings, nav, descriptions)
+  ['attrSummary','flaggedContent','allPostsContent','studentsContent','studentsPosContent','forumGrid','calGrid'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+  // Reset calendar title
+  var calTitle = document.getElementById('calTitle');
+  if (calTitle) calTitle.textContent = '';
+  // Reset global state
+  analyzedPosts = [];
+  globalAttrCounts = { positive: {}, negative: {} };
+  forumMap = {};
+  calDayMap = {};
+  dbg('Dashboard cleared for re-analysis');
+}
+
+async function analyzeAndRender(instructorPosts, forums, overlay) {
+  const loadEl = document.getElementById('loadMsg');
+  if (loadEl) loadEl.textContent = 'Analyzing ' + instructorPosts.length + ' posts...';
+  dbg('Analyzing ' + instructorPosts.length + ' posts (' + (modelReady ? 'AI' : 'keyword-only') + ')...');
+
+  // Reset state
+  analyzedPosts = [];
+  globalAttrCounts = { positive: {}, negative: {} };
+  forumMap = {};
+
+  // Batch analysis — process BATCH_SIZE posts, then yield to the browser
+  const BATCH_SIZE = 5;
+  const total = instructorPosts.length;
+  const analysisStart = Date.now();
+  for (let start = 0; start < total; start += BATCH_SIZE) {
+    const end = Math.min(start + BATCH_SIZE, total);
+    for (let i = start; i < end; i++) {
+      try {
+        const post = instructorPosts[i];
+        const text = post.Message.Text || post.Message.Html || '';
+        const analysis = await analyzeText(text);
+        analyzedPosts.push({ ...post, text: stripHtml(text), ...analysis });
+
+        // Accumulate global counts
+        for (const [attr, data] of Object.entries(analysis.attrs.positive)) {
+          if (!globalAttrCounts.positive[attr]) globalAttrCounts.positive[attr] = { category: data.category, count: 0 };
+          globalAttrCounts.positive[attr].count += data.count;
+        }
+        for (const [attr, data] of Object.entries(analysis.attrs.negative)) {
+          if (!globalAttrCounts.negative[attr]) globalAttrCounts.negative[attr] = { category: data.category, count: 0 };
+          globalAttrCounts.negative[attr].count += data.count;
+        }
+      } catch (postErr) {
+        dbg('✗ Error analyzing post ' + (i+1) + ': ' + postErr);
+      }
+    }
+    // Update progress and yield to the event loop so the browser can repaint
+    if (loadEl) loadEl.textContent = 'Analyzing post ' + end + ' of ' + total + '...';
+    if (end < total) {
+      await new Promise(r => setTimeout(r, 0));
+      // Periodic memory check during analysis (every 50 posts)
+      if (end % 50 === 0 && modelReady) {
+        var midMem = checkMemoryPressure();
+        if (midMem.pressure === 'critical') {
+          dbg('⚠ Memory critical during analysis at post ' + end + ' — switching to keyword-only for remaining posts');
+          modelReady = false;
+          showAlert('warn', 'Memory Pressure Detected',
+            'Switched to keyword-only analysis at post ' + end + ' of ' + total + ' to prevent a crash. Earlier posts used AI; remaining posts use keywords.', false);
+        }
+      }
+    }
+  }
+  dbg('✓ All posts analyzed in ' + ((Date.now() - analysisStart)/1000).toFixed(1) + 's');
+
+  analyzedPosts.sort((a, b) => new Date(a.DatePosted) - new Date(b.DatePosted));
+
+  forums.forEach(f => {
+    forumMap[f.ForumId] = { name: f.Name, posts: analyzedPosts.filter(p => p.ForumId === f.ForumId) };
+  });
+
+  updateKPIs();
+  renderOverview();
+  renderTimeline();
+  renderForums();
+  renderFlagged();
+  renderAllPosts();
+  renderStudents();
+  renderStudentsPositive();
+  dbg('Dashboard complete — ' + analyzedPosts.length + ' posts analyzed');
+
+  overlay.style.display = 'none';
+  switchTab('Overview');
+  announce('Dashboard loaded, ' + analyzedPosts.length + ' posts analyzed');
+}
+
+// ════════════════════════════════════════════
+// KPI UPDATE
+// ════════════════════════════════════════════
+function updateKPIs() {
+  const total = analyzedPosts.length;
+  if (total === 0) return;
+
+  const positivePosts = analyzedPosts.filter(p => p.toneLabel === 'positive').length;
+  const negativePosts = analyzedPosts.filter(p => p.negCount > 0).length;
+  const totalNegFlags = analyzedPosts.reduce((sum, p) => sum + p.negCount, 0);
+  const positivePct = Math.round(positivePosts / total * 100);
+
+  document.getElementById('kpiPositive').textContent = positivePct + '%';
+  document.getElementById('kpiPositiveSub').textContent = positivePosts + ' of ' + total + ' posts';
+
+  document.getElementById('kpiNegative').textContent = totalNegFlags;
+  document.getElementById('kpiNegativeSub').textContent = totalNegFlags > 0 ? totalNegFlags + ' flags in ' + negativePosts + ' post' + (negativePosts !== 1 ? 's' : '') : 'no negative attributes found';
+
+  document.getElementById('kpiPosts').textContent = total;
+  document.getElementById('kpiPostsSub').textContent = 'discussion replies';
+
+  // Top attribute
+  const allAttrs = Object.entries(globalAttrCounts.positive).sort((a, b) => b[1].count - a[1].count);
+  if (allAttrs.length > 0) {
+    document.getElementById('kpiTopAttr').textContent = capitalize(allAttrs[0][0]);
+    document.getElementById('kpiTopAttrSub').textContent = 'detected ' + allAttrs[0][1].count + ' times';
+  }
+}
+
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ════════════════════════════════════════════
+// RENDER: OVERVIEW
+// ════════════════════════════════════════════
+function renderOverview() {
+  const container = document.getElementById('attrSummary');
+  let html = '';
+
+  // Positive column
+  html += '<div class="attr-col"><div class="attr-col-header positive">Positive Attributes Detected</div><div class="attr-col-body">';
+  for (const [catName, attrs] of Object.entries(POSITIVE_CATEGORIES)) {
+    const catAttrs = Object.keys(attrs).map(a => ({ name: a, count: (globalAttrCounts.positive[a] || {}).count || 0 })).sort((a, b) => b.count - a.count);
+    const hasAny = catAttrs.some(a => a.count > 0);
+    html += '<div class="attr-category"><div class="attr-category-label">' + escHtml(catName) + '</div><div class="attr-tags">';
+    catAttrs.forEach(a => {
+      const cls = a.count > 0 ? 'pos' : 'zero';
+      html += '<span class="attr-tag ' + cls + '">' + capitalize(a.name) + (a.count > 0 ? ' <span class="attr-count">' + a.count + '</span>' : '') + '</span>';
+    });
+    html += '</div></div>';
+  }
+  html += '</div></div>';
+
+  // Negative column
+  html += '<div class="attr-col"><div class="attr-col-header negative">Negative Attributes Detected</div><div class="attr-col-body">';
+  for (const [catName, attrs] of Object.entries(NEGATIVE_CATEGORIES)) {
+    const catAttrs = Object.keys(attrs).map(a => ({ name: a, count: (globalAttrCounts.negative[a] || {}).count || 0 })).sort((a, b) => b.count - a.count);
+    html += '<div class="attr-category"><div class="attr-category-label">' + escHtml(catName) + '</div><div class="attr-tags">';
+    catAttrs.forEach(a => {
+      const cls = a.count > 0 ? 'neg' : 'zero';
+      html += '<span class="attr-tag ' + cls + '">' + capitalize(a.name) + (a.count > 0 ? ' <span class="attr-count">' + a.count + '</span>' : '') + '</span>';
+    });
+    html += '</div></div>';
+  }
+  html += '</div></div>';
+
+  container.innerHTML = html;
+}
+
+// ════════════════════════════════════════════
+// RENDER: TIMELINE
+// ════════════════════════════════════════════
+function scoreColor(score) {
+  if (score >= 70) return 'var(--success)';
+  if (score >= 50) return 'var(--lb)';
+  if (score >= 30) return 'var(--warning)';
+  return 'var(--danger)';
+}
+
+// ── Calendar state ──
+let calYear = 0;
+let calMonth = 0;
+let calDayMap = {};
+let calSelectedKey = null;
+
+function buildCalDayMap() {
+  calDayMap = {};
+  analyzedPosts.forEach(p => {
+    if (!p.DatePosted) return;
+    const d = new Date(p.DatePosted);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    if (!calDayMap[key]) calDayMap[key] = { posts: 0, posAttrs: {}, negAttrs: {}, items: [] };
+    const day = calDayMap[key];
+    day.posts++;
+    day.items.push(p);
+    for (const [attr, data] of Object.entries(p.attrs.positive || {})) {
+      day.posAttrs[attr] = (day.posAttrs[attr] || 0) + data.count;
+    }
+    for (const [attr, data] of Object.entries(p.attrs.negative || {})) {
+      day.negAttrs[attr] = (day.negAttrs[attr] || 0) + data.count;
+    }
+  });
+}
+
+function clearCalDayDetail() {
+  calSelectedKey = null;
+  const detail = document.getElementById('calDayDetail');
+  if (detail) {
+    detail.classList.remove('active');
+    detail.innerHTML = '';
+  }
+  document.querySelectorAll('.cal-cell.selected').forEach(el => el.classList.remove('selected'));
+}
+
+function renderToneCalDayDetail(dateKey) {
+  const detail = document.getElementById('calDayDetail');
+  if (!detail) return;
+  const data = calDayMap[dateKey];
+  if (!data || !data.items || !data.items.length) {
+    clearCalDayDetail();
+    return;
+  }
+
+  calSelectedKey = dateKey;
+  const label = new Date(dateKey + 'T12:00:00').toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+  });
+
+  const items = data.items.slice().sort((a, b) => new Date(b.DatePosted) - new Date(a.DatePosted));
+  let html = '<h3>' + escHtml(label) + ' — ' + items.length + ' post' + (items.length === 1 ? '' : 's') + '</h3>';
+
+  items.forEach(p => {
+    const author = p.AuthorName || userMap[p.PostingUserId] || targetUserName || 'Author';
+    const preview = (p.text || p.Subject || 'Open post').substring(0, 100);
+    const url = postUrl(p);
+    const time = new Date(p.DatePosted).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    html += '<div class="cal-day-item">';
+    html += '<span class="tone-badge ' + toneClass(p.toneLabel) + '">' + capitalize(p.toneLabel || 'neutral') + '</span>';
+    html += '<div class="cdi-main">';
+    html += '<div><a class="tone-link" href="' + url + '" target="_blank" rel="noopener">' + escHtml(preview) + (preview.length >= 100 ? '…' : '') + '</a></div>';
+    html += '<div class="cdi-meta">';
+    html += '<a class="tone-link-muted" href="' + userProgressUrl(p.PostingUserId) + '" target="_blank" rel="noopener">' + escHtml(author) + '</a>';
+    html += ' replied to ';
+    html += p.ReplyToStudentId
+      ? '<a class="tone-link-muted" href="' + userProgressUrl(p.ReplyToStudentId) + '" target="_blank" rel="noopener">' + escHtml(p.ReplyToStudent || 'student') + '</a>'
+      : escHtml(p.ReplyToStudent || 'student');
+    html += ' · <a class="tone-link-muted" href="' + forumUrl(p.ForumId) + '" target="_blank" rel="noopener">' + escHtml(p.ForumName || 'Forum') + '</a>';
+    html += ' · ' + escHtml(time);
+    html += ' · Pos ' + (p.posCount || 0) + ' / Neg ' + (p.negCount || 0);
+    html += '</div>';
+    html += '<div class="cdi-attrs">';
+    Object.keys(p.attrs.positive || {}).forEach(a => {
+      html += '<span class="attr-tag pos">' + capitalize(a) + '</span>';
+    });
+    Object.keys(p.attrs.negative || {}).forEach(a => {
+      html += '<span class="attr-tag neg">' + capitalize(a) + '</span>';
+    });
+    if (!Object.keys(p.attrs.positive || {}).length && !Object.keys(p.attrs.negative || {}).length) {
+      html += '<span style="color:#6B6D70;font-size:11px">No attributes flagged</span>';
+    }
+    html += '</div></div></div>';
+  });
+
+  detail.innerHTML = html;
+  detail.classList.add('active');
+  detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calGrid');
+  const title = document.getElementById('calTitle');
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  title.textContent = monthNames[calMonth] + ' ' + calYear;
+
+  const today = new Date();
+  const todayKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  let html = '';
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
+    html += '<div class="cal-hdr" role="columnheader">' + d + '</div>';
+  });
+
+  for (let i = 0; i < firstDay; i++) {
+    html += '<div class="cal-cell empty" role="gridcell"></div>';
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = calYear + '-' + String(calMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    const data = calDayMap[key];
+    const isToday = key === todayKey;
+    const selected = calSelectedKey === key ? ' selected' : '';
+
+    let dayClass = '';
+    if (data) {
+      const totalPos = Object.values(data.posAttrs).reduce((s, v) => s + v, 0);
+      const totalNeg = Object.values(data.negAttrs).reduce((s, v) => s + v, 0);
+      if (totalPos > totalNeg) dayClass = ' day-pos';
+      else if (totalNeg > totalPos) dayClass = ' day-neg';
+      else if (totalPos > 0) dayClass = ' day-neutral';
+      dayClass += ' has-posts';
+    }
+
+    html += '<div class="cal-cell' + dayClass + (isToday ? ' today' : '') + selected + '" role="gridcell"' +
+      (data ? ' data-cal-date="' + key + '" tabindex="0" aria-label="' + data.posts + ' posts on ' + key + '. Activate to view details."' : '') + '>';
+    html += '<div class="cal-day">' + day + '</div>';
+
+    if (data) {
+      html += '<div class="cal-post-count">' + data.posts + ' post' + (data.posts !== 1 ? 's' : '') + '</div>';
+      html += '<div class="cal-attrs">';
+      Object.entries(data.posAttrs).sort((a, b) => b[1] - a[1]).forEach(([attr, count]) => {
+        html += '<span class="cal-attr pos" title="' + capitalize(attr) + ' (' + count + ')">' + capitalize(attr) + '</span>';
+      });
+      Object.entries(data.negAttrs).sort((a, b) => b[1] - a[1]).forEach(([attr, count]) => {
+        html += '<span class="cal-attr neg" title="' + capitalize(attr) + ' (' + count + ')">' + capitalize(attr) + '</span>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.cal-cell.has-posts').forEach(cell => {
+    const open = () => {
+      const key = cell.getAttribute('data-cal-date');
+      document.querySelectorAll('.cal-cell.selected').forEach(el => el.classList.remove('selected'));
+      cell.classList.add('selected');
+      renderToneCalDayDetail(key);
+    };
+    cell.addEventListener('click', open);
+    cell.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+    });
+  });
+}
+
+function initCalendar() {
+  buildCalDayMap();
+  const dates = Object.keys(calDayMap).sort();
+  if (dates.length > 0) {
+    const last = new Date(dates[dates.length - 1] + 'T00:00:00');
+    calYear = last.getFullYear();
+    calMonth = last.getMonth();
+  } else {
+    const now = new Date();
+    calYear = now.getFullYear();
+    calMonth = now.getMonth();
+  }
+
+  const prev = document.getElementById('calPrev');
+  const next = document.getElementById('calNext');
+  if (prev && !prev._toneBound) {
+    prev._toneBound = true;
+    prev.addEventListener('click', () => {
+      calMonth--;
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      clearCalDayDetail();
+      renderCalendar();
+    });
+  }
+  if (next && !next._toneBound) {
+    next._toneBound = true;
+    next.addEventListener('click', () => {
+      calMonth++;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      clearCalDayDetail();
+      renderCalendar();
+    });
+  }
+
+  clearCalDayDetail();
+  renderCalendar();
+}
+
+function renderTimeline() {
+  initCalendar();
+}
+
+// ════════════════════════════════════════════
+// RENDER: FORUMS
+// ════════════════════════════════════════════
+function toneClass(label) {
+  if (label === 'positive') return 'tone-positive';
+  if (label === 'mixed') return 'tone-mixed';
+  if (label === 'negative') return 'tone-negative';
+  return 'tone-neutral';
+}
+
+function renderForums() {
+  const grid = document.getElementById('forumGrid');
+  const fids = Object.keys(forumMap);
+  if (fids.length === 0) { grid.innerHTML = '<div style="text-align:center;padding:40px;color:#6B6D70">No forums</div>'; return; }
+
+  let html = '';
+  fids.forEach(fid => {
+    const f = forumMap[fid];
+    if (f.posts.length === 0) return;
+    const posPosts = f.posts.filter(p => p.toneLabel === 'positive').length;
+    const negPosts = f.posts.filter(p => p.negCount > 0).length;
+    const posPct = Math.round(posPosts / f.posts.length * 100);
+    const avgSent = Math.round(f.posts.reduce((s, p) => s + p.sentiment, 0) / f.posts.length * 100);
+
+    // Top 3 positive attrs in this forum
+    const fAttrMap = {};
+    f.posts.forEach(p => {
+      for (const [attr, data] of Object.entries(p.attrs.positive)) {
+        if (!fAttrMap[attr]) fAttrMap[attr] = 0;
+        fAttrMap[attr] += data.count;
+      }
+    });
+    const topAttrs = Object.entries(fAttrMap).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+    html += '<div class="forum-card">'
+      + '<div class="forum-card-header"><span><a class="tone-link" href="' + forumUrl(fid) + '" target="_blank" rel="noopener" title="Open forum in Brightspace">' + escHtml(f.name) + '</a></span><span class="tone-badge ' + (posPct >= 70 ? 'tone-positive' : posPct >= 40 ? 'tone-mixed' : 'tone-negative') + '">' + posPct + '% positive</span></div>'
+      + '<div class="forum-card-body">'
+      + '<div class="forum-stat"><span class="forum-stat-label">Posts Analyzed</span><span class="forum-stat-value">' + f.posts.length + '</span></div>'
+      + '<div class="forum-stat"><span class="forum-stat-label">Positive Tone Posts</span><span class="forum-stat-value" style="color:var(--success)">' + posPosts + '</span></div>'
+      + '<div class="forum-stat"><span class="forum-stat-label">Negative Flags</span><span class="forum-stat-value" style="color:' + (negPosts > 0 ? 'var(--danger)' : 'var(--success)') + '">' + negPosts + '</span></div>'
+      + '<div class="forum-stat"><span class="forum-stat-label">AI Sentiment Avg</span><span class="forum-stat-value">' + avgSent + '/100</span></div>';
+    if (topAttrs.length > 0) {
+      html += '<div class="forum-top-attrs"><div class="forum-top-attrs-label">Top Attributes</div><div class="attr-tags">';
+      topAttrs.forEach(([a, c]) => { html += '<span class="attr-tag pos">' + capitalize(a) + ' <span class="attr-count">' + c + '</span></span>'; });
+      html += '</div></div>';
+    }
+    html += '</div></div>';
+  });
+  grid.innerHTML = html;
+}
+
+// ════════════════════════════════════════════
+// RENDER: FLAGGED POSTS
+// ════════════════════════════════════════════
+let flagSortCol = 'negCount';
+let flagSortAsc = false;
+
+function flagThSortable(col, label) {
+  const dir = flagSortCol === col ? (flagSortAsc ? 'ascending' : 'descending') : 'none';
+  return '<th scope="col" role="columnheader" aria-sort="' + dir + '" tabindex="0" onclick="setFlagSort(\'' + col + '\')" onkeydown="fsk(event,\'' + col + '\')" class="' + (flagSortCol === col ? 'sorted' : '') + '">'
+    + label + ' <span class="sort-arrow">' + (flagSortCol === col ? (flagSortAsc ? '▲' : '▼') : '⇅') + '</span></th>';
+}
+
+function setFlagSort(col) {
+  if (flagSortCol === col) flagSortAsc = !flagSortAsc;
+  else { flagSortCol = col; flagSortAsc = col === 'date'; }
+  renderFlagged();
+  announce('Flagged posts sorted by ' + col);
+}
+function fsk(e, col) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFlagSort(col); } }
+
+function renderFlagged() {
+  const container = document.getElementById('flaggedContent');
+  const flagged = analyzedPosts.filter(p => p.negCount > 0);
+
+  if (flagged.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--success);font-size:15px">No negative tone attributes detected. Your discussion tone looks great!</div>';
+    return;
+  }
+
+  const sorted = [...flagged].sort((a, b) => {
+    let va, vb;
+    if (flagSortCol === 'negCount') { va = a.negCount; vb = b.negCount; }
+    else if (flagSortCol === 'date') { va = new Date(a.DatePosted); vb = new Date(b.DatePosted); }
+    else if (flagSortCol === 'forum') { va = a.ForumName; vb = b.ForumName; }
+    if (va < vb) return flagSortAsc ? -1 : 1;
+    if (va > vb) return flagSortAsc ? 1 : -1;
+    return 0;
+  });
+
+  let html = '<table aria-label="Posts with negative tone attributes"><thead><tr>';
+  html += '<th scope="col">#</th>';
+  html += flagThSortable('date', 'Date');
+  html += flagThSortable('forum', 'Forum');
+  html += '<th scope="col">Author</th>';
+  html += '<th scope="col">Reply To</th>';
+  html += flagThSortable('negCount', 'Neg. Attrs');
+  html += '<th scope="col">Attributes Detected</th>';
+  html += '<th scope="col">Preview</th>';
+  html += '<th scope="col"><span class="sr-only">Actions</span></th>';
+  html += '</tr></thead><tbody>';
+
+  sorted.forEach((p, idx) => {
+    const date = new Date(p.DatePosted).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const negAttrs = Object.keys(p.attrs.negative);
+    const url = postUrl(p);
+    const author = p.AuthorName || userMap[p.PostingUserId] || targetUserName || 'Author';
+    const demoGuard = DEMO ? ' onclick="event.preventDefault();alert(\'In live mode this opens Brightspace.\')"' : '';
+    html += '<tr>';
+    html += '<td style="text-align:center;color:#6B6D70;font-size:11px">' + (idx + 1) + '</td>';
+    html += '<td>' + date + '</td>';
+    html += '<td><a class="tone-link" href="' + forumUrl(p.ForumId) + '" target="_blank" rel="noopener"' + demoGuard + '>' + escHtml(p.ForumName) + '</a></td>';
+    html += '<td><a class="tone-link" href="' + userProgressUrl(p.PostingUserId) + '" target="_blank" rel="noopener"' + demoGuard + '>' + escHtml(author) + '</a></td>';
+    html += '<td>' + (p.ReplyToStudentId
+      ? '<a class="tone-link" href="' + userProgressUrl(p.ReplyToStudentId) + '" target="_blank" rel="noopener"' + demoGuard + '>' + escHtml(p.ReplyToStudent) + '</a>'
+      : escHtml(p.ReplyToStudent)) + '</td>';
+    html += '<td style="text-align:center"><span style="font-weight:700;color:var(--danger)">' + p.negCount + '</span></td>';
+    html += '<td><div class="detected-attrs">';
+    negAttrs.forEach(a => { html += '<span class="attr-tag neg">' + capitalize(a) + '</span>'; });
+    html += '</div></td>';
+    html += '<td><div class="post-preview"><a class="tone-link-muted" href="' + url + '" target="_blank" rel="noopener"' + demoGuard + '>' + escHtml(p.text.substring(0, 80)) + '</a></div></td>';
+    html += '<td style="text-align:center;white-space:nowrap"><a href="' + url + '" target="_blank" rel="noopener" class="view-link" aria-label="View post in Brightspace"' + demoGuard + '>View</a></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ════════════════════════════════════════════
+// RENDER: ALL POSTS
+// ════════════════════════════════════════════
+let allSortCol = 'date';
+let allSortAsc = false;
+
+function allThSortable(col, label) {
+  const dir = allSortCol === col ? (allSortAsc ? 'ascending' : 'descending') : 'none';
+  return '<th scope="col" role="columnheader" aria-sort="' + dir + '" tabindex="0" onclick="setAllSort(\'' + col + '\')" onkeydown="ask(event,\'' + col + '\')" class="' + (allSortCol === col ? 'sorted' : '') + '">'
+    + label + ' <span class="sort-arrow">' + (allSortCol === col ? (allSortAsc ? '▲' : '▼') : '⇅') + '</span></th>';
+}
+
+function setAllSort(col) {
+  if (allSortCol === col) allSortAsc = !allSortAsc;
+  else { allSortCol = col; allSortAsc = col === 'date' ? false : true; }
+  renderAllPosts();
+  announce('All posts sorted by ' + col);
+}
+function ask(e, col) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAllSort(col); } }
+
+function renderAllPosts() {
+  const container = document.getElementById('allContent');
+  if (analyzedPosts.length === 0) { container.innerHTML = '<div style="text-align:center;padding:40px;color:#6B6D70">No posts</div>'; return; }
+
+  const sorted = [...analyzedPosts].sort((a, b) => {
+    let va, vb;
+    if (allSortCol === 'date') { va = new Date(a.DatePosted); vb = new Date(b.DatePosted); }
+    else if (allSortCol === 'posCount') { va = a.posCount; vb = b.posCount; }
+    else if (allSortCol === 'negCount') { va = a.negCount; vb = b.negCount; }
+    else if (allSortCol === 'sentiment') { va = a.sentiment; vb = b.sentiment; }
+    else if (allSortCol === 'forum') { va = a.ForumName; vb = b.ForumName; }
+    if (va < vb) return allSortAsc ? -1 : 1;
+    if (va > vb) return allSortAsc ? 1 : -1;
+    return 0;
+  });
+
+  let html = '<table aria-label="All analyzed discussion posts"><thead><tr>';
+  html += '<th scope="col">#</th>';
+  html += allThSortable('date', 'Date');
+  html += allThSortable('forum', 'Forum');
+  html += '<th scope="col">Author</th>';
+  html += '<th scope="col">Reply To</th>';
+  html += '<th scope="col">Tone</th>';
+  html += allThSortable('posCount', 'Pos');
+  html += allThSortable('negCount', 'Neg');
+  html += allThSortable('sentiment', 'AI Sent.');
+  html += '<th scope="col">Top Attributes</th>';
+  html += '<th scope="col"><span class="sr-only">Actions</span></th>';
+  html += '</tr></thead><tbody>';
+
+  sorted.forEach((p, idx) => {
+    const date = new Date(p.DatePosted).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const sentPct = Math.round(p.sentiment * 100);
+    const topPos = Object.entries(p.attrs.positive).sort((a, b) => b[1].count - a[1].count).slice(0, 2);
+    const topNeg = Object.entries(p.attrs.negative).sort((a, b) => b[1].count - a[1].count).slice(0, 2);
+    const url = postUrl(p);
+    const author = p.AuthorName || userMap[p.PostingUserId] || targetUserName || 'Author';
+    const demoGuard = DEMO ? ' onclick="event.preventDefault();alert(\'In live mode this opens Brightspace.\')"' : '';
+
+    html += '<tr>';
+    html += '<td style="text-align:center;color:#6B6D70;font-size:11px">' + (idx + 1) + '</td>';
+    html += '<td>' + date + '</td>';
+    html += '<td><a class="tone-link" href="' + forumUrl(p.ForumId) + '" target="_blank" rel="noopener"' + demoGuard + '>' + escHtml(p.ForumName) + '</a></td>';
+    html += '<td><a class="tone-link" href="' + userProgressUrl(p.PostingUserId) + '" target="_blank" rel="noopener"' + demoGuard + '>' + escHtml(author) + '</a></td>';
+    html += '<td>' + (p.ReplyToStudentId
+      ? '<a class="tone-link" href="' + userProgressUrl(p.ReplyToStudentId) + '" target="_blank" rel="noopener"' + demoGuard + '>' + escHtml(p.ReplyToStudent) + '</a>'
+      : escHtml(p.ReplyToStudent)) + '</td>';
+    html += '<td><span class="tone-badge ' + toneClass(p.toneLabel) + '">' + capitalize(p.toneLabel) + '</span></td>';
+    html += '<td style="text-align:center;color:var(--success);font-weight:600">' + p.posCount + '</td>';
+    html += '<td style="text-align:center;color:' + (p.negCount > 0 ? 'var(--danger)' : '#6B6D70') + ';font-weight:600">' + p.negCount + '</td>';
+    html += '<td><div class="score-meter"><span style="font-weight:600;min-width:28px">' + sentPct + '</span><div class="meter-track"><div class="meter-fill" style="width:' + sentPct + '%;background:' + scoreColor(sentPct) + '"></div></div></div></td>';
+    html += '<td><div class="detected-attrs">';
+    topPos.forEach(([a]) => { html += '<span class="attr-tag pos">' + capitalize(a) + '</span>'; });
+    topNeg.forEach(([a]) => { html += '<span class="attr-tag neg">' + capitalize(a) + '</span>'; });
+    if (topPos.length === 0 && topNeg.length === 0) html += '<span style="color:#6B6D70;font-size:11px">—</span>';
+    html += '</div></td>';
+    html += '<td style="text-align:center"><a href="' + url + '" target="_blank" rel="noopener" class="view-link" aria-label="View post in Brightspace"' + demoGuard + '>View</a></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ════════════════════════════════════════════
+// RENDER: STUDENTS
+// ════════════════════════════════════════════
+function renderStudents() {
+  const container = document.getElementById('studentsContent');
+  // Group posts by student who received the reply
+  const studentMap = {};
+  analyzedPosts.forEach(p => {
+    const key = p.ReplyToStudent || 'Unknown';
+    const sid = p.ReplyToStudentId || key;
+    if (!studentMap[sid]) studentMap[sid] = { id: sid, name: key, totalNeg: 0, totalPos: 0, negPosts: 0, totalPosts: 0, negAttrs: {}, samplePost: null };
+    const s = studentMap[sid];
+    s.totalPosts++;
+    s.totalPos += p.posCount;
+    s.totalNeg += p.negCount;
+    if (p.negCount > 0) {
+      s.negPosts++;
+      if (!s.samplePost || p.negCount > (s.samplePost.negCount || 0)) s.samplePost = p;
+      Object.keys(p.attrs.negative).forEach(attr => {
+        s.negAttrs[attr] = (s.negAttrs[attr] || 0) + p.attrs.negative[attr].count;
+      });
+    }
+  });
+
+  const students = Object.values(studentMap).filter(s => s.totalNeg > 0).sort((a, b) => b.totalNeg - a.totalNeg);
+
+  if (students.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--success);font-size:15px">No recipients received replies with negative tone attributes.</div>';
+    return;
+  }
+
+  let html = '<table aria-label="Recipients by negative tone received"><thead><tr>';
+  html += '<th scope="col">#</th>';
+  html += '<th scope="col">Recipient</th>';
+  html += '<th scope="col">Replies Received</th>';
+  html += '<th scope="col">Positive Attrs</th>';
+  html += '<th scope="col">Negative Attrs</th>';
+  html += '<th scope="col">Neg. Posts</th>';
+  html += '<th scope="col">Top Negative Attributes</th>';
+  html += '<th scope="col"><span class="sr-only">Actions</span></th>';
+  html += '</tr></thead><tbody>';
+
+  students.forEach((s, idx) => {
+    const topNeg = Object.entries(s.negAttrs).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    const demoGuard = DEMO ? ' onclick="event.preventDefault();alert(\'In live mode this opens Brightspace.\')"' : '';
+    const userHref = (s.id && String(s.id) !== s.name) ? userProgressUrl(s.id) : '#';
+    const postHref = s.samplePost ? postUrl(s.samplePost) : userHref;
+    html += '<tr' + (s.totalNeg > 0 ? ' style="background:#FFF8F8"' : '') + '>';
+    html += '<td style="text-align:center;color:#6B6D70;font-size:11px">' + (idx + 1) + '</td>';
+    html += '<td style="font-weight:600">' +
+      (userHref !== '#'
+        ? '<a class="tone-link" href="' + userHref + '" target="_blank" rel="noopener"' + demoGuard + '>' + escHtml(s.name) + '</a>'
+        : escHtml(s.name)) + '</td>';
+    html += '<td style="text-align:center">' + s.totalPosts + '</td>';
+    html += '<td style="text-align:center;color:var(--success);font-weight:600">' + s.totalPos + '</td>';
+    html += '<td style="text-align:center;color:' + (s.totalNeg > 0 ? 'var(--danger)' : '#6B6D70') + ';font-weight:600">' + s.totalNeg + '</td>';
+    html += '<td style="text-align:center;color:' + (s.negPosts > 0 ? 'var(--danger)' : '#6B6D70') + '">' + s.negPosts + '</td>';
+    html += '<td><div class="detected-attrs">';
+    if (topNeg.length > 0) {
+      topNeg.forEach(([a]) => { html += '<span class="attr-tag neg">' + capitalize(a) + '</span>'; });
+    } else {
+      html += '<span style="color:var(--success);font-size:11px">None</span>';
+    }
+    html += '</div></td>';
+    html += '<td style="text-align:center">' +
+      (s.samplePost
+        ? '<a href="' + postHref + '" target="_blank" rel="noopener" class="view-link"' + demoGuard + '>View post</a>'
+        : '—') + '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  html += '<p style="color:#6B6D70;font-size:11px;margin-top:10px;font-style:italic">Click a recipient to open their Brightspace user progress page, or View post for an example flagged reply.</p>';
+
+  container.innerHTML = html;
+}
+
+function renderStudentsPositive() {
+  const container = document.getElementById('studentsPosContent');
+  const studentMap = {};
+  analyzedPosts.forEach(p => {
+    const key = p.ReplyToStudent || 'Unknown';
+    const sid = p.ReplyToStudentId || key;
+    if (!studentMap[sid]) studentMap[sid] = { id: sid, name: key, totalNeg: 0, totalPos: 0, posPosts: 0, totalPosts: 0, posAttrs: {}, samplePost: null };
+    const s = studentMap[sid];
+    s.totalPosts++;
+    s.totalPos += p.posCount;
+    s.totalNeg += p.negCount;
+    if (p.posCount > 0) {
+      s.posPosts++;
+      if (!s.samplePost || p.posCount > (s.samplePost.posCount || 0)) s.samplePost = p;
+      Object.keys(p.attrs.positive).forEach(attr => {
+        s.posAttrs[attr] = (s.posAttrs[attr] || 0) + p.attrs.positive[attr].count;
+      });
+    }
+  });
+
+  const students = Object.values(studentMap).filter(s => s.totalPos > 0).sort((a, b) => b.totalPos - a.totalPos);
+
+  if (students.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:#6B6D70;font-size:15px">No recipients received replies with positive tone attributes.</div>';
+    return;
+  }
+
+  let html = '<table aria-label="Recipients by positive tone received"><thead><tr>';
+  html += '<th scope="col">#</th>';
+  html += '<th scope="col">Recipient</th>';
+  html += '<th scope="col">Replies Received</th>';
+  html += '<th scope="col">Positive Attrs</th>';
+  html += '<th scope="col">Negative Attrs</th>';
+  html += '<th scope="col">Pos. Posts</th>';
+  html += '<th scope="col">Top Positive Attributes</th>';
+  html += '<th scope="col"><span class="sr-only">Actions</span></th>';
+  html += '</tr></thead><tbody>';
+
+  students.forEach((s, idx) => {
+    const topPos = Object.entries(s.posAttrs).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    const demoGuard = DEMO ? ' onclick="event.preventDefault();alert(\'In live mode this opens Brightspace.\')"' : '';
+    const userHref = (s.id && String(s.id) !== s.name) ? userProgressUrl(s.id) : '#';
+    const postHref = s.samplePost ? postUrl(s.samplePost) : userHref;
+    html += '<tr' + (s.totalPos > 0 ? ' style="background:#F0FAF0"' : '') + '>';
+    html += '<td style="text-align:center;color:#6B6D70;font-size:11px">' + (idx + 1) + '</td>';
+    html += '<td style="font-weight:600">' +
+      (userHref !== '#'
+        ? '<a class="tone-link" href="' + userHref + '" target="_blank" rel="noopener"' + demoGuard + '>' + escHtml(s.name) + '</a>'
+        : escHtml(s.name)) + '</td>';
+    html += '<td style="text-align:center">' + s.totalPosts + '</td>';
+    html += '<td style="text-align:center;color:var(--success);font-weight:600">' + s.totalPos + '</td>';
+    html += '<td style="text-align:center;color:' + (s.totalNeg > 0 ? 'var(--danger)' : '#6B6D70') + ';font-weight:600">' + s.totalNeg + '</td>';
+    html += '<td style="text-align:center;color:' + (s.posPosts > 0 ? 'var(--success)' : '#6B6D70') + '">' + s.posPosts + '</td>';
+    html += '<td><div class="detected-attrs">';
+    if (topPos.length > 0) {
+      topPos.forEach(([a]) => { html += '<span class="attr-tag pos">' + capitalize(a) + '</span>'; });
+    } else {
+      html += '<span style="color:#6B6D70;font-size:11px">—</span>';
+    }
+    html += '</div></td>';
+    html += '<td style="text-align:center">' +
+      (s.samplePost
+        ? '<a href="' + postHref + '" target="_blank" rel="noopener" class="view-link"' + demoGuard + '>View post</a>'
+        : '—') + '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  html += '<p style="color:#6B6D70;font-size:11px;margin-top:10px;font-style:italic">Click a recipient to open their Brightspace user progress page, or View post for an example positive reply.</p>';
+
+  container.innerHTML = html;
+}
+
+// ════════════════════════════════════════════
+// UTILITIES
+// ════════════════════════════════════════════
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+function postUrl(p) {
+  if (DEMO) return '#';
+  if (!p || !p.TopicId) return '#';
+  if (p.PostId) {
+    return '/d2l/le/' + OU + '/discussions/topics/' + p.TopicId + '/View?postId=' + encodeURIComponent(p.PostId) + '#m_' + encodeURIComponent(p.PostId);
+  }
+  return '/d2l/le/' + OU + '/discussions/topics/' + p.TopicId + '/View';
+}
+function forumUrl(forumId) {
+  if (DEMO || !forumId) return '#';
+  return '/d2l/le/' + OU + '/discussions/forums/' + forumId + '/View';
+}
+function userProgressUrl(userId) {
+  if (DEMO || userId == null || userId === '') return '#';
+  return '/d2l/le/' + OU + '/userprogress/' + encodeURIComponent(userId);
+}
+
+function updateFooterTime() {
+  const el = document.getElementById('footerTime');
+  if (el) el.textContent = new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+}
+setInterval(updateFooterTime, 30000);
+updateFooterTime();
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+loadData().catch(e => { dbg('═══ UNCAUGHT FATAL ═══ ' + e.message + '\n' + (e.stack || '')); });
+</script></p></body></html>

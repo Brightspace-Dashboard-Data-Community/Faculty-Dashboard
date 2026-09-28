@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="D2L Faculty Dashboard - Analytics / Action Center">
+    <title>Analytics / Action Center - D2L Faculty Dashboard</title>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    
+    <!-- Universal Styles -->
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Navigation Sidebar (loaded dynamically) -->
+    <div id="nav-placeholder"></div>
+    
+    <!-- Main Content Area -->
+    <main id="main-content" class="main-content" role="main">
+        <!-- Page Header -->
+        <div class="page-header analytics-page-header">
+            <div class="page-header-content">
+                <div>
+                    <h1 class="page-title">Analytics / Action Center</h1>
+                    <p class="page-subtitle">Action Center (what to do next) + Insight Center (what's happening)</p>
+                </div>
+                <div class="page-header-right">
+                    <div data-fd-readspeaker-slot></div>
+                    <span class="semester-label" data-fd-semester-banner="active"></span>
+                </div>
+            </div>
+            <div class="analytics-filter-bar analytics-filter-bar-in-header">
+                <div class="analytics-filter-row">
+                    <label for="analytics-course-filter" class="analytics-filter-label">Course</label>
+                    <select id="analytics-course-filter" class="course-filter-select" aria-label="Filter by course">
+                        <option value="all">All Courses</option>
+                    </select>
+                    <button type="button" id="load-analytics-btn" class="analytics-refresh-btn">Load Analytics</button>
+                    <span id="last-loaded-text" class="analytics-last-loaded">Last loaded: —</span>
+                    <button type="button" id="export-all-csv-btn" class="analytics-secondary-btn">Download All Data</button>
+                </div>
+                <fieldset class="analytics-filter-checks">
+                    <legend class="sr-only">Course and grade filters</legend>
+                    <label for="hide-not-started-courses">
+                        <input type="checkbox" id="hide-not-started-courses" checked>
+                        Don't show courses that haven't started
+                    </label>
+                    <label for="hide-ended-courses">
+                        <input type="checkbox" id="hide-ended-courses" checked>
+                        Don't show courses that have ended
+                    </label>
+                    <label for="show-only-below-72">
+                        <input type="checkbox" id="show-only-below-72">
+                        Show only students below 72% passing
+                    </label>
+                </fieldset>
+                <div id="analytics-progress" class="analytics-progress">
+                    <div class="analytics-progress-track">
+                        <div id="progress-bar" class="analytics-progress-bar"></div>
+                    </div>
+                    <span id="progress-text">Loading...</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Needs Attention (Top Strip) -->
+        <div id="needs-attention-strip" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+            <h2 style="font-size: 18px; font-weight: 700; color: #111; margin-bottom: 16px;">NEEDS ATTENTION (Action Tiles)</h2>
+            <div id="needs-attention-tiles" style="display: flex; flex-wrap: wrap; gap: 12px;">
+                <div style="padding: 12px; color: #999; font-size: 14px;">Click "Load Analytics" to populate action tiles</div>
+            </div>
+        </div>
+        
+        <!-- Student Risk Table (Core Component) -->
+        <div id="student-risk-table-section" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
+                <h2 style="font-size: 20px; font-weight: 700; color: #111;">STUDENT RISK TABLE (core value)</h2>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <select id="risk-filter" style="padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px;">
+                        <option value="all">Risk ▼ All</option>
+                        <option value="never-attended">Never Attended</option>
+                        <option value="inactive-7d">Inactive 7d</option>
+                        <option value="inactive-3d">Inactive 3d</option>
+                        <option value="failing">Failing</option>
+                        <option value="drop-off">Drop-off</option>
+                        <option value="behind-pace">Behind Pace</option>
+                    </select>
+                    <select id="threshold-filter" style="padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px;">
+                        <option value="60">Threshold ▼ 60%</option>
+                        <option value="65">65%</option>
+                        <option value="70" selected>70%</option>
+                        <option value="75">75%</option>
+                    </select>
+                    <select id="sort-filter" style="padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px;">
+                        <option value="highest-risk" selected>Sort ▼ Highest risk</option>
+                        <option value="name">Name</option>
+                        <option value="course">Course</option>
+                        <option value="grade">Grade</option>
+                    </select>
+                    <input type="text" id="risk-search" placeholder="Search" style="padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; min-width: 150px;">
+                    <button id="export-risk-csv-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Download CSV</button>
+                </div>
+            </div>
+            <div id="risk-table-container" style="overflow-x: auto; max-height: 420px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
+                <table id="risk-table" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #333;">Student</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #333;">Course</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #333;">Last Access</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #333;">Current %</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #333;">Risk Flags</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #333;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="risk-table-body">
+                        <tr>
+                            <td colspan="6" style="padding: 40px; text-align: center; color: #999;">Click "Load Analytics" to populate student risk data</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Engagement Section -->
+        <div id="engagement-section" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+            <h2 style="font-size: 20px; font-weight: 700; color: #111; margin-bottom: 20px;">ENGAGEMENT</h2>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px;">
+                <!-- Low Content Interaction -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">Low Content Interaction</h3>
+                    <div style="font-size: 32px; font-weight: 700; color: #0f5b46; margin-bottom: 8px;" id="low-content-count">--</div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">Students who haven't opened the current week's module</div>
+                    <div id="low-content-list" style="max-height: 200px; overflow-y: auto; margin-top: 12px;">
+                        <div style="padding: 8px; color: #999; font-size: 13px;">Click "Load Analytics" to populate</div>
+                    </div>
+                    <button id="low-content-export-btn" style="margin-top: 12px; padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export CSV</button>
+                </div>
+                
+                <!-- Average Days Since Last Access -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">Average Days Since Last Access</h3>
+                    <div style="font-size: 24px; font-weight: 700; color: #0f5b46; margin-bottom: 8px;" id="avg-time-current">--</div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">This week vs last week (lower = more recent activity)</div>
+                    <div id="time-trend-chart" style="height: 150px; margin-top: 12px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 13px;">
+                        Trend line chart (placeholder)
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-top: 8px;" id="time-trend-indicator">--</div>
+                </div>
+                
+                <!-- Unopened Feedback -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">Unopened Feedback</h3>
+                    <div style="font-size: 32px; font-weight: 700; color: #0f5b46; margin-bottom: 8px;" id="unopened-feedback-count">--</div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">Students who haven't viewed their graded feedback</div>
+                    <div id="unopened-feedback-list" style="max-height: 200px; overflow-y: auto; margin-top: 12px;">
+                        <div style="padding: 8px; color: #999; font-size: 13px;">Click "Load Analytics" to populate</div>
+                    </div>
+                    <button id="unopened-feedback-export-btn" style="margin-top: 12px; padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export CSV</button>
+                </div>
+                
+                <!-- Login Inactivity -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">Login Inactivity</h3>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; font-weight: 700; color: #dc2626;" id="never-logged-count">--</div>
+                            <div style="font-size: 11px; color: #666;">Never</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; font-weight: 700; color: #f59e0b;" id="inactive-3d-count">--</div>
+                            <div style="font-size: 11px; color: #666;">3+ days</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; font-weight: 700; color: #f59e0b;" id="inactive-7d-count">--</div>
+                            <div style="font-size: 11px; color: #666;">7+ days</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; font-weight: 700; color: #dc2626;" id="inactive-14d-count">--</div>
+                            <div style="font-size: 11px; color: #666;">14+ days</div>
+                        </div>
+                    </div>
+                    <div id="login-inactivity-list" style="max-height: 200px; overflow-y: auto; margin-top: 12px;">
+                        <div style="padding: 8px; color: #999; font-size: 13px;">Click "Load Analytics" to populate</div>
+                    </div>
+                    <button id="login-inactivity-export-btn" style="margin-top: 12px; padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export CSV</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Assessment Section -->
+        <div id="assessment-section" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+            <h2 style="font-size: 20px; font-weight: 700; color: #111; margin-bottom: 20px;">ASSESSMENT</h2>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+                <!-- High Quiz Attempt Time -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">High Quiz Attempt Time</h3>
+                    <div style="font-size: 32px; font-weight: 700; color: #0f5b46; margin-bottom: 8px;" id="high-quiz-time-count">--</div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">Students taking 2x the average time on quizzes</div>
+                    <div id="high-quiz-time-list" style="max-height: 200px; overflow-y: auto; margin-top: 12px;">
+                        <div style="padding: 8px; color: #999; font-size: 13px;">Click "Load Analytics" to populate</div>
+                    </div>
+                    <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        <a id="high-quiz-view-all-stats-btn" href="#" target="_blank" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; color: #0f5b46; text-decoration: none;">View all Quiz Stats</a>
+                        <button id="high-quiz-time-export-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export CSV</button>
+                    </div>
+                </div>
+                
+                <!-- Discussion Lurkers -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">Discussion "Lurkers"</h3>
+                    <div style="font-size: 32px; font-weight: 700; color: #0f5b46; margin-bottom: 8px;" id="discussion-lurkers-count">--</div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">Students who posted but haven't replied to others, or read 10+ posts without contributing</div>
+                    <div id="discussion-lurkers-list" style="max-height: 200px; overflow-y: auto; margin-top: 12px;">
+                        <div style="padding: 8px; color: #999; font-size: 13px;">Click "Load Analytics" to populate</div>
+                    </div>
+                    <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        <a id="discussion-view-all-btn" href="#" target="_blank" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; color: #0f5b46; text-decoration: none;">View all</a>
+                        <a id="discussion-view-all-stats-btn" href="#" target="_blank" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; color: #0f5b46; text-decoration: none;">View all Stats</a>
+                        <button id="discussion-lurkers-export-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export CSV</button>
+                    </div>
+                </div>
+                
+                <!-- Grade Volatility -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">Grade Volatility</h3>
+                    <div style="font-size: 32px; font-weight: 700; color: #0f5b46; margin-bottom: 8px;" id="grade-volatility-count">--</div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">Latest grade 15%+ lower than previous average</div>
+                    <div id="grade-volatility-list" style="max-height: 200px; overflow-y: auto; margin-top: 12px;">
+                        <div style="padding: 8px; color: #999; font-size: 13px;">Click "Load Analytics" to populate</div>
+                    </div>
+                    <button id="grade-volatility-export-btn" style="margin-top: 12px; padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export CSV</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Course Friction Section -->
+        <div id="course-friction-section" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+                <h2 style="font-size: 20px; font-weight: 700; color: #111; margin: 0;">COURSE FRICTION (Instructor Action)</h2>
+                <button id="refresh-course-friction-btn" type="button" style="padding: 6px 14px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 13px; color: #0f5b46; cursor: pointer;"><i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh Challenging Quizzes &amp; Bottlenecks</button>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+                <!-- Challenging Quizzes -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">Challenging Quizzes</h3>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">Quizzes with the lowest average scores (needs at least one completed attempt)</div>
+                    
+                    <!-- Category tabs: 70%+, 50-69%, 30-49%, Below 30% (default 70%) -->
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid #e5e7eb;">
+                        <button id="challenging-70-tab" class="challenging-tab active" data-threshold="70" style="padding: 6px 12px; background: #f9fafb; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-size: 12px; color: #666;">&lt; 70%</button>
+                        <button id="challenging-50-tab" class="challenging-tab" data-threshold="50" style="padding: 6px 12px; background: #f9fafb; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-size: 12px; color: #666;">&lt; 50%</button>
+                        <button id="challenging-30-tab" class="challenging-tab" data-threshold="30" style="padding: 6px 12px; background: #f9fafb; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-size: 12px; color: #666;">&lt; 30%</button>
+                        <button id="challenging-all-tab" class="challenging-tab" data-threshold="0" style="padding: 6px 12px; background: #f9fafb; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-size: 12px; color: #666;">All</button>
+                    </div>
+                    
+                    <div id="challenging-question-list" style="max-height: 300px; overflow-y: auto; overflow-x: hidden;">
+                        <div style="padding: 12px; color: #999; font-size: 13px;">Waiting for analytics to load…</div>
+                    </div>
+                    <button id="challenging-question-export-btn" style="margin-top: 12px; padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export CSV</button>
+                </div>
+                
+                <!-- Submission Bottleneck -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">Submission Bottleneck</h3>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">Assignments due in the next 7 days (or overdue in the last 7) where 20%+ have not submitted</div>
+                    <div id="submission-bottleneck-list" style="max-height: 300px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
+                        <div style="padding: 12px; color: #999; font-size: 13px;">Waiting for analytics to load…</div>
+                    </div>
+                    <button id="submission-bottleneck-export-btn" style="margin-top: 12px; padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export CSV</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Trends and Patterns Section -->
+        <div id="trends-section" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+            <h2 style="font-size: 20px; font-weight: 700; color: #111; margin-bottom: 20px;">TRENDS & PATTERNS</h2>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+                <!-- Week-over-Week Non-Participation -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; grid-column: 1 / -1;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 4px;">Week-over-Week Non-Participation</h3>
+                    <p id="non-participation-summary" style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Students with zero submissions (assignments, quizzes, or discussions) in each week. Weeks are Monday–Sunday. Rolling 3-week window.</p>
+                    <p id="non-participation-note" style="font-size: 11px; color: #b45309; margin-bottom: 8px; font-style: italic;">If using a book publisher, this data may not be accurate as that content cannot be checked for submissions.</p>
+                    <div id="non-participation-progress" style="display: none; font-size: 12px; color: #64748b; margin-bottom: 8px;"></div>
+                    <div id="non-participation-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; min-height: 280px;">
+                        <div id="non-participation-week-0" class="non-participation-column" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; background: #f8fafc;">
+                            <div class="non-participation-week-label" style="font-weight: 700; font-size: 13px; color: #0f5b46; margin-bottom: 4px;">Week 1</div>
+                            <div class="non-participation-week-range" style="font-size: 11px; color: #64748b; margin-bottom: 8px;">--</div>
+                            <div class="non-participation-count-badge" style="font-size: 12px; color: #64748b; margin-bottom: 8px;">0 students with 0 submissions</div>
+                            <div class="non-participation-list" style="max-height: 200px; overflow-y: auto; font-size: 12px;"></div>
+                        </div>
+                        <div id="non-participation-week-1" class="non-participation-column" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; background: #f8fafc;">
+                            <div class="non-participation-week-label" style="font-weight: 700; font-size: 13px; color: #0f5b46; margin-bottom: 4px;">Week 2</div>
+                            <div class="non-participation-week-range" style="font-size: 11px; color: #64748b; margin-bottom: 8px;">--</div>
+                            <div class="non-participation-count-badge" style="font-size: 12px; color: #64748b; margin-bottom: 8px;">0 students with 0 submissions</div>
+                            <div class="non-participation-list" style="max-height: 200px; overflow-y: auto; font-size: 12px;"></div>
+                        </div>
+                        <div id="non-participation-week-2" class="non-participation-column" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; background: #f8fafc;">
+                            <div class="non-participation-week-label" style="font-weight: 700; font-size: 13px; color: #0f5b46; margin-bottom: 4px;">Week 3</div>
+                            <div class="non-participation-week-range" style="font-size: 11px; color: #64748b; margin-bottom: 8px;">--</div>
+                            <div class="non-participation-count-badge" style="font-size: 12px; color: #64748b; margin-bottom: 8px;">0 students with 0 submissions</div>
+                            <div class="non-participation-list" style="max-height: 200px; overflow-y: auto; font-size: 12px;"></div>
+                        </div>
+                    </div>
+                    <p id="non-participation-placeholder" style="padding: 16px; color: #94a3b8; font-size: 13px; text-align: center;">Select a course and load analytics to see week-over-week non-participation.</p>
+                    <div style="margin-top: 12px;">
+                        <button id="non-participation-export-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export CSV</button>
+                    </div>
+                </div>
+
+                <!-- Grades entered this week (book publisher content) — only if course has external/content tool grade items -->
+                <div id="external-grades-section" style="display: none; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; grid-column: 1 / -1;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 4px;">Grades entered this week (book publisher content)</h3>
+                    <p id="external-grades-summary" style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Grade letters and counts for grades entered in each week from external/content tool grade items. Expand to see students with NO grade or 0.</p>
+                    <div id="external-grades-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; min-height: 120px;">
+                        <div id="external-grades-week-0" class="external-grades-column" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; background: #fefce8;">
+                            <div class="external-grades-week-label" style="font-weight: 700; font-size: 13px; color: #854d0e; margin-bottom: 4px;">2 weeks ago</div>
+                            <div class="external-grades-week-range" style="font-size: 11px; color: #64748b; margin-bottom: 8px;">--</div>
+                            <div class="external-grades-letter-counts" style="font-size: 12px; color: #475569; margin-bottom: 8px;"></div>
+                            <button type="button" class="external-grades-explore-btn" data-week="0" style="font-size: 12px; color: #0f766e; background: none; border: none; cursor: pointer; padding: 4px 0; text-decoration: underline;">Explore: students with NO grade or 0</button>
+                            <div class="external-grades-no-grade-list" style="display: none; max-height: 180px; overflow-y: auto; font-size: 12px; margin-top: 8px;"></div>
+                        </div>
+                        <div id="external-grades-week-1" class="external-grades-column" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; background: #fefce8;">
+                            <div class="external-grades-week-label" style="font-weight: 700; font-size: 13px; color: #854d0e; margin-bottom: 4px;">Last week</div>
+                            <div class="external-grades-week-range" style="font-size: 11px; color: #64748b; margin-bottom: 8px;">--</div>
+                            <div class="external-grades-letter-counts" style="font-size: 12px; color: #475569; margin-bottom: 8px;"></div>
+                            <button type="button" class="external-grades-explore-btn" data-week="1" style="font-size: 12px; color: #0f766e; background: none; border: none; cursor: pointer; padding: 4px 0; text-decoration: underline;">Explore: students with NO grade or 0</button>
+                            <div class="external-grades-no-grade-list" style="display: none; max-height: 180px; overflow-y: auto; font-size: 12px; margin-top: 8px;"></div>
+                        </div>
+                        <div id="external-grades-week-2" class="external-grades-column" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; background: #fefce8;">
+                            <div class="external-grades-week-label" style="font-weight: 700; font-size: 13px; color: #854d0e; margin-bottom: 4px;">This week</div>
+                            <div class="external-grades-week-range" style="font-size: 11px; color: #64748b; margin-bottom: 8px;">--</div>
+                            <div class="external-grades-letter-counts" style="font-size: 12px; color: #475569; margin-bottom: 8px;"></div>
+                            <button type="button" class="external-grades-explore-btn" data-week="2" style="font-size: 12px; color: #0f766e; background: none; border: none; cursor: pointer; padding: 4px 0; text-decoration: underline;">Explore: students with NO grade or 0</button>
+                            <div class="external-grades-no-grade-list" style="display: none; max-height: 180px; overflow-y: auto; font-size: 12px; margin-top: 8px;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Grade Distribution Curve -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 4px;">Grade Distribution</h3>
+                    <p id="grade-distribution-summary" style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Current grades by range</p>
+                    <div id="grade-distribution-chart" style="min-height: 200px; margin-top: 0; display: flex; align-items: stretch; color: #999; font-size: 13px;">
+                        Load analytics to see grade distribution
+                    </div>
+                    <button id="grade-distribution-export-btn" style="margin-top: 12px; padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export CSV</button>
+                </div>
+                
+                <!-- Upcoming Deadlines (assignments & quizzes) -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 4px;">Upcoming Deadlines</h3>
+                    <p id="upcoming-deadlines-summary" style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Next assignment and quiz due dates for the selected course</p>
+                    <div id="upcoming-deadlines-list" style="min-height: 200px; max-height: 280px; overflow-y: auto; color: #999; font-size: 13px;">
+                        Load analytics to see upcoming deadlines
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Course Readiness Bucket (loaded by course-readiness.js; no heavy analytics) -->
+        <div id="course-readiness-bucket" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+            <h3 style="font-size: 18px; font-weight: 700; color: #111; margin-bottom: 16px;">COURSE READINESS</h3>
+            <div style="margin-bottom: 12px;">
+                <button id="course-readiness-load-btn" style="padding: 8px 16px; background: #0f5b46; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">Load Course Readiness</button>
+            </div>
+            <div id="course-readiness-tiles" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+                <!-- Tiles populated by course-readiness.js -->
+            </div>
+            <div id="course-readiness-list" style="margin-top: 20px;">
+                <h4 style="font-size: 14px; font-weight: 600; color: #666; margin-bottom: 12px;">Course list (top issues first)</h4>
+                <div id="course-readiness-items" style="max-height: 400px; overflow-y: auto;">
+                    <div style="padding: 12px; color: #999; font-size: 13px;">Click "Load Course Readiness" to run checks (Empty Modules, Broken Links, News, Gradebook).</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Course Readiness Details Modal (populated by course-readiness.js) -->
+        <div id="course-readiness-modal" role="dialog" aria-modal="true" aria-labelledby="course-readiness-modal-title" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;">
+            <div style="background: #fff; border-radius: 12px; max-width: 560px; width: 100%; max-height: 85vh; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);">
+                <div style="padding: 20px 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h2 id="course-readiness-modal-title" style="font-size: 18px; font-weight: 700; color: #111; margin: 0;">Course Readiness Details</h2>
+                    <button id="course-readiness-modal-close" type="button" aria-label="Close" style="padding: 4px; background: transparent; border: none; cursor: pointer; color: #64748b; font-size: 20px; line-height: 1;">&times;</button>
+                </div>
+                <div id="course-readiness-modal-body" style="padding: 24px; overflow-y: auto; max-height: calc(85vh - 80px);">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Communication / Outreach Section -->
+        <div id="communication-section" style="display: none; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+            <h2 style="font-size: 20px; font-weight: 700; color: #111; margin-bottom: 20px;">COMMUNICATION / OUTREACH</h2>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+                <!-- Top Left: Outreach Queue -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">COMMUNICATION / OUTREACH</h3>
+                    <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+                        <button id="flagged-today-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Flagged today</button>
+                        <button id="export-contacts-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export contacts</button>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <h4 style="font-size: 13px; font-weight: 600; color: #666; margin-bottom: 8px;">Outreach Queue (top 8)</h4>
+                        <div id="outreach-queue" style="max-height: 300px; overflow-y: auto;">
+                            <div style="padding: 12px; color: #999; font-size: 13px;">Click "Load Analytics" to populate outreach queue</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button id="outreach-view-all-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">View all</button>
+                        <button id="copy-emails-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Copy emails</button>
+                        <button id="outreach-export-csv-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export CSV</button>
+                    </div>
+                </div>
+                
+                <!-- Top Right: Message Templates -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">MESSAGE TEMPLATES</h3>
+                    <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+                        <button id="saved-templates-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Saved templates</button>
+                        <button id="new-template-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">New template</button>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <h4 style="font-size: 13px; font-weight: 600; color: #666; margin-bottom: 8px;">Template List (top 6)</h4>
+                        <div id="templates-list" style="max-height: 300px; overflow-y: auto;">
+                            <div style="padding: 12px; color: #999; font-size: 13px;">No templates saved. Create one using the compose section.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bottom Left: Compose -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">COMPOSE (copy-ready)</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #666; margin-bottom: 4px;">Template:</label>
+                            <select id="compose-template-select" style="width: 100%; padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px;">
+                                <option value="">[▼]</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #666; margin-bottom: 4px;">Course:</label>
+                            <select id="compose-course-select" style="width: 100%; padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px;">
+                                <option value="">[▼]</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #666; margin-bottom: 4px;">Subject:</label>
+                            <input type="text" id="compose-subject" placeholder="Subject" style="width: 100%; padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #666; margin-bottom: 4px;">Body:</label>
+                            <textarea id="compose-body" rows="6" placeholder="Body" style="width: 100%; padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; resize: vertical;"></textarea>
+                        </div>
+                        <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                            Tokens: {FirstName} {Course}
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button id="copy-message-btn" style="padding: 6px 12px; background: #0f5b46; color: #fff; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 600;">Copy message</button>
+                            <button id="save-template-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Save template</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bottom Right: Last Contacted Log -->
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <h3 style="font-size: 16px; font-weight: 700; color: #111; margin-bottom: 12px;">LAST CONTACTED (local log)</h3>
+                    <div style="margin-bottom: 12px;">
+                        <div id="last-contacted-table-container" style="overflow-x: auto; max-height: 300px; overflow-y: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                <thead style="background: #f9fafb; position: sticky; top: 0;">
+                                    <tr>
+                                        <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-bottom: 1px solid #e5e7eb;">Date</th>
+                                        <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-bottom: 1px solid #e5e7eb;">Student</th>
+                                        <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-bottom: 1px solid #e5e7eb;">Course</th>
+                                        <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-bottom: 1px solid #e5e7eb;">Note</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="last-contacted-tbody">
+                                    <tr>
+                                        <td colspan="4" style="padding: 16px; text-align: center; color: #999;">No contact log entries yet.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button id="mark-contacted-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Mark contacted</button>
+                        <button id="add-note-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Add note</button>
+                        <button id="export-outreach-log-btn" style="padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 13px; cursor: pointer;">Export outreach log CSV</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </main>
+    
+    <!-- JavaScript -->
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/analytics.js"></script>
+    <script src="js/course-readiness.js"></script>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="D2L Faculty Dashboard - Create Sandbox Course">
+    <title>Create Sandbox Course - D2L Faculty Dashboard</title>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Universal Styles -->
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Navigation Sidebar (loaded dynamically) -->
+    <div id="nav-placeholder"></div>
+    
+    <!-- Main Content Area -->
+    <main id="main-content" class="main-content" role="main">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Create Sandbox Course</h1>
+            <p class="page-subtitle">Create a practice course for testing and experimentation</p>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="sandbox-main-content">
+            <section class="sandbox-section">
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title">Create Sandbox Course</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+                
+                <p class="sandbox-description">
+                    This tool allows an Instructor to create a Sandbox course and enroll you as Instructor in the new course.
+                </p>
+                
+                <p class="sandbox-description">
+                    If you need assistance with this tool, please contact the eLearning Office through the 
+                    <a href="https://helpdesk.example.edu/portal" target="_blank" rel="noopener">Help Desk Ticketing System</a>.
+                </p>
+                
+                <form id="courseForm" class="sandbox-form">
+                    <div class="form-group">
+                        <label for="courseName" class="form-label">Course Name:</label>
+                        <input
+                            type="text" 
+                            id="courseName" 
+                            name="courseName" 
+                            class="form-input"
+                            required 
+                            placeholder="Enter course name"
+                            aria-required="true"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="courseCode" class="form-label">Course Code:</label>
+                        <input 
+                            type="text" 
+                            id="courseCode" 
+                            class="form-input"
+                            value="Sandbox-" 
+                            readonly
+                            aria-label="Course code (auto-generated)"
+                        >
+                    </div>
+                    
+                    <button 
+                        type="button" 
+                        id="createButton" 
+                        class="form-button"
+                        aria-label="Create sandbox course"
+                    >
+                        <i class="fas fa-plus-circle" aria-hidden="true"></i>
+                        Create Sandbox Course
+                    </button>
+                </form>
+                
+                <div id="successMessage" class="message-container" style="display: none;" role="alert"></div>
+                <pre id="debug" class="message-container" role="log"></pre>
+            </section>
+        </div>
+    </main>
+    
+    <!-- JavaScript -->
+    <script src="js/navigation.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const createButton = document.getElementById("createButton");
+            const courseNameInput = document.getElementById("courseName");
+            createButton.addEventListener("click", createSandboxCourse);
+            courseNameInput.addEventListener("input", updateCourseCode);
+        });
+
+        function updateCourseCode() {
+            const courseName = document.getElementById("courseName").value.trim();
+            const formattedCourseName = courseName
+                .replace(/\s+/g, '-')                   // Replace spaces with dashes
+                .replace(/[^a-zA-Z0-9-_]/g, '')         // Remove invalid characters
+                .substring(0, 40);                      // Limit to leave room for prefix
+            document.getElementById("courseCode").value = `Sandbox-${formattedCourseName}`;
+        }
+
+        async function BrightspaceFetch(fetchMethod, fetchUrl, fetchData) {
+            const csrfToken = localStorage.getItem("XSRF.Token") || "";
+            const headers = {
+                "Content-Type": "application/json",
+                "X-Csrf-Token": csrfToken
+            };
+
+            const options = {
+                method: fetchMethod,
+                headers,
+                credentials: "include"
+            };
+
+            if (fetchData !== null) {
+                options.body = JSON.stringify(fetchData);
+            }
+
+            try {
+                const res = await fetch(fetchUrl, options);
+                const result = { status: res.status, data: {} };
+                const contentType = res.headers.get("content-type") || "";
+                if (res.ok && contentType.includes("application/json")) {
+                    result.data = await res.json();
+                } else {
+                    result.data = await res.text();
+                }
+                return result;
+            } catch (error) {
+                return { status: 500, error: error.toString() };
+            }
+        }
+
+        async function createSandboxCourse() {
+            const courseName = document.getElementById("courseName").value.trim();
+            const createButton = document.getElementById("createButton");
+            const successMessage = document.getElementById("successMessage");
+            const debug = document.getElementById("debug");
+            
+            if (!courseName) {
+                successMessage.style.display = "block";
+                successMessage.className = "message-container message-error";
+                successMessage.innerHTML = "❌ Please enter a course name.";
+                return;
+            }
+
+            // Disable button during creation
+            createButton.disabled = true;
+            createButton.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Creating...';
+            successMessage.style.display = "none";
+            debug.textContent = "";
+            debug.classList.remove("show");
+
+            const formattedCourseName = courseName
+                .replace(/\s+/g, '-')
+                .replace(/[^a-zA-Z0-9-_]/g, '')
+                .substring(0, 40);
+
+            const sanitizedCourseCode = `Sandbox-${formattedCourseName}`;
+
+            try {
+                // Get instructor info
+                const whoamiUrl = `https://${window.location.hostname}/d2l/api/lp/1.47/users/whoami`;
+                const whoamiResult = await BrightspaceFetch("GET", whoamiUrl, null);
+                
+                if (whoamiResult.status !== 200) {
+                    successMessage.style.display = "block";
+                    successMessage.className = "message-container message-error";
+                    successMessage.innerHTML = "❌ Failed to retrieve instructor information.";
+                    createButton.disabled = false;
+                    createButton.innerHTML = '<i class="fas fa-plus-circle" aria-hidden="true"></i> Create Sandbox Course';
+                    return;
+                }
+
+                const instructorUserId = whoamiResult.data.Identifier;
+
+                // Create course
+                const courseData = {
+                    Name: courseName,
+                    Code: sanitizedCourseCode,
+                    CourseTemplateId: 0,
+                    Path: "",
+                    StartDate: null,
+                    EndDate: null,
+                    SemesterId: 0,
+                    LocaleId: null,
+                    ForceLocale: false,
+                    ShowAddressBook: false,
+                    Description: { Content: "", Type: "Text" },
+                    CanSelfRegister: false
+                };
+
+                const createCourseUrl = `https://${window.location.hostname}/d2l/api/lp/1.49/courses/`;
+                const courseResult = await BrightspaceFetch("POST", createCourseUrl, courseData);
+
+                if ((courseResult.status !== 200 && courseResult.status !== 201) || !courseResult.data.Identifier) {
+                    successMessage.style.display = "block";
+                    successMessage.className = "message-container message-error";
+                    successMessage.innerHTML = `❌ Failed to create course "${courseName}". Please try again or contact support.`;
+                    createButton.disabled = false;
+                    createButton.innerHTML = '<i class="fas fa-plus-circle" aria-hidden="true"></i> Create Sandbox Course';
+                    return;
+                }
+
+                const courseId = courseResult.data.Identifier;
+
+                // Enroll instructor
+                const enrollInstructor = {
+                    OrgUnitId: courseId,
+                    UserId: instructorUserId,
+                    RoleId: 102, // Instructor RoleId
+                    IsCascading: false
+                };
+                await BrightspaceFetch("POST", `https://${window.location.hostname}/d2l/api/lp/1.49/enrollments/`, enrollInstructor);
+
+                const courseLink = `https://${window.location.hostname}/d2l/home/${courseId}`;
+                successMessage.style.display = "block";
+                successMessage.className = "message-container message-success";
+                successMessage.innerHTML = `<a href="${courseLink}" target="_blank" rel="noopener">✅ Sandbox course "${courseName}" created successfully. Click to view.</a>`;
+                
+                // Reset form
+                document.getElementById("courseName").value = "";
+                document.getElementById("courseCode").value = "Sandbox-";
+
+            } catch (error) {
+                successMessage.style.display = "block";
+                successMessage.className = "message-container message-error";
+                successMessage.innerHTML = `❌ An error occurred: ${error.message}. Please try again or contact support.`;
+            } finally {
+                createButton.disabled = false;
+                createButton.innerHTML = '<i class="fas fa-plus-circle" aria-hidden="true"></i> Create Sandbox Course';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="D2L Faculty Dashboard - AI Learning Companion Generator">
+    <title>AI Learning Companion - D2L Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body data-coming-soon-page="AI Learning Companion">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">AI Note-Taking Guide Generator</h1>
+            <p class="page-subtitle">Generate a structured note-taking guide from lecture transcripts using in-browser AI.</p>
+        </div>
+
+        <div class="ai-companion-main-content">
+            <section class="ai-companion-section">
+                <div class="ai-companion-section-header">
+                    <h2 class="ai-companion-section-title">Transcript to Note Guide</h2>
+                    <div class="ai-companion-section-separator"></div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card-title">
+                        <i class="fas fa-circle-info" aria-hidden="true"></i>
+                        How this works
+                    </div>
+                    <div class="info-card-content">
+                            <p>This tool runs entirely in your browser with <strong>Transformers.js</strong>. It generates a student-facing note-taking guide directly from your transcript.</p>
+                            <p><strong>Heads up:</strong> first run can take 1-2 minutes while the model loads. Keep this tab open and wait for status messages to update.</p>
+                    </div>
+                </div>
+
+                <form id="learningCompanionForm" class="ai-companion-form">
+                    <div class="form-group">
+                        <label for="lectureTopic" class="form-label">Lecture topic (optional)</label>
+                        <input type="text" id="lectureTopic" class="form-input" placeholder="Example: Photosynthesis - light reactions">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transcriptInput" class="form-label">Lecture transcript</label>
+                        <textarea id="transcriptInput" class="form-textarea ai-companion-textarea" placeholder="Paste lecture transcript text here..." required></textarea>
+                    </div>
+
+                    <div class="ai-companion-options-grid">
+                        <div class="form-group">
+                            <label for="noteStyle" class="form-label">Note guide style</label>
+                            <select id="noteStyle" class="form-select">
+                                <option value="guided-outline">Guided outline</option>
+                                <option value="cornell">Cornell notes</option>
+                                <option value="fill-in-the-blank">Fill-in-the-blank</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Generation mode</label>
+                            <input type="text" class="form-input" value="Note-taking guide only" readonly>
+                        </div>
+                    </div>
+
+                    <div class="ai-companion-actions">
+                        <button type="submit" id="generateCompanionBtn" class="form-button">
+                            <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                            Generate Note Guide
+                        </button>
+                    </div>
+                </form>
+
+                <div id="companionMessage" class="message-container" style="display:none;"></div>
+            </section>
+
+            <section class="ai-companion-section">
+                <div class="ai-companion-section-header">
+                    <h2 class="ai-companion-section-title">Generated Output</h2>
+                    <div class="ai-companion-section-separator"></div>
+                </div>
+
+                <div class="ai-companion-output-grid">
+                    <div class="ai-companion-output-card">
+                        <div class="ai-companion-output-header">
+                            <h3>Aligned Note-Taking Guide</h3>
+                            <button type="button" id="copyNotesBtn" class="form-button form-button-secondary ai-companion-copy-btn" disabled>
+                                <i class="fas fa-copy" aria-hidden="true"></i> Copy
+                            </button>
+                        </div>
+                        <textarea id="notesOutput" class="form-textarea ai-companion-output-textarea" placeholder="Generated notes will appear here..." readonly></textarea>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/navigation.js"></script>
+    <script src="js/coming-soon-modal.js"></script>
+    <script type="module" src="js/ai-learning-companion.js"></script>
+</body>
+</html>

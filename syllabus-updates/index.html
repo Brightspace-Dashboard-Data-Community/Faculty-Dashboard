@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Syllabus Updates - Your Institution Faculty</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="icon" type="image/png" href="institution-mark.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <main id="main-content" class="page-wrap" tabindex="-1">
+    <a href="../index.html" class="back-link">
+      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+      Back to Faculty Dashboard
+    </a>
+    <header class="page-header">
+      <div class="brand-row">
+        <img src="institution-mark.svg" alt="Your Institution Duck logo" class="hero-brand-image">
+        <span class="brand-pill">Faculty Resources</span>
+      </div>
+      <h1>Simple Syllabus Policy Updates</h1>
+      <p>Review, copy, and download the latest Spring/Summer syllabus policy language for your courses.</p>
+      <p class="header-walkthrough-link">
+        New to Simple Syllabus?
+        <a href="../simple-syllabus-tutorial.html">Walkthrough: navbar link + release to students</a>
+      </p>
+      <div class="header-actions">
+        <a id="download-word" class="btn btn-primary" href="Information-Included-in-Simple-Syllabus.docx" download>
+          <i class="fa-solid fa-file-word" aria-hidden="true"></i>
+          Download Word document
+        </a>
+        <button type="button" id="copy-all-updated" class="btn btn-secondary" hidden>
+          <i class="fa-solid fa-copy" aria-hidden="true"></i>
+          Copy all updated sections
+        </button>
+        <a href="../semester-updates/index.html" class="btn btn-secondary">
+          <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+          Semester reminders
+        </a>
+      </div>
+    </header>
+
+    <section class="intro-card card" aria-labelledby="intro-heading">
+      <div class="card-body">
+        <h2 id="intro-heading" class="intro-greeting"></h2>
+        <div id="intro-paragraphs" class="intro-copy"></div>
+        <p class="intro-note">
+          <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+          Sections marked with <span class="updated-mark" aria-label="updated">*</span> include recent updates (often contact information).
+        </p>
+      </div>
+    </section>
+
+    <section class="controls-card card" aria-label="Browse syllabus sections">
+      <div class="card-body controls-body">
+        <div class="controls-row">
+          <div class="search-wrap">
+            <label for="page-search" class="sr-only">Search syllabus sections</label>
+            <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+            <input id="page-search" type="search" placeholder="Search sections..." autocomplete="off">
+          </div>
+          <div class="select-wrap">
+            <label for="module-select">Jump to section</label>
+            <select id="module-select">
+              <option value="">Choose a section...</option>
+            </select>
+          </div>
+        </div>
+        <div class="controls-row filters-row">
+          <label class="filter-check">
+            <input type="checkbox" id="updated-only">
+            Show updated sections only
+          </label>
+          <p id="modules-count" class="results-text" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <div class="layout-two-col">
+      <section aria-labelledby="modules-heading">
+        <h2 id="modules-heading" class="section-title">
+          <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+          Syllabus Sections
+        </h2>
+        <div id="modules-grid" class="modules-grid" role="list"></div>
+      </section>
+
+      <section aria-labelledby="content-heading" class="content-panel">
+        <div class="content-panel-header">
+          <h2 id="content-heading" class="section-title">
+            <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
+            Section Content
+          </h2>
+          <div class="content-actions">
+            <button type="button" id="copy-section" class="btn btn-secondary" disabled>
+              <i class="fa-solid fa-copy" aria-hidden="true"></i>
+              Copy section text
+            </button>
+            <a id="download-section-word" class="btn btn-secondary" href="Information-Included-in-Simple-Syllabus.docx" download hidden>
+              <i class="fa-solid fa-download" aria-hidden="true"></i>
+              Open full Word file
+            </a>
+          </div>
+        </div>
+        <div id="module-content" class="card content-card">
+          <div class="card-body">
+            <p class="placeholder-text">Select a section from the list to view policy language you can copy into your syllabus.</p>
+          </div>
+        </div>
+        <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+
+    <footer class="page-footer">
+      <img src="institution-mark.svg" alt="Your Institution flag logo" class="footer-flag-mark">
+      <p>Your Institution · Simple Syllabus Updates · eLearning</p>
+    </footer>
+  </main>
+  <script src="../js/readspeaker.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>

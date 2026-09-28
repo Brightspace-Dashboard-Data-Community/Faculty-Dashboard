@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Prepare your D2L Brightspace courses for the upcoming semester — a faculty checklist with Your Institution dashboard tools.">
+    <title>Semester Rollover Kit - D2L Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">Semester Rollover Kit</h1>
+            <p class="page-subtitle">Choose a semester first. The header, course list, and checklist all follow that term.</p>
+        </div>
+
+        <section class="srk-hero" aria-labelledby="srk-term-heading">
+            <div class="srk-hero-copy">
+                <p class="srk-eyebrow">Preparing</p>
+                <h2 id="srk-term-heading" class="srk-hero-title">Select a semester</h2>
+                <p class="srk-hero-lead" id="srkHeroLead">
+                    Work through the phases in order. Brightspace Copy Components does <strong>not</strong> copy student work, grades, or discussion posts.
+                </p>
+                <div class="srk-term-pills" id="srkTermPills" role="radiogroup" aria-label="Semester to prepare"></div>
+            </div>
+            <div class="srk-progress-card" aria-live="polite">
+                <p class="srk-progress-label" id="srkProgressLabel">Checklist progress</p>
+                <p class="srk-progress-count" id="srkProgressCount">0 of 0 complete</p>
+                <div class="srk-progress-track" role="progressbar" aria-labelledby="srkProgressLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="srkProgressBar">
+                    <div class="srk-progress-fill" id="srkProgressFill"></div>
+                </div>
+                <div class="srk-progress-actions">
+                    <button type="button" class="form-button form-button-secondary" id="srkResetBtn">
+                        Reset this term’s progress
+                    </button>
+                    <button type="button" class="form-button form-button-secondary" id="srkPrintBtn">
+                        <i class="fas fa-print" aria-hidden="true"></i>
+                        Print checklist
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <div class="info-card srk-note">
+            <div class="info-card-title">
+                <i class="fas fa-circle-info" aria-hidden="true"></i>
+                How to use this kit
+            </div>
+            <div class="info-card-content">
+                <ol class="srk-how-list">
+                    <li id="srkHowConfirm">Choose a semester above, then confirm those shells in the list below.</li>
+                    <li>If several sections should share one gradebook, submit a merge <em>before</em> you copy content.</li>
+                    <li>Copy from a previous offering <em>or</em> build a new shell, then shift dates and student-facing settings.</li>
+                    <li>Mark <strong>Done</strong> or <strong>Does not apply</strong> on each step.</li>
+                </ol>
+            </div>
+        </div>
+
+        <section class="sandbox-section" aria-labelledby="srk-courses-heading">
+            <div class="sandbox-section-header">
+                <h2 class="sandbox-section-title" id="srk-courses-heading">Your courses</h2>
+                <div class="sandbox-section-separator"></div>
+            </div>
+            <p class="form-hint" id="srkCourseHint" style="margin-top:0;">
+                Offerings for the semester selected above. Open a course in Brightspace, or use the tools in each phase below.
+            </p>
+            <div id="srkCourseList" class="srk-course-list" role="status" aria-live="polite">
+                <p class="srk-course-loading">Loading your Brightspace offerings…</p>
+            </div>
+        </section>
+
+        <nav class="srk-toc widget-container" aria-label="Rollover phases">
+            <h2 class="srk-toc-title">Phases</h2>
+            <ol class="srk-toc-list" id="srkToc"></ol>
+        </nav>
+
+        <div id="srkPhases"></div>
+
+        <section class="srk-help widget-container" aria-labelledby="srk-help-heading">
+            <h2 id="srk-help-heading" class="srk-help-title">Need help?</h2>
+            <p class="srk-help-text">
+                eLearning Office (J102) · <a href="mailto:elearning@example.edu">elearning@example.edu</a> ·
+                <a href="tel:[campus phone]">[campus phone]</a>.
+                For access or merge issues, submit a
+                <a href="https://helpdesk.example.edu/portal/en/newticket" target="_blank" rel="noopener noreferrer">Help Desk ticket</a>.
+            </p>
+        </section>
+    </main>
+
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/course-offerings.js"></script>
+    <script src="js/semester-rollover-kit.js"></script>
+</body>
+</html>

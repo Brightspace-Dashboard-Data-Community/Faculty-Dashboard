@@ -1,0 +1,571 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="D2L Faculty Dashboard - Winter 2027 Course Merge Request">
+<title>Winter 2027 Course Merge Request - D2L Faculty Dashboard</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="../../css/navigation.css">
+<link rel="stylesheet" href="../../css/dashboard.css">
+<link rel="stylesheet" href="../../css/pages.css">
+
+<style>
+/* Page-scoped layout for course merge tool — uses dashboard theme tokens */
+#authGate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg-light);
+  color: var(--text-medium);
+  font-size: 16px;
+}
+#authGate .auth-gate-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border-green);
+  border-top-color: var(--primary-green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.merge-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .merge-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.merge-instructor-meta {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  background: var(--bg-light);
+  border: 1px solid var(--border-gray);
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--text-medium);
+}
+.merge-instructor-meta strong {
+  color: var(--text-dark);
+}
+.merge-instructor-meta span {
+  color: var(--primary-green);
+  font-weight: 600;
+}
+
+.merge-selection-summary {
+  margin-top: 20px;
+  padding: 16px 20px;
+  background: var(--light-green);
+  border: 1px solid var(--border-green);
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--text-medium);
+  line-height: 1.6;
+}
+.merge-selection-summary strong {
+  color: var(--text-dark);
+}
+.merge-selection-summary #selectedMaster,
+.merge-selection-summary #selectedSecondaries {
+  color: var(--primary-green);
+  font-weight: 600;
+}
+
+.merge-course-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-gray);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 14px;
+}
+.merge-course-table th,
+.merge-course-table td {
+  border-bottom: 1px solid var(--border-gray);
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: middle;
+}
+.merge-course-table th {
+  background: var(--primary-green);
+  color: var(--bg-white);
+  font-weight: 600;
+}
+.merge-course-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.merge-course-table tbody tr:hover {
+  background: var(--bg-light);
+}
+.merge-course-table a {
+  color: var(--primary-green);
+  text-decoration: none;
+  font-weight: 600;
+}
+.merge-course-table a:hover {
+  text-decoration: underline;
+}
+.merge-course-table input[type="radio"],
+.merge-course-table input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-green);
+  cursor: pointer;
+}
+.merge-course-table tr.is-primary {
+  background: #dbeafe;
+}
+.merge-course-table tr.is-merge {
+  background: var(--feature-green-light);
+}
+
+.merge-zoho-frame {
+  width: 100%;
+  min-height: 800px;
+  height: 800px;
+  border: 1px solid var(--border-gray);
+  border-radius: 12px;
+  background: var(--bg-white);
+}
+.merge-zoho-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  padding: 32px;
+  text-align: center;
+  color: var(--text-medium);
+  background: var(--bg-light);
+  border: 1px dashed var(--border-gray-dark);
+  border-radius: 12px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<div id="authGate" role="status" aria-live="polite">
+  <div class="auth-gate-spinner" aria-hidden="true"></div>
+  <span>Checking Brightspace login…</span>
+</div>
+
+<div id="nav-placeholder"></div>
+
+<main id="main-content" class="main-content" role="main" style="display: none;">
+  <div id="app">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../../forms.html">Forms</a>
+      <span class="breadcrumb-separator" aria-hidden="true">/</span>
+      <a href="../../course-merge-form.html">Course Merge Form</a>
+      <span class="breadcrumb-separator" aria-hidden="true">/</span>
+      <span>Winter 2027</span>
+    </nav>
+
+    <div class="page-header">
+      <h1 class="page-title">
+        <i class="fas fa-code-branch" aria-hidden="true"></i>
+        Winter 2027 Course Merge Request
+      </h1>
+      <p class="page-subtitle">Select your primary and merge courses, then continue to the prefilled Zoho form.</p>
+    </div>
+
+    <div class="sandbox-main-content">
+      <div class="merge-layout">
+        <!-- LEFT: course selection -->
+        <section class="sandbox-section">
+          <div class="sandbox-section-header">
+            <h2 class="sandbox-section-title">Select Courses</h2>
+            <div class="sandbox-section-separator"></div>
+          </div>
+
+          <p class="sandbox-description">
+            Select <strong>one Primary course</strong> and up to <strong>four Merge courses</strong>
+            for Winter 2027 (<strong>27/WI</strong>). Choose your courses before opening the Zoho form.
+          </p>
+
+          <div class="merge-instructor-meta">
+            <div><strong>Instructor:</strong> <span id="instructorInfo">Loading...</span></div>
+            <div><strong>Institution ID Number:</strong> <span id="instructorDeltaId">Loading...</span></div>
+          </div>
+
+          <div class="form-group">
+            <label for="semesterFilter" class="form-label">Semester</label>
+            <select id="semesterFilter" class="form-select" disabled aria-disabled="true" onchange="filterCoursesBySemester()">
+              <option value="27/WI" selected>27/WI — Winter 2027</option>
+            </select>
+          </div>
+
+          <table id="courseTable" class="merge-course-table" style="display: none;">
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Primary</th>
+                <th>Merge</th>
+              </tr>
+            </thead>
+            <tbody id="courseTableBody"></tbody>
+          </table>
+
+          <div class="merge-selection-summary">
+            <p style="margin: 0 0 8px 0;"><strong>Primary:</strong> <span id="selectedMaster">None</span></p>
+            <p style="margin: 0;"><strong>Merge Courses (up to 4):</strong><br><span id="selectedSecondaries">None</span></p>
+          </div>
+
+          <button type="button" class="form-button" style="margin-top: 20px;" onclick="loadZohoForm()">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            Continue to Form
+          </button>
+        </section>
+
+        <!-- RIGHT: Zoho form -->
+        <section class="sandbox-section">
+          <div class="sandbox-section-header">
+            <h2 class="sandbox-section-title">Zoho Form</h2>
+            <div class="sandbox-section-separator"></div>
+          </div>
+
+          <p class="sandbox-description">
+            After you select courses and continue, your information is prefilled below. Complete and submit the form to send your merge request.
+          </p>
+
+          <div id="zohoPlaceholder" class="merge-zoho-placeholder">
+            Select a primary course and at least one merge course, then choose <strong>Continue to Form</strong>.
+          </div>
+          <iframe id="zohoFormFrame" class="merge-zoho-frame" title="Course merge Zoho form" style="display: none;"></iframe>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="../../js/navigation.js"></script>
+<script>
+// CONFIG
+var D2L_HOST = location.origin;
+var LOGIN_URL = D2L_HOST + "/d2l/lp/auth/login/login.d2l?target=" + encodeURIComponent(location.href);
+
+// STATE
+var ALLOWED_SEMESTERS = ["27/WI"];
+var instructorCourses = [];
+var selectedMaster = "";
+var selectedSecondaries = [];
+var instructorFirstName = "";
+var instructorLastName = "";
+var instructorEmail = "";
+var instructorOrgDefinedId = "";
+
+// FETCH
+async function BrightspaceFetch(url) {
+  var token = localStorage.getItem("X-Csrf-Token");
+
+  var res = await fetch(url, {
+    method: "GET",
+    headers: { "X-Csrf-Token": token }
+  });
+
+  if (!res.ok) throw new Error("API Error");
+
+  return await res.json();
+}
+
+function pickOrgDefinedId(user) {
+  if (!user) return "";
+  return user.OrgDefinedId || user.OrgDefinedID || "";
+}
+
+async function loadInstructorOrgDefinedId(me) {
+  var idsToTry = [];
+
+  if (me.Identifier) idsToTry.push(me.Identifier);
+  if (me.UserId && idsToTry.indexOf(String(me.UserId)) === -1) idsToTry.push(me.UserId);
+
+  var i;
+  for (i = 0; i < idsToTry.length; i++) {
+    try {
+      var user = await BrightspaceFetch("/d2l/api/lp/1.49/users/" + idsToTry[i]);
+      var id = pickOrgDefinedId(user);
+      if (id) return id;
+    } catch (profileErr) {
+      // try next lookup method
+    }
+  }
+
+  if (me.UniqueName) {
+    try {
+      var matches = await BrightspaceFetch(
+        "/d2l/api/lp/1.49/users/?userName=" + encodeURIComponent(me.UniqueName)
+      );
+      if (matches && matches.length) {
+        return pickOrgDefinedId(matches[0]);
+      }
+    } catch (userNameErr) {
+      // fall through
+    }
+  }
+
+  return "";
+}
+
+function setDeltaIdDisplay(value, loadNote) {
+  var el = document.getElementById("instructorDeltaId");
+  if (!el) return;
+
+  if (value) {
+    el.textContent = value;
+    el.style.color = "";
+    return;
+  }
+
+  el.textContent = loadNote || "Not returned by Brightspace";
+  el.style.color = "#b45309";
+}
+
+// INIT
+async function init() {
+  try {
+    var me = await BrightspaceFetch("/d2l/api/lp/1.49/users/whoami");
+
+    instructorFirstName = me.FirstName;
+    instructorLastName = me.LastName;
+    instructorEmail = me.UniqueName + "@example.edu";
+
+    document.getElementById("instructorInfo").innerText =
+      instructorFirstName + " " + instructorLastName + " (" + instructorEmail + ")";
+
+    setDeltaIdDisplay("", "Loading...");
+    instructorOrgDefinedId = await loadInstructorOrgDefinedId(me);
+    setDeltaIdDisplay(instructorOrgDefinedId);
+
+    document.getElementById("authGate").style.display = "none";
+    document.getElementById("main-content").style.display = "block";
+
+    loadCourses();
+
+  } catch (e) {
+    window.location = LOGIN_URL;
+  }
+}
+
+// LOAD COURSES
+async function loadCourses() {
+  var next = "/d2l/api/lp/1.49/enrollments/myenrollments/";
+  var all = [];
+
+  while (next) {
+    var data = await BrightspaceFetch(next);
+    all = all.concat(data.Items);
+
+    if (data.PagingInfo && data.PagingInfo.HasMoreItems) {
+      next = "/d2l/api/lp/1.49/enrollments/myenrollments/?bookmark=" +
+        encodeURIComponent(data.PagingInfo.Bookmark);
+    } else {
+      next = null;
+    }
+  }
+
+  instructorCourses = all.filter(function(c) {
+    return c.OrgUnit.Type.Id === 3 &&
+      (c.Access.ClasslistRoleName === "Instructor" ||
+       c.Access.ClasslistRoleName === "Faculty Member");
+  });
+
+  populateSemesterDropdown();
+}
+
+// SEMESTER
+function getSemester(code) {
+  return code.split("-")[3] || "";
+}
+
+function populateSemesterDropdown() {
+  var dropdown = document.getElementById("semesterFilter");
+  dropdown.innerHTML = "";
+
+  var opt = document.createElement("option");
+  opt.value = "27/WI";
+  opt.textContent = "27/WI — Winter 2027";
+  opt.selected = true;
+  dropdown.appendChild(opt);
+  dropdown.value = "27/WI";
+  dropdown.disabled = true;
+
+  filterCoursesBySemester();
+}
+
+// FILTER
+function filterCoursesBySemester() {
+  var sem = document.getElementById("semesterFilter").value;
+  var body = document.getElementById("courseTableBody");
+  body.innerHTML = "";
+
+  instructorCourses.forEach(function(c) {
+    var courseSem = getSemester(c.OrgUnit.Code);
+
+    if (ALLOWED_SEMESTERS.indexOf(courseSem) === -1) return;
+    if (sem !== "all" && courseSem !== sem) return;
+
+    var tr = document.createElement("tr");
+    tr.setAttribute("data-code", c.OrgUnit.Code);
+
+    tr.innerHTML =
+      "<td><a href='" + c.OrgUnit.HomeUrl + "' target='_blank'>" + c.OrgUnit.Name + "</a></td>" +
+      "<td><input type='radio' name='master' onclick=\"selectMaster('" + c.OrgUnit.Code + "')\"></td>" +
+      "<td><input type='checkbox' class='merge-checkbox' data-code='" + c.OrgUnit.Code + "' onclick=\"selectSecondary('" + c.OrgUnit.Code + "')\"></td>";
+
+    body.appendChild(tr);
+  });
+
+  document.getElementById("courseTable").style.display = "table";
+}
+
+// SELECT MASTER
+function selectMaster(code) {
+  selectedMaster = code;
+
+  selectedSecondaries = selectedSecondaries.filter(function(c) {
+    return c !== code;
+  });
+
+  document.getElementById("selectedMaster").innerText = code;
+
+  updateSecondaryDisplay();
+  updateRowStyles();
+}
+
+// SELECT SECONDARY
+function selectSecondary(code) {
+
+  if (selectedSecondaries.indexOf(code) === -1) {
+    if (selectedSecondaries.length >= 4) {
+      alert("Maximum of 4 merge courses allowed.");
+      return;
+    }
+    selectedSecondaries.push(code);
+  } else {
+    selectedSecondaries = selectedSecondaries.filter(function(c) {
+      return c !== code;
+    });
+  }
+
+  updateSecondaryDisplay();
+  updateRowStyles();
+}
+
+// DISPLAY SECONDARY LIST
+function updateSecondaryDisplay() {
+  var display = document.getElementById("selectedSecondaries");
+
+  if (selectedSecondaries.length === 0) {
+    display.innerText = "None";
+    return;
+  }
+
+  display.innerHTML = selectedSecondaries
+    .map(function(c, i) {
+      return (i + 1) + ". " + c;
+    })
+    .join("<br>");
+}
+
+// ROW COLORS
+function updateRowStyles() {
+  var rows = document.querySelectorAll("#courseTableBody tr");
+
+  rows.forEach(function(row) {
+    var code = row.getAttribute("data-code");
+    var checkbox = row.querySelector(".merge-checkbox");
+
+    row.classList.remove("is-primary", "is-merge");
+
+    // PRIMARY
+    if (code === selectedMaster) {
+      row.classList.add("is-primary");
+
+      if (checkbox) {
+        checkbox.checked = false;
+        checkbox.disabled = true;
+      }
+
+      return;
+    }
+
+    // SECONDARY
+    if (selectedSecondaries.indexOf(code) !== -1) {
+      row.classList.add("is-merge");
+
+      if (checkbox) {
+        checkbox.disabled = false;
+      }
+
+      return;
+    }
+
+    // DEFAULT
+    if (checkbox) {
+      checkbox.disabled = false;
+    }
+  });
+}
+
+// ZOHO LOAD
+function loadZohoForm() {
+
+  if (!selectedMaster) {
+    alert("Select a primary course");
+    return;
+  }
+
+  if (selectedSecondaries.length === 0) {
+    alert("Select at least one merge course");
+    return;
+  }
+
+  var base = "https://forms.example.edu/course-merge-request";
+
+  var url = base + "?zf_rszfm=1";
+
+  // Field link names from Merge Request Form 27/WI (Name_First / Name_Last are the name subfields)
+  url += "&Name_First=" + encodeURIComponent(instructorFirstName);
+  url += "&Name_Last=" + encodeURIComponent(instructorLastName);
+  url += "&Email=" + encodeURIComponent(instructorEmail);
+  url += "&Number=" + encodeURIComponent(instructorOrgDefinedId);
+
+  url += "&SingleLine=" + encodeURIComponent(selectedMaster);
+
+  if (selectedSecondaries[0]) url += "&SingleLine1=" + encodeURIComponent(selectedSecondaries[0]);
+  if (selectedSecondaries[1]) url += "&SingleLine2=" + encodeURIComponent(selectedSecondaries[1]);
+  if (selectedSecondaries[2]) url += "&SingleLine3=" + encodeURIComponent(selectedSecondaries[2]);
+  if (selectedSecondaries[3]) url += "&SingleLine4=" + encodeURIComponent(selectedSecondaries[3]);
+
+  var placeholder = document.getElementById("zohoPlaceholder");
+  var frame = document.getElementById("zohoFormFrame");
+  if (placeholder) placeholder.style.display = "none";
+  frame.style.display = "block";
+  frame.src = url;
+}
+
+// START
+init();
+</script>
+</body>
+</html>

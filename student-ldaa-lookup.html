@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your Institution Faculty Dashboard - Student LDAA Lookup">
+    <title>Student LDAA Lookup - D2L Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">Student LDAA Lookup</h1>
+            <p class="page-subtitle">Look up a student's Last Date of Academic Activity in one of your courses and generate a FERPA-aware PDF report.</p>
+        </div>
+
+        <div class="sandbox-main-content">
+            <div class="agent-tabs" role="tablist" aria-label="LDAA lookup mode">
+                <button type="button" class="agent-tab active" role="tab" id="ldaaTabEnrolled" aria-selected="true" aria-controls="ldaaPanelEnrolled">
+                    Currently enrolled
+                </button>
+                <button type="button" class="agent-tab" role="tab" id="ldaaTabRemoved" aria-selected="false" aria-controls="ldaaPanelRemoved">
+                    Previously removed
+                </button>
+            </div>
+
+            <div id="ldaaPanelEnrolled" class="agent-tab-content active" role="tabpanel" aria-labelledby="ldaaTabEnrolled">
+                <section class="sandbox-section">
+                    <div class="sandbox-section-header">
+                        <h2 class="sandbox-section-title">Find a student</h2>
+                        <div class="sandbox-section-separator"></div>
+                    </div>
+
+                    <div class="tool-ferpa-note" role="note">
+                        <strong>FERPA:</strong> This tool displays education records for students enrolled in your courses. Use only for legitimate educational purposes at Your Institution. Course login alone does not count toward LDA — only academic events (discussions, assignments, quizzes, and integrated tool gradebook activity when available).
+                        For a weekly attendance snapshot of the class (or one student) in a selected date range, use
+                        <a href="ldaa-period-report.html">LDAA Period Report</a>.
+                    </div>
+
+                    <div class="ldaa-student-bar">
+                        <div class="form-group" style="flex:1;min-width:220px;margin:0;">
+                            <label for="ldaaCourse" class="form-label">Course offering</label>
+                            <select id="ldaaCourse" class="form-select">
+                                <option value="">Loading courses…</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:220px;margin:0;">
+                            <label for="ldaaStudent" class="form-label">Student</label>
+                            <select id="ldaaStudent" class="form-select" disabled>
+                                <option value="">Select a course first…</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label class="form-label" style="visibility:hidden;">Action</label>
+                            <button type="button" class="form-button" id="ldaaViewBtn" disabled>
+                                <i class="fas fa-search" aria-hidden="true"></i>
+                                View activity
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="tool-meta" id="ldaaHeaderMeta" aria-live="polite"></p>
+                    <p class="tool-meta" id="ldaaStatus" aria-live="polite"></p>
+                </section>
+
+                <section class="tool-panel" id="ldaaDetailPanel" hidden>
+                    <h3 class="tool-panel-title">Last Date of Academic Activity</h3>
+                    <div id="ldaaDetailContent"></div>
+                </section>
+            </div>
+
+            <div id="ldaaPanelRemoved" class="agent-tab-content" role="tabpanel" aria-labelledby="ldaaTabRemoved" hidden>
+                <section class="sandbox-section">
+                    <div class="sandbox-section-header">
+                        <h2 class="sandbox-section-title">Removed student lookup</h2>
+                        <div class="sandbox-section-separator"></div>
+                    </div>
+
+                    <div class="tool-ferpa-note" role="note">
+                        <strong>FERPA:</strong> Use this only when a student has already been removed from the course and an LDAA report is still required. The tool temporarily enrolls them with <strong>Student - LDAA Report (role 172)</strong>, downloads the PDF, then you must unenroll them before leaving this page.
+                    </div>
+
+                    <div class="ldaa-removed-search">
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label for="ldaaRemovedCourse" class="form-label">Course offering</label>
+                            <select id="ldaaRemovedCourse" class="form-select">
+                                <option value="">Loading courses…</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label for="ldaaOrgDefinedId" class="form-label">OrgDefinedId</label>
+                            <input type="text" id="ldaaOrgDefinedId" class="form-input" autocomplete="off" placeholder="Enter OrgDefinedId">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" style="visibility:hidden;">Search</label>
+                            <button type="button" class="form-button form-button-secondary" id="ldaaSearchBtn">
+                                <i class="fas fa-search" aria-hidden="true"></i>
+                                Search
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="ldaaRemovedResults" class="search-results" hidden></div>
+
+                    <div id="ldaaRemovedSelected" class="selected-user">
+                        <div class="selected-user-info">
+                            <div class="selected-user-details">
+                                <div class="selected-user-name" id="ldaaRemovedSelectedName"></div>
+                                <div class="selected-user-meta" id="ldaaRemovedSelectedMeta"></div>
+                            </div>
+                            <button type="button" class="remove-user-btn" id="ldaaRemovedClearBtn" aria-label="Clear selected user">
+                                <i class="fas fa-times" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top:1rem;">
+                        <button type="button" class="form-button" id="ldaaProcessBtn" disabled>
+                            <i class="fas fa-file-arrow-down" aria-hidden="true"></i>
+                            Process LDAA report
+                        </button>
+                    </div>
+
+                    <p class="tool-meta" id="ldaaRemovedStatus" aria-live="polite"></p>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <div id="ldaaLockOverlay" class="ldaa-lock" hidden>
+        <div class="ldaa-lock-card" role="dialog" aria-modal="true" aria-labelledby="ldaaLockTitle">
+            <h3 id="ldaaLockTitle">Unenroll required</h3>
+            <p id="ldaaLockBody">The LDAA report downloaded. This user is temporarily enrolled with Student - LDAA Report (role 172). Unenroll them before leaving this page.</p>
+            <button type="button" class="form-button" id="ldaaLockUnenrollBtn">
+                <i class="fas fa-user-minus" aria-hidden="true"></i>
+                Unenroll user
+            </button>
+            <p class="ldaa-lock-status" id="ldaaLockStatus" aria-live="assertive"></p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/course-offerings.js"></script>
+    <script src="js/brightspace-api.js"></script>
+    <script src="js/pdf-brand.js"></script>
+    <script src="js/ldaa-report.js"></script>
+    <script src="js/student-ldaa-lookup.js"></script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your Institution Faculty Dashboard - Checklist Creator">
+    <title>Checklist Creator - D2L Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">Checklist Creator</h1>
+            <p class="page-subtitle">Build a Brightspace checklist with categories and tasks in one pass, then optionally place a link to it in a content module.</p>
+        </div>
+
+        <div class="sandbox-main-content">
+            <section class="sandbox-section">
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title">Select a course</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+
+                <div class="info-card" style="margin-bottom: 1.25rem;">
+                    <div class="info-card-title">
+                        <i class="fas fa-circle-info" aria-hidden="true"></i>
+                        How this tool works
+                    </div>
+                    <div class="info-card-content">
+                        <p>Creates a real Checklist in the selected course (name, categories, and items) through the Brightspace API. Optionally adds a <strong>link topic</strong> in a content module that opens the checklist for students.</p>
+                        <p>Native “Add Existing → Checklist” topics are not fully supported by the Content API, so module placement uses the Brightspace checklist page (<code>checklist.d2l</code>). You can also attach any existing checklist to a module without recreating it.</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="clcCourse" class="form-label">Course offering</label>
+                    <select id="clcCourse" class="form-select">
+                        <option value="">Loading your courses…</option>
+                    </select>
+                    <p class="form-hint">Previous, current, and upcoming term faculty offerings plus sandboxes (<span data-fd-semester-code="previous"></span>, <span data-fd-semester-code="active"></span>, and <span data-fd-semester-code="future"></span>).</p>
+                </div>
+                <p class="tool-meta" id="clcHeaderMeta" aria-live="polite"></p>
+            </section>
+
+            <section class="tool-panel" id="clcExistingCard" hidden>
+                <h3 class="tool-panel-title">Existing checklists in this course</h3>
+                <div id="clcExistingList" class="clc-existing-list" aria-live="polite"></div>
+                <div class="clc-place-existing" id="clcPlaceExisting">
+                    <h4 class="clc-subtitle">Add an existing checklist to a module</h4>
+                    <div class="form-group-row clc-place-row">
+                        <div class="form-group">
+                            <label for="clcExistingSelect" class="form-label">Checklist</label>
+                            <select id="clcExistingSelect" class="form-select">
+                                <option value="">Select a checklist…</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="clcExistingModule" class="form-label">Content module</label>
+                            <select id="clcExistingModule" class="form-select">
+                                <option value="">Select a module…</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="form-button form-button-secondary" id="clcPlaceExistingBtn" disabled>
+                        <i class="fas fa-link" aria-hidden="true"></i>
+                        Add checklist link to module
+                    </button>
+                </div>
+            </section>
+
+            <section class="tool-panel" id="clcBuilderCard" hidden>
+                <h3 class="tool-panel-title">Create a new checklist</h3>
+
+                <form id="clcForm" novalidate>
+                    <div class="form-group">
+                        <label for="clcName" class="form-label">Checklist name <span class="form-required">*</span></label>
+                        <input type="text" id="clcName" class="form-input" maxlength="256" required aria-required="true" placeholder="e.g. Week 3 Checklist">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="clcDescription" class="form-label">Description <span class="form-optional">(optional)</span></label>
+                        <textarea id="clcDescription" class="form-textarea" rows="2" placeholder="Short note students see at the top of the checklist"></textarea>
+                    </div>
+
+                    <div class="clc-categories-header">
+                        <h4 class="clc-subtitle">Categories &amp; items</h4>
+                        <p class="form-hint" style="margin-top:0;">One task per line. Optional due date: <code>Read Chapter 3 | 2026-09-15</code> (YYYY-MM-DD). Due times are set to 11:59 PM local.</p>
+                    </div>
+                    <div id="clcCategories" class="clc-categories"></div>
+                    <div class="clc-category-actions">
+                        <button type="button" class="form-button form-button-secondary" id="clcAddCategoryBtn">
+                            <i class="fas fa-folder-plus" aria-hidden="true"></i>
+                            Add category
+                        </button>
+                    </div>
+
+                    <div class="clc-module-block">
+                        <label class="clc-check-label">
+                            <input type="checkbox" id="clcAddToModule">
+                            Also add a link to this checklist in a content module
+                        </label>
+                        <div class="form-group" id="clcModuleGroup" hidden>
+                            <label for="clcModule" class="form-label">Content module</label>
+                            <select id="clcModule" class="form-select">
+                                <option value="">Select a module…</option>
+                            </select>
+                            <p class="form-hint">Lists content modules in the course selected above. Creates a link topic in that module that opens this checklist.</p>
+                        </div>
+                    </div>
+
+                    <div class="clc-actions-row">
+                        <button type="submit" class="form-button" id="clcCreateBtn">
+                            <i class="fas fa-list-check" aria-hidden="true"></i>
+                            Create checklist
+                        </button>
+                        <button type="button" class="form-button form-button-secondary" id="clcResetBtn">
+                            Reset form
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="tool-panel" id="clcProgressCard" hidden aria-live="polite">
+                <h3 class="tool-panel-title">Progress</h3>
+                <div class="psc-progress-header">
+                    <strong id="clcProgressLabel">Working…</strong>
+                    <span id="clcProgressCount"></span>
+                </div>
+                <div class="psc-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="clcProgressBar">
+                    <div class="psc-progress-fill" id="clcProgressFill"></div>
+                </div>
+                <ul id="clcProgressLog" class="psc-progress-log"></ul>
+            </section>
+
+            <div id="clcMessage" class="message-container" style="display:none;" role="status"></div>
+        </div>
+    </main>
+
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/course-offerings.js"></script>
+    <script src="js/brightspace-api.js"></script>
+    <script src="js/checklist-creator.js"></script>
+</body>
+</html>

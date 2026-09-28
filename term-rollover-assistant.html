@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your Institution Faculty Dashboard - Term Rollover Assistant">
+    <title>Term Rollover Assistant - D2L Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css?v=20260823a">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">Term Rollover Assistant</h1>
+            <p class="page-subtitle">Copy selected materials from a past course into your upcoming offering, add new items, then edit dates, rename, or delete.</p>
+        </div>
+
+        <div class="sandbox-main-content tra-page">
+            <div class="info-card" style="margin-bottom: 1.25rem;">
+                <div class="info-card-title">
+                    <i class="fas fa-circle-info" aria-hidden="true"></i>
+                    How rollover works
+                </div>
+                <div class="info-card-content">
+                    <ol class="tra-steps-list">
+                        <li>Choose the <strong>upcoming course</strong> (destination), then the <strong>past course</strong> (source).</li>
+                        <li>Uncheck items you do not want, and optionally <strong>Add</strong> new assignments, quizzes, or discussions.</li>
+                        <li>Click <strong>Copy into upcoming course</strong>. Brightspace copies full packages first (quizzes keep questions). Items you left unchecked are then removed from the upcoming course.</li>
+                        <li>In step 4, update dates, rename, delete, or add more items as needed.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Step 1: Courses -->
+            <section class="sandbox-section" id="traStepCourses">
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title">1. Select courses</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+
+                <div class="tra-course-grid">
+                    <div class="form-group">
+                        <label for="traTargetCourse" class="form-label">Upcoming course <span class="tra-dest-badge">Copy to</span></label>
+                        <select id="traTargetCourse" class="form-select">
+                            <option value="">Loading your courses…</option>
+                        </select>
+                        <p class="form-hint">Destination offering for this term (usually <span data-fd-semester-code="future"></span> or a sandbox).</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="traSourceCourse" class="form-label">Past course <span class="tra-source-badge">Copy from</span></label>
+                        <select id="traSourceCourse" class="form-select" disabled>
+                            <option value="">Select the upcoming course first…</option>
+                        </select>
+                        <p class="form-hint">Source offering from a previous term (<span data-fd-semester-code="previous"></span>, <span data-fd-semester-code="active"></span>, or sandbox).</p>
+                    </div>
+                </div>
+
+                <div class="tra-actions">
+                    <button type="button" class="form-button" id="traLoadInventoryBtn" disabled>
+                        <i class="fas fa-list-check" aria-hidden="true"></i>
+                        Load course materials
+                    </button>
+                    <p class="tool-meta" id="traCourseMeta" aria-live="polite"></p>
+                </div>
+            </section>
+
+            <!-- Step 2: Inventory + package options -->
+            <section class="sandbox-section tra-hidden" id="traStepPackages">
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title">2. Review &amp; choose what to copy</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+
+                <p class="form-hint" style="margin-top:0;">Inventory is from the <em>past</em> course. Check the items to keep. Brightspace copies each tool as a package (quizzes keep questions); unchecked items are removed afterward. Use <strong>Add</strong> to stage new items for the upcoming course.</p>
+
+                <div class="tra-package-grid" id="traPackageCards">
+                    <article class="tra-package-card" data-package="dropbox">
+                        <header class="tra-package-header">
+                            <h3><i class="fas fa-inbox" aria-hidden="true"></i> Assignments</h3>
+                            <span class="tra-count" id="traCountDropbox">—</span>
+                        </header>
+                        <label class="tra-check-label">
+                            <input type="checkbox" id="traCopyDropbox" checked>
+                            <span>Include assignments in copy</span>
+                        </label>
+                        <p class="form-hint">Copies selected assignment folders and settings. Uncheck items to skip them, or Add a new one for the upcoming course.</p>
+                        <div class="tra-inventory" id="traInvDropbox" hidden></div>
+                    </article>
+
+                    <article class="tra-package-card" data-package="quizzes">
+                        <header class="tra-package-header">
+                            <h3><i class="fas fa-question-circle" aria-hidden="true"></i> Quizzes</h3>
+                            <span class="tra-count" id="traCountQuizzes">—</span>
+                        </header>
+                        <label class="tra-check-label">
+                            <input type="checkbox" id="traCopyQuizzes" checked>
+                            <span>Include quizzes in copy</span>
+                        </label>
+                        <p class="form-hint">Copies selected quizzes with questions and settings (plus Question Library). Uncheck to skip, or Add a new quiz shell.</p>
+                        <div class="tra-inventory" id="traInvQuizzes" hidden></div>
+                    </article>
+
+                    <article class="tra-package-card" data-package="discussions">
+                        <header class="tra-package-header">
+                            <h3><i class="fas fa-comments" aria-hidden="true"></i> Discussions</h3>
+                            <span class="tra-count" id="traCountDiscussions">—</span>
+                        </header>
+                        <label class="tra-check-label">
+                            <input type="checkbox" id="traCopyDiscussions" checked>
+                            <span>Include discussions in copy</span>
+                        </label>
+                        <p class="form-hint">Copies selected discussion topics with settings. Uncheck to skip, or Add a new topic.</p>
+                        <div class="tra-inventory" id="traInvDiscussions" hidden></div>
+                    </article>
+                </div>
+
+                <details class="cpd-accordion" id="traOtherComponents" open>
+                    <summary class="cpd-accordion-summary">Other course components (copy as-is)</summary>
+                    <div class="cpd-accordion-body">
+                        <p class="form-hint" style="margin-top:0;">These also transfer with Copy Components. Content modules and announcements can be edited in step 4 after copy.</p>
+                        <div class="tra-other-grid" id="traOtherGrid"></div>
+                    </div>
+                </details>
+
+                <div class="tool-panel" style="margin-top:1rem;">
+                    <h3 class="tool-panel-title">Date handling during copy</h3>
+                    <fieldset class="tra-fieldset">
+                        <legend class="form-label">Offset copied dates</legend>
+                        <label class="tra-check-label">
+                            <input type="radio" name="traDateOffset" value="startDiff" checked>
+                            <span>Offset by course start-date difference <span class="form-hint">(recommended)</span></span>
+                        </label>
+                        <label class="tra-check-label">
+                            <input type="radio" name="traDateOffset" value="days">
+                            <span>Offset by a fixed number of days</span>
+                        </label>
+                        <div class="form-group tra-days-wrap" id="traDaysWrap" hidden>
+                            <label for="traDaysOffset" class="form-label">Days to offset</label>
+                            <input type="number" id="traDaysOffset" class="form-input" value="0" step="1" min="-5000" max="5000">
+                            <p class="form-hint">Positive = later; negative = earlier.</p>
+                        </div>
+                        <label class="tra-check-label">
+                            <input type="radio" name="traDateOffset" value="none">
+                            <span>Keep original dates (you will edit them in step 4)</span>
+                        </label>
+                    </fieldset>
+                </div>
+
+                <div class="tra-actions">
+                    <button type="button" class="form-button" id="traStartCopyBtn">
+                        <i class="fas fa-copy" aria-hidden="true"></i>
+                        Copy into upcoming course
+                    </button>
+                    <button type="button" class="form-button form-button-secondary" id="traOpenEditorOnlyBtn">
+                        Already copied? Open editor
+                    </button>
+                </div>
+                <p class="form-hint" id="traCopyHint">Copy runs first for selected packages. Unchecked items are removed from the upcoming course, then Step 4 opens so you can update dates, rename, delete, or finish adding items.</p>
+            </section>
+
+            <!-- Step 3: Copy progress -->
+            <section class="sandbox-section tra-hidden" id="traStepCopy">
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title">3. Copy progress</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+                <div id="traCopyMessage" class="message-container" role="status" aria-live="polite"></div>
+                <pre class="tra-log" id="traCopyLog" aria-live="polite"></pre>
+            </section>
+
+            <!-- Step 4: Post-copy editor -->
+            <section class="sandbox-section tra-hidden" id="traStepEditor">
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title">4. Edit upcoming course</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+                <p class="form-hint" style="margin-top:0;">Items below are from the <em>upcoming</em> course. For assignments, quizzes, and discussions you can edit <strong>Due</strong>, <strong>Available from</strong>, and <strong>Available until</strong>. Moving a due date later also extends “Available until” so Brightspace does not reject the save. Use <strong>Add</strong> for new items; Apply sends PUT, POST, or DELETE.</p>
+                <p class="tool-meta" id="traEditorMeta" aria-live="polite"></p>
+                <div id="traEditor"></div>
+                <div class="dd-savebar" id="traSaveBar" style="display:none;">
+                    <button type="button" class="form-button" id="traSaveBtn">
+                        <i class="fas fa-save" aria-hidden="true"></i>
+                        Apply selected changes
+                    </button>
+                    <button type="button" class="form-button form-button-secondary" id="traReloadEditorBtn">
+                        <i class="fas fa-rotate" aria-hidden="true"></i>
+                        Reload from course
+                    </button>
+                    <span class="dd-save-status" id="traSaveStatus" aria-live="polite"></span>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/course-offerings.js?v=20260722f"></script>
+    <script src="js/brightspace-api.js?v=20260722f"></script>
+    <script src="js/bulk-editor-shared.js?v=20260722f"></script>
+    <script src="js/term-rollover-assistant.js?v=20260823a"></script>
+</body>
+</html>

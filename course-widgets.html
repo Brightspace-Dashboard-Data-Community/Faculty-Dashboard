@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Course homepage widgets for Your Institution faculty—Institution custom tools and D2L Brightspace package widgets">
+  <title>Course Widgets – D2L Faculty Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="css/navigation.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <div id="nav-placeholder"></div>
+
+  <main id="main-content" class="main-content" role="main">
+    <div class="page-header">
+      <h1 class="page-title">Course Widgets</h1>
+      <p class="page-subtitle">Widgets you can add to a course homepage—Institution custom tools (Office Hours Chat and Discussion Board Activity) plus D2L Brightspace package widgets for content, announcements, and student orientation.</p>
+    </div>
+
+    <div class="cw-intro widget-container">
+      <p class="cw-intro-text">
+        These tools sit on your <strong>course homepage</strong> (not inside Content topics). Some are <strong>Institution custom widgets</strong>; others are <strong>D2L package widgets</strong> that ship with Brightspace.
+        If a widget is not already on your homepage, add it from the widget list—or ask eLearning to place it for you.
+      </p>
+      <p class="cw-intro-help">
+        Need help? Contact <a href="mailto:elearning@example.edu">elearning@example.edu</a> or call <a href="tel:[campus phone]">[campus phone]</a>.
+      </p>
+    </div>
+
+    <nav class="cw-toc widget-container" aria-labelledby="cw-toc-heading">
+      <h2 id="cw-toc-heading" class="cw-toc-title">Widgets in this guide</h2>
+
+      <h3 class="cw-toc-group-title">Institution custom widgets</h3>
+      <ul class="cw-toc-list">
+        <li>
+          <a href="#office-hours">
+            <span class="cw-toc-icon" aria-hidden="true"><i class="fas fa-comments"></i></span>
+            <span>
+              <span class="cw-toc-name">Office Hours Chat</span>
+              <span class="cw-toc-blurb">Open hours, waiting room, and private chat with students</span>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="#recent-discussions">
+            <span class="cw-toc-icon" aria-hidden="true"><i class="fas fa-stream"></i></span>
+            <span>
+              <span class="cw-toc-name">Discussion Board Activity</span>
+              <span class="cw-toc-blurb">Newest posts and replies from the last 30 days</span>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="#section-profile">
+            <span class="cw-toc-icon" aria-hidden="true"><i class="fas fa-id-card"></i></span>
+            <span>
+              <span class="cw-toc-name">Section Profile Widget</span>
+              <span class="cw-toc-blurb">Show each student their section’s instructor profile</span>
+            </span>
+          </a>
+        </li>
+      </ul>
+
+      <h3 class="cw-toc-group-title">D2L package widgets</h3>
+      <ul class="cw-toc-list cw-toc-list--d2l">
+        <li>
+          <a href="#activity-feed">
+            <span class="cw-toc-icon" aria-hidden="true"><i class="fas fa-bullhorn"></i></span>
+            <span>
+              <span class="cw-toc-name">Activity Feed</span>
+              <span class="cw-toc-blurb">Post messages, assignments, and resource links</span>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="#content-browser">
+            <span class="cw-toc-icon" aria-hidden="true"><i class="fas fa-folder-open"></i></span>
+            <span>
+              <span class="cw-toc-name">Content Browser</span>
+              <span class="cw-toc-blurb">Browse modules, bookmarks, and recent topics</span>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="#content-navigator">
+            <span class="cw-toc-icon" aria-hidden="true"><i class="fas fa-compass"></i></span>
+            <span>
+              <span class="cw-toc-name">Content Navigator</span>
+              <span class="cw-toc-blurb">Navigate content with history and completion %</span>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="#visual-toc">
+            <span class="cw-toc-icon" aria-hidden="true"><i class="fas fa-th-large"></i></span>
+            <span>
+              <span class="cw-toc-name">Visual Table of Contents</span>
+              <span class="cw-toc-blurb">Flip tiles for modules, images, and progress</span>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="#welcome-window">
+            <span class="cw-toc-icon" aria-hidden="true"><i class="fas fa-door-open"></i></span>
+            <span>
+              <span class="cw-toc-name">Welcome Window</span>
+              <span class="cw-toc-blurb">Popup orientation steps from a Welcome module</span>
+            </span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- ========== Institution custom ========== -->
+    <div class="tools-section-header cw-section-header">
+      <h2 class="tools-section-title" id="delta-custom-heading">Institution custom widgets</h2>
+      <div class="tools-section-separator"></div>
+    </div>
+    <p class="cw-section-intro">Built by Institution eLearning for course homepages. These are not standard Brightspace system widgets.</p>
+
+    <article id="office-hours" class="cw-widget widget-container" aria-labelledby="office-hours-heading">
+      <header class="cw-widget-header">
+        <div class="cw-widget-icon" aria-hidden="true"><i class="fas fa-comments"></i></div>
+        <div>
+          <p class="cw-widget-eyebrow">Institution custom · Instructor &amp; students</p>
+          <h2 id="office-hours-heading" class="cw-widget-title">Office Hours Chat</h2>
+        </div>
+      </header>
+
+      <p class="cw-widget-lead">
+        Run live, private office-hours chats from your course homepage. Open or close hours, admit students from a waiting room, chat with more than one student at a time, and download TXT transcripts when a session ends.
+      </p>
+
+      <div class="cw-audience" role="group" aria-label="Who sees this widget">
+        <span class="cw-pill cw-pill--instructor"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Instructor controls</span>
+        <span class="cw-pill cw-pill--student"><i class="fas fa-user" aria-hidden="true"></i> Student waiting room &amp; chat</span>
+      </div>
+
+      <h3 class="cw-subheading">What instructors can do</h3>
+      <ul class="cw-feature-list">
+        <li><strong>Open / Close Office Hours</strong> — a shared course flag every student can see</li>
+        <li><strong>Waiting room</strong> — see who joined while hours are open</li>
+        <li><strong>Start Chat</strong> — admit a waiting student into a private conversation</li>
+        <li><strong>Multiple chats</strong> — talk with more than one student at once</li>
+        <li><strong>Download Log</strong> — save a TXT transcript; ending a chat can auto-download one</li>
+      </ul>
+
+      <h3 class="cw-subheading">What students see</h3>
+      <ul class="cw-feature-list">
+        <li>Whether office hours are open or closed</li>
+        <li><strong>Join Waiting Room</strong> when hours are open</li>
+        <li>A private chat with you once admitted</li>
+        <li>Option to download their own chat log</li>
+      </ul>
+
+      <h3 class="cw-subheading">Screenshots</h3>
+      <div class="cw-screenshots cw-screenshots--three">
+        <figure class="cw-shot">
+          <img src="assets/screenshot-omitted.svg" alt="Office Hours Chat widget with hours closed, a red closed status, empty Active Chats, and an Open Office Hours button" width="528" height="1024" loading="lazy">
+          <figcaption>Instructor view — hours closed. Use Open Office Hours when you are ready for students.</figcaption>
+        </figure>
+        <figure class="cw-shot">
+          <img src="assets/screenshot-omitted.svg" alt="Office Hours Chat widget with hours open, an active student conversation, Download Log and End Chat buttons, and an empty waiting room" width="333" height="1024" loading="lazy">
+          <figcaption>Instructor view — hours open with an active chat. End Chat downloads the transcript automatically.</figcaption>
+        </figure>
+        <figure class="cw-shot">
+          <img src="assets/screenshot-omitted.svg" alt="Student Office Hours Chat view with Open status, a private conversation, message box, Send button, and Download My Log" width="310" height="657" loading="lazy">
+          <figcaption>Student view — private chat after being admitted, with Download My Log.</figcaption>
+        </figure>
+      </div>
+
+      <h3 class="cw-subheading">Tips</h3>
+      <ul class="cw-feature-list">
+        <li>Keep the widget on the <strong>course homepage</strong> so both you and students see the same tool.</li>
+        <li>Closing office hours can end active chats and download transcripts automatically.</li>
+        <li>Use your course’s existing student-view / demo student options if you want to try the waiting-room flow yourself.</li>
+      </ul>
+    </article>
+
+    <article id="recent-discussions" class="cw-widget widget-container" aria-labelledby="recent-discussions-heading">
+      <header class="cw-widget-header">
+        <div class="cw-widget-icon" aria-hidden="true"><i class="fas fa-stream"></i></div>
+        <div>
+          <p class="cw-widget-eyebrow">Institution custom · Everyone in the course</p>
+          <h2 id="recent-discussions-heading" class="cw-widget-title">Discussion Board Activity</h2>
+        </div>
+      </header>
+
+      <p class="cw-widget-lead">
+        Show a homepage feed of the newest discussion posts and replies from the last 30 days. The widget loads 10 items first, then offers <strong>Load more</strong>—handy for keeping conversation activity visible without digging through every forum.
+      </p>
+
+      <div class="cw-audience" role="group" aria-label="Who sees this widget">
+        <span class="cw-pill cw-pill--instructor"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Instructors</span>
+        <span class="cw-pill cw-pill--student"><i class="fas fa-user" aria-hidden="true"></i> Students</span>
+      </div>
+
+      <h3 class="cw-subheading">What it shows</h3>
+      <ul class="cw-feature-list">
+        <li>Newest posts and replies across course discussions (last 30 days)</li>
+        <li>Short text previews with links into the discussion topic</li>
+        <li>Initial list of 10 items, then load more as needed</li>
+      </ul>
+
+      <h3 class="cw-subheading">Screenshot</h3>
+      <div class="cw-screenshots cw-screenshots--single">
+        <figure class="cw-shot">
+          <img src="assets/screenshot-omitted.svg" alt="Discussion Board Activity widget showing recent discussion posts with New post and Reply labels, forum path, author, and snippet" width="1024" height="706" loading="lazy">
+          <figcaption>Recent posts and replies appear on the course homepage with Refresh and type indicators for new posts and replies.</figcaption>
+        </figure>
+      </div>
+
+      <h3 class="cw-subheading">Tips</h3>
+      <ul class="cw-feature-list">
+        <li>Place it full-width on the course homepage so the feed is easy to scan.</li>
+        <li>Students only see discussions they already have permission to view.</li>
+        <li>Pair it with your Discussions analytics pages in this dashboard when you need deeper follow-up.</li>
+      </ul>
+    </article>
+
+    <article id="section-profile" class="cw-widget widget-container" aria-labelledby="section-profile-heading">
+      <header class="cw-widget-header">
+        <div class="cw-widget-icon" aria-hidden="true"><i class="fas fa-id-card"></i></div>
+        <div>
+          <p class="cw-widget-eyebrow">Institution custom · Students (section-aware)</p>
+          <h2 id="section-profile-heading" class="cw-widget-title">Section Profile Widget</h2>
+        </div>
+      </header>
+
+      <p class="cw-widget-lead">
+        On multi-section courses, show each learner the instructor profile for <strong>their</strong> section—photo,
+        office hours, phone, bio, and an email button—based on a JSON config in Manage Files.
+      </p>
+
+      <div class="cw-audience" role="group" aria-label="Who sees this widget">
+        <span class="cw-pill cw-pill--student"><i class="fas fa-user" aria-hidden="true"></i> Students see their section’s instructor</span>
+        <span class="cw-pill cw-pill--instructor"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Instructors configure via builder</span>
+      </div>
+
+      <h3 class="cw-subheading">Screenshot</h3>
+      <div class="cw-screenshots cw-screenshots--single">
+        <figure class="cw-shot">
+          <img src="assets/screenshot-omitted.svg" alt="Section Profile Widget showing an instructor photo, contact details, Email Instructor button, and Section label" width="800" height="900" loading="lazy">
+          <figcaption>Student view — profile card for the section they are enrolled in.</figcaption>
+        </figure>
+      </div>
+
+      <h3 class="cw-subheading">How to configure</h3>
+      <ul class="cw-feature-list">
+        <li>Use the <a href="section-profile-builder.html"><strong>Section Profile Config Builder</strong></a> to map sections and publish JSON + photos.</li>
+        <li>Or add the builder as a <strong>hidden Content topic</strong> in the course (instructor-only module) so faculty can update profiles without leaving the course.</li>
+        <li>Paste <code>section-profile-widget.html</code> into a course homepage Custom Widget so students see the card.</li>
+      </ul>
+
+      <h3 class="cw-subheading">Tips</h3>
+      <ul class="cw-feature-list">
+        <li>Works best in a sidebar column on the course homepage.</li>
+        <li>Publish files to the course Manage Files root as <code>section-instructors.json</code> plus image files.</li>
+        <li>Need help? Contact <a href="mailto:elearning@example.edu">elearning@example.edu</a>.</li>
+      </ul>
+    </article>
+
+    <!-- ========== D2L package ========== -->
+    <div class="tools-section-header cw-section-header">
+      <h2 class="tools-section-title" id="d2l-package-heading">D2L package widgets</h2>
+      <div class="tools-section-separator"></div>
+    </div>
+    <p class="cw-section-intro">Standard Brightspace widgets from D2L. Add them from the course homepage widget list when they are enabled for your course.</p>
+
+    <article id="activity-feed" class="cw-widget widget-container" aria-labelledby="activity-feed-heading">
+      <header class="cw-widget-header">
+        <div class="cw-widget-icon" aria-hidden="true"><i class="fas fa-bullhorn"></i></div>
+        <div>
+          <p class="cw-widget-eyebrow">D2L package · Instructor posts · Everyone reads</p>
+          <h2 id="activity-feed-heading" class="cw-widget-title">Activity Feed</h2>
+        </div>
+      </header>
+
+      <p class="cw-widget-lead">
+        A central homepage feed for instructors to post messages, share links to course materials or external resources, and create or highlight assignments. Students follow the feed on the course home without opening Announcements or Content first.
+      </p>
+
+      <div class="cw-audience" role="group" aria-label="Who sees this widget">
+        <span class="cw-pill cw-pill--instructor"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Instructors post</span>
+        <span class="cw-pill cw-pill--student"><i class="fas fa-user" aria-hidden="true"></i> Students view</span>
+      </div>
+
+      <h3 class="cw-subheading">What it does</h3>
+      <ul class="cw-feature-list">
+        <li>Post messages and updates that appear on the course homepage</li>
+        <li>Link to course materials or external resources</li>
+        <li>Share or create assignment-related posts from the feed</li>
+        <li>Pin important posts so they stay at the top of the feed</li>
+      </ul>
+
+      <h3 class="cw-subheading">Tips</h3>
+      <ul class="cw-feature-list">
+        <li>Use Activity Feed for quick, ongoing communication; use Announcements when you need a more formal course-wide notice.</li>
+        <li>Pin syllabus links, weekly agendas, or “start here” resources so they stay visible.</li>
+      </ul>
+    </article>
+
+    <article id="content-browser" class="cw-widget widget-container" aria-labelledby="content-browser-heading">
+      <header class="cw-widget-header">
+        <div class="cw-widget-icon" aria-hidden="true"><i class="fas fa-folder-open"></i></div>
+        <div>
+          <p class="cw-widget-eyebrow">D2L package · Everyone in the course</p>
+          <h2 id="content-browser-heading" class="cw-widget-title">Content Browser</h2>
+        </div>
+      </header>
+
+      <p class="cw-widget-lead">
+        Browse course content from the homepage: drill into modules and topics, jump to recently visited items, and open bookmarked topics. Selecting a topic opens it in View Content. The widget remembers where someone left off when they return to the homepage.
+      </p>
+
+      <div class="cw-audience" role="group" aria-label="Who sees this widget">
+        <span class="cw-pill cw-pill--instructor"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Instructors</span>
+        <span class="cw-pill cw-pill--student"><i class="fas fa-user" aria-hidden="true"></i> Students</span>
+      </div>
+
+      <h3 class="cw-subheading">What it does</h3>
+      <ul class="cw-feature-list">
+        <li>Browse modules and topics without leaving the homepage first</li>
+        <li>Show recently visited and bookmarked topics</li>
+        <li>Use breadcrumb-style navigation to move up a module level or return home in the widget</li>
+        <li>Retain the last browsing place when users return to the course homepage</li>
+      </ul>
+
+      <h3 class="cw-subheading">Tips</h3>
+      <ul class="cw-feature-list">
+        <li>Unlike <a href="#content-navigator">Content Navigator</a>, Content Browser focuses on browsing and bookmarks—it does not emphasize module completion percentages.</li>
+        <li>Encourage students to bookmark topics they revisit often (readings, resources, weekly checklists).</li>
+      </ul>
+    </article>
+
+    <article id="content-navigator" class="cw-widget widget-container" aria-labelledby="content-navigator-heading">
+      <header class="cw-widget-header">
+        <div class="cw-widget-icon" aria-hidden="true"><i class="fas fa-compass"></i></div>
+        <div>
+          <p class="cw-widget-eyebrow">D2L package · Everyone in the course</p>
+          <h2 id="content-navigator-heading" class="cw-widget-title">Content Navigator Widget</h2>
+        </div>
+      </header>
+
+      <p class="cw-widget-lead">
+        Access course content from the homepage with navigational history, content-type icons, and module completion shown as a percentage. Students can jump back to the last-visited module or topic and see progress at a glance.
+      </p>
+
+      <div class="cw-audience" role="group" aria-label="Who sees this widget">
+        <span class="cw-pill cw-pill--instructor"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Instructors</span>
+        <span class="cw-pill cw-pill--student"><i class="fas fa-user" aria-hidden="true"></i> Students</span>
+      </div>
+
+      <h3 class="cw-subheading">What it does</h3>
+      <ul class="cw-feature-list">
+        <li>Open course content directly from the homepage</li>
+        <li>Track and display navigational history (including last-visited items)</li>
+        <li>Show icons for content types (pages, files, activities, and so on)</li>
+        <li>Indicate module completion as a percentage</li>
+      </ul>
+
+      <h3 class="cw-subheading">Tips</h3>
+      <ul class="cw-feature-list">
+        <li>Best when your Content is organized into clear modules and completion tracking is turned on for topics students should finish.</li>
+        <li>Choose Content Navigator when you want progress visibility; choose Content Browser when you want bookmarks and free browsing.</li>
+      </ul>
+    </article>
+
+    <article id="visual-toc" class="cw-widget widget-container" aria-labelledby="visual-toc-heading">
+      <header class="cw-widget-header">
+        <div class="cw-widget-icon" aria-hidden="true"><i class="fas fa-th-large"></i></div>
+        <div>
+          <p class="cw-widget-eyebrow">D2L package · Everyone in the course</p>
+          <h2 id="visual-toc-heading" class="cw-widget-title">Visual Table of Contents Widget</h2>
+        </div>
+      </header>
+
+      <p class="cw-widget-lead">
+        Presents course modules as interactive flip tiles. The front of each tile shows the module title and image from Content; the back shows the module description. Students can open modules quickly and scan progress or completion without opening the full Content tool first.
+      </p>
+
+      <div class="cw-audience" role="group" aria-label="Who sees this widget">
+        <span class="cw-pill cw-pill--instructor"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Instructors</span>
+        <span class="cw-pill cw-pill--student"><i class="fas fa-user" aria-hidden="true"></i> Students</span>
+      </div>
+
+      <h3 class="cw-subheading">What it does</h3>
+      <ul class="cw-feature-list">
+        <li>Display modules as visual flip tiles on the homepage</li>
+        <li>Pull module titles and images from Content for the tile front</li>
+        <li>Show module descriptions on the reverse side of each tile</li>
+        <li>Help students navigate to modules and see progress at a glance</li>
+      </ul>
+
+      <h3 class="cw-subheading">Tips</h3>
+      <ul class="cw-feature-list">
+        <li>Add module images and short descriptions in Content so tiles look intentional and readable.</li>
+        <li>Works especially well for courses with a small number of top-level modules (units, weeks, or themes).</li>
+      </ul>
+    </article>
+
+    <article id="welcome-window" class="cw-widget widget-container" aria-labelledby="welcome-window-heading">
+      <header class="cw-widget-header">
+        <div class="cw-widget-icon" aria-hidden="true"><i class="fas fa-door-open"></i></div>
+        <div>
+          <p class="cw-widget-eyebrow">D2L package · Popup on course home</p>
+          <h2 id="welcome-window-heading" class="cw-widget-title">Welcome Window Widget</h2>
+        </div>
+      </header>
+
+      <p class="cw-widget-lead">
+        Shows a popup orientation window over the course homepage. Content comes from a Content module whose title includes <strong>Welcome</strong>—each HTML page (or topic) in that module becomes a step students click through before they can dismiss the window. After dismissing, they can relaunch it from the homepage widget button.
+      </p>
+
+      <div class="cw-audience" role="group" aria-label="Who sees this widget">
+        <span class="cw-pill cw-pill--instructor"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Instructors set content</span>
+        <span class="cw-pill cw-pill--student"><i class="fas fa-user" aria-hidden="true"></i> Students see on entry</span>
+      </div>
+
+      <h3 class="cw-subheading">How to set it up</h3>
+      <ol class="cw-steps">
+        <li>Confirm the <strong>Welcome Window Widget</strong> is enabled for the course (Course Admin → Tools, if needed) and added to the homepage.</li>
+        <li>In <strong>Content</strong>, create a module whose title includes the word <strong>Welcome</strong> (for example, “Welcome” or “Welcome to this course”).</li>
+        <li>Add one or more HTML pages (or other topics) to that module—each becomes a step in the popup.</li>
+        <li>Visit the course homepage to preview: the window appears until dismissed on the last step.</li>
+      </ol>
+
+      <h3 class="cw-subheading">What students experience</h3>
+      <ul class="cw-feature-list">
+        <li>The window appears when they arrive on the homepage (until they dismiss it)</li>
+        <li>It can reappear when you add or rearrange content in the Welcome module</li>
+        <li>They can open it again later with <strong>Relaunch the Welcome Window</strong> on the homepage</li>
+        <li>If there is no Welcome module (or no content in it), the popup does not appear</li>
+      </ul>
+
+      <div class="cw-callout" role="note">
+        <p><strong>Setup tip:</strong> Use the Welcome module for a short orientation—meet the instructor, syllabus highlights, how to navigate, or first-week priorities. Keep steps brief so students can finish and dismiss quickly.</p>
+      </div>
+    </article>
+
+    <!-- ========== How to add ========== -->
+    <section id="how-to-add" class="cw-howto widget-container" aria-labelledby="how-to-add-heading">
+      <h2 id="how-to-add-heading" class="cw-howto-title">
+        <i class="fas fa-plus-circle" aria-hidden="true"></i>
+        How to add a widget to your course homepage
+      </h2>
+      <ol class="cw-steps">
+        <li>Open the course in Brightspace and go to the <strong>course homepage</strong>.</li>
+        <li>Select the homepage options menu (often labeled <strong>Change Course Homepage</strong> / edit homepage) and choose to <strong>edit</strong> or customize the homepage layout.</li>
+        <li>Choose <strong>Add Widgets</strong> and look for the widget by name:
+          <ul>
+            <li><strong>Institution custom:</strong> Office Hours Chat, Discussion Board Activity</li>
+            <li><strong>D2L package:</strong> Activity Feed, Content Browser, Content Navigator Widget, Visual Table of Contents Widget, Welcome Window Widget</li>
+          </ul>
+        </li>
+        <li>Add the widget, drag it where you want it, and <strong>save</strong> the homepage.</li>
+      </ol>
+      <p class="cw-howto-note">
+        If you do not see a widget in the list, it may be turned off under Course Admin → Tools, or not yet available on your homepage template.
+        Email <a href="mailto:elearning@example.edu">elearning@example.edu</a> with the course name and which widget(s) you want added.
+      </p>
+    </section>
+
+    <section class="cw-related widget-container" aria-labelledby="cw-related-heading">
+      <h2 id="cw-related-heading" class="cw-related-title">Related resources</h2>
+      <ul class="cw-related-list">
+        <li><a href="faculty-training.html">Faculty Tutorials</a> — more Brightspace walkthroughs</li>
+        <li><a href="one-on-one-discussions.html">1-on-1 Discussion Activity</a> — discussion analytics in this dashboard</li>
+        <li><a href="resources.html">Faculty Resources</a> — eLearning and campus contacts</li>
+        <li><a href="mailto:elearning@example.edu">Email eLearning</a> to request a widget or homepage change</li>
+      </ul>
+    </section>
+  </main>
+
+  <script src="js/semester-config.js"></script>
+  <script src="js/navigation.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your Institution Faculty Dashboard - Inactive Student Audit">
+    <title>Inactive Student Audit - D2L Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">Inactive Student Audit</h1>
+            <p class="page-subtitle">Flag students who have not accessed your course recently and export an outreach list for follow-up.</p>
+        </div>
+
+        <div class="sandbox-main-content">
+            <section class="sandbox-section">
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title">Run an audit</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+
+                <div class="tool-ferpa-note" role="note">
+                    <strong>FERPA:</strong> This tool lists education records for students enrolled in your courses. Use only for legitimate educational outreach at Your Institution.
+                    <strong>Note:</strong> Inactivity here is based on <em>last course login/access</em> from the classlist — not Last Date of Academic Activity.
+                    For a registrar-ready activity report on one student, use
+                    <a href="student-ldaa-lookup.html">Student LDAA Lookup</a>.
+                    For weekly attendance by date range (class or one student), use
+                    <a href="ldaa-period-report.html">LDAA Period Report</a>.
+                </div>
+
+                <div class="ldaa-student-bar">
+                    <div class="form-group" style="flex:1;min-width:220px;margin:0;">
+                        <label for="isaCourse" class="form-label">Course offering</label>
+                        <select id="isaCourse" class="form-select">
+                            <option value="">Loading courses…</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:0 1 200px;min-width:180px;margin:0;">
+                        <label for="isaWindow" class="form-label">Inactive if no access for</label>
+                        <select id="isaWindow" class="form-select">
+                            <option value="3">3+ days</option>
+                            <option value="7" selected>7+ days</option>
+                            <option value="14">14+ days</option>
+                            <option value="21">21+ days</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label class="form-label" style="visibility:hidden;">Action</label>
+                        <button type="button" class="form-button" id="isaRunBtn" disabled>
+                            <i class="fas fa-user-clock" aria-hidden="true"></i>
+                            Run audit
+                        </button>
+                    </div>
+                </div>
+
+                <p class="tool-meta" id="isaHeaderMeta" aria-live="polite"></p>
+                <p class="tool-meta" id="isaStatus" aria-live="polite"></p>
+            </section>
+
+            <section class="tool-panel" id="isaResultsPanel" hidden>
+                <div class="isa-results-header">
+                    <h3 class="tool-panel-title" style="margin:0;">Outreach list</h3>
+                    <div class="isa-results-actions">
+                        <button type="button" class="form-button form-button-secondary" id="isaCopyEmailsBtn" disabled>
+                            <i class="fas fa-copy" aria-hidden="true"></i>
+                            Copy emails
+                        </button>
+                        <button type="button" class="form-button" id="isaExportBtn" disabled>
+                            <i class="fas fa-file-csv" aria-hidden="true"></i>
+                            Export CSV
+                        </button>
+                    </div>
+                </div>
+                <div id="isaResultsContent"></div>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/course-offerings.js"></script>
+    <script src="js/brightspace-api.js"></script>
+    <script src="js/inactive-student-audit.js"></script>
+</body>
+</html>

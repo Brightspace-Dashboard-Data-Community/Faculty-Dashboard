@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="D2L Faculty Dashboard - Course Report">
+    <title>Course Report - D2L Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">Course Report</h1>
+            <p class="page-subtitle">Export a grade spreadsheet, or generate a visual grade analytics PDF or a full course report from quizzes, discussions, and assignment folders.</p>
+        </div>
+
+        <div class="sandbox-main-content">
+            <section class="sandbox-section">
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title">Build a report</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+
+                <p class="course-report-intro">
+                    Courses listed are offerings for <strong data-fd-semester-code="previous"></strong>, <strong data-fd-semester-code="active"></strong>, and <strong data-fd-semester-code="future"></strong> where you have an instructor, secondary instructor, TA, or related teaching role (same rules as My Courses). Spreadsheet export uses final calculated grades. Visual reports add class analytics, and the full course report also pulls assignment folders, quizzes, and discussions.
+                    For Last Date of Academic Activity in a selected week or date range, use
+                    <a href="ldaa-period-report.html">LDAA Period Report</a>.
+                </p>
+
+                <div class="tool-ferpa-note" role="note">
+                    <strong>FERPA:</strong> These files contain student education records. Download only for legitimate educational purposes at Your Institution. Visual PDFs include names and grades; they do not include email addresses.
+                </div>
+
+                <form id="gradeExportForm" class="sandbox-form course-report-form" novalidate>
+                    <div class="form-group">
+                        <label for="courseSelector" class="form-label">Course (<span data-fd-semester-code="previous"></span>, <span data-fd-semester-code="active"></span>, <span data-fd-semester-code="future"></span>)</label>
+                        <select id="courseSelector" class="form-input" required aria-required="true">
+                            <option value="">Loading courses…</option>
+                        </select>
+                    </div>
+
+                    <fieldset class="cr-type-fieldset">
+                        <legend class="form-label">Report type</legend>
+                        <div class="cr-type-grid" role="radiogroup" aria-label="Report type">
+                            <label class="cr-type-card is-selected">
+                                <input type="radio" name="reportType" value="spreadsheet" checked>
+                                <span class="cr-type-icon" aria-hidden="true"><i class="fas fa-file-excel"></i></span>
+                                <span class="cr-type-title">Grade spreadsheet</span>
+                                <span class="cr-type-desc">CSV or Excel roster of final calculated grades.</span>
+                            </label>
+                            <label class="cr-type-card">
+                                <input type="radio" name="reportType" value="analytics">
+                                <span class="cr-type-icon" aria-hidden="true"><i class="fas fa-chart-column"></i></span>
+                                <span class="cr-type-title">Grade analytics</span>
+                                <span class="cr-type-desc">Visual class performance: distribution, averages, and students below 70%.</span>
+                            </label>
+                            <label class="cr-type-card">
+                                <input type="radio" name="reportType" value="full">
+                                <span class="cr-type-icon" aria-hidden="true"><i class="fas fa-file-pdf"></i></span>
+                                <span class="cr-type-title">Full course report</span>
+                                <span class="cr-type-desc">Grades plus quizzes, discussions, and assignment folders in one visual PDF.</span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <div class="form-group" id="exportFormatGroup">
+                        <label for="exportFormat" class="form-label">File format</label>
+                        <select id="exportFormat" class="form-input">
+                            <option value="csv">CSV (.csv)</option>
+                            <option value="xlsx">Excel (.xlsx)</option>
+                        </select>
+                    </div>
+
+                    <div class="cr-actions">
+                        <button type="submit" class="form-button" id="exportBtn">
+                            <i class="fas fa-file-download" aria-hidden="true"></i>
+                            <span id="exportBtnLabel">Download grade spreadsheet</span>
+                        </button>
+                        <button type="button" class="form-button form-button-secondary" id="pdfBtn" hidden>
+                            <i class="fas fa-file-pdf" aria-hidden="true"></i>
+                            Download PDF
+                        </button>
+                    </div>
+                </form>
+
+                <div id="exportMessage" class="message-container" style="display:none; margin-top:16px;" role="status"></div>
+            </section>
+
+            <section class="sandbox-section cr-preview-section" id="reportPreviewSection" hidden>
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title" id="reportPreviewTitle">Visual report</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+                <div id="reportPreview" class="cr-preview"></div>
+            </section>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+            integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw"
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/pdf-brand.js"></script>
+    <script src="js/grade-export-utility.js"></script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+{
+  "documentTitle": "Information Included in Simple Syllabus",
+  "wordFile": "Information-Included-in-Simple-Syllabus.docx",
+  "elearningEmail": "elearning@example.edu",
+  "elearningLinkLabel": "eLearning Office",
+  "intro": {
+    "greeting": "Hello Faculty,",
+    "paragraphs": [
+      "To ensure all students have access to the most current campus resources and policies, we are sharing the latest updates to the Simple Syllabus templates.",
+      "If you use Simple Syllabus, these updates have been made to Spring/Summer syllabi. If you do not use the platform, feel free to copy and paste these updated policies into your own course documents to ensure students have accurate contact information and procedural guidance. The updates to many of these sections involve changes to email addresses and phone numbers.",
+      "The following sections are included in the attached document. An asterisk indicates an update was made.",
+      "The eLearning Office plans to collect updates annually and will continue to share these with faculty. If you notice something that is a grammatical issue, please feel free to contact the eLearning Office at elearning@example.edu."
+    ]
+  },
+  "sections": [
+    {
+      "id": "basic-needs",
+      "title": "Basic Needs",
+      "updated": false,
+      "icon": "fa-hand-holding-heart",
+      "paragraphs": [
+        "In need of food, housing, utility assistance, clothing, childcare or other essential needs? ",
+        "It can be challenging to do your best in class if you have trouble meeting basic needs like safe shelter, sleep, and nutrition. If you have difficulty affording groceries or accessing sufficient food to eat every day or lack a safe and stable place to live, I encourage you to access the institution's Coordinated Care Network for a confidential connection to resources available on-campus and in the local area. In addition, you can dial 2-1-1 from any phone or visit the website  211 for a 24/7 directory of community assistance opportunities."
+      ]
+    },
+    {
+      "id": "drop-withdrawal-policy",
+      "title": "Drop/Withdrawal Policy",
+      "updated": true,
+      "icon": "fa-calendar-xmark",
+      "paragraphs": [
+        "Drop Policy: Drops occur during the refund period for the course. No grade will appear on the transcript. To drop a class (during the refund period) online, go to Student Self Service, select Student Planning, and navigate to Plan and Schedule. Check the class that you would like to drop and submit. It is recommended that you print screen for your records as this will be your documentation of dropping the class.",
+        "Instructor Initiated Never Attended Drops: During the initial nonattendance reporting period (the refund period for the course), a Faculty member shall drop any student who has never attended class, according to federal guidelines. Upon receipt of an Instructor initiated never attended form, the Registration Office will process and notify you of the drop. If you wish to appeal an instructor initiated never attended drop, the contact must be with the course instructor. If necessary, mediation may be requested by the appropriate Associate Dean. All appeals must be in writing, signed by you as the person requesting the appeal, and received within one week following notification of the drop.",
+        "Withdrawal Policy: Withdrawals occur after the refund period. Withdrawals are allowable through the 80 percent mark for the course. A W grade will be assigned to the transcript. If you wish to withdraw from this course go to Student Planning and navigate to your current semester schedule. If still within the refund period for the course, you may click the drop button under the course(s) you want to drop from and follow the prompts. If outside of the refund period for the section, you will need to use the Request to withdraw from a course form. This form is linked in the blue text box at the top of Student Planning. Fill out the form and keep an eye on your Institution email for updates. The form will be routed to various departments to evaluate what, if any, implications would occur as a result of withdrawing from the course. You will receive an email with the findings and if you do not act within 48 hours of when you receive the confirmation request, the withdrawal will be processed as requested. For dates and details about drops and withdrawals you may review the institution's Registration and Records website.",
+        "Note: Financial aid awards are contingent upon continued enrollment and attendance in each course upon which your financial aid eligibility was calculated. If you drop any class before completion or make course changes after the semester has started, your financial aid eligibility may decrease, and some or all of the financial aid awarded to you may be revoked. If financial aid award recalculations result in a balance owed to the College, you are responsible to pay such balance."
+      ]
+    },
+    {
+      "id": "pass-no-credit-incomplete-and-leave-of-absence",
+      "title": "Pass/No Credit, Incomplete, and Leave of Absence",
+      "updated": true,
+      "icon": "fa-graduation-cap",
+      "paragraphs": [
+        "For students facing unexpected life circumstances or barriers to their academic success, the College provides a variety of remedies, including taking the course as Pass/No Credit (Note: not all courses are eligible), taking an Incomplete in the course, or applying for a Leave of Absence (which must be approved by The Office of the Dean of Student Success). If you find yourself in extenuating circumstances or with a concern for your ability to attend and/or be successful in the course, please contact Advising for more information about your options: Office D102, email at advising@example.edu, or call [campus phone]. If you are experiencing a mental health challenge, please also consider reaching out to Your Institution’s counselors for support: Office D102, email at confidentialcounsel@example.edu, or call [campus phone]. Emergency/crisis assistance information by county can be found on our website at our Counseling Services website."
+      ]
+    },
+    {
+      "id": "disability-resources",
+      "title": "Disability Resources",
+      "updated": false,
+      "icon": "fa-universal-access",
+      "paragraphs": [
+        "Your Institution strives to make all learning experiences as accessible and inclusive as possible. Your Institution is committed to providing reasonable accommodations for students who have any documented disability/situation/condition, either permanent or temporary, that may create barriers and affect their overall academic success. If you are a person with a disability, whether apparent or non-apparent, and need accommodations, please contact the Disability Resources Office. They will make an appointment to explore needed arrangements to assure access to the academic environment. Contact the Disability Resources Office by emailing disabilityresources@example.edu  or calling [campus phone]. Please note that accommodations are not retroactive, so please avoid delays if services may be needed."
+      ]
+    },
+    {
+      "id": "title-ix-sexual-misconduct-gender-discrimination-and-pregnant-parenting-students",
+      "title": "Title IX, Sexual Misconduct & Gender Discrimination, and Pregnant/Parenting Students",
+      "updated": true,
+      "icon": "fa-scale-balanced",
+      "paragraphs": [
+        "Title IX of the Education Amendments of 1972 requires that all entities in receipt of any federal funds or financial assistance must prohibit sex discrimination in their education programs and activities. Examples of the types of discrimination that are covered under Title IX include sexual harassment (as defined by 34 CFR Part 106), the failure to provide equal opportunity in athletic and academic programs, and discrimination based on pregnancy.The prohibited behaviors under Title IX include sexual misconduct, in any form, and is in direct conflict with Your Institution's values and diminish the safety and security of all members of the College community. Your Institution's Sexual Misconduct and Gender Discrimination Procedures were developed to take every reasonable measure to prevent, investigate, appropriately respond to, and mitigate the effects of any reported Title IX or sexual misconduct incident. The policy and procedures can be viewed online on campus Equity Information website.",
+        "To prevent discrimination based on pregnancy, Your Institution administrators, faculty, and Title IX coordinator pledge to collaborate on a case-by-case basis with all students facing challenges in their pregnancy and birth-related issues (parenting), up to six months from the birth of a child. We also pledge to provide strategies that support the academic freedom of faculty and the academic integrity of the learning environment.The aforementioned policies and procedures were created in accordance with State of Michigan and Federal regulations and reflect Your Institution's commitment to the safety of its community while providing prompt, fair, and impartial processes for those involved in allegations of prohibited behavior. Retaliation for filing a complaint or advocating for a right protected by Title IX is also prohibited. The Title IX Sexual Harassment Policy specifically details what constitutes sexual harassment and the process that is followed when the College receives a formal complaint under Title IX.To file a complaint, contact Allie Martinez, Title IX Coordinator/Investigator; Office J101, [campus address], MI 48710, telephone [campus phone], or email equityoffice@example.edu or the Office for Civil Rights, Denver Office; U.S. Department of Education; 1244 Speer Boulevard, Suite 310; Denver, CO 80204; Phone: 303-844-5696; Email: OCR.Denver@ed.gov "
+      ]
+    },
+    {
+      "id": "short-term-leave-of-absence",
+      "title": "Short Term Leave of Absence",
+      "updated": false,
+      "icon": "fa-clock",
+      "paragraphs": [
+        "If you have a temporary circumstance that prevents you from attending classes for at least one class session and up to two weeks, such as Covid, Mono, concussions, surgeries or procedures with shorter-length recoveries, death of an immediate family member, etc., you may request a Short-Term Leave of Absence. For additional information and to begin the process, please visit https://students.example.edu/student-handbook/leave-of-absence.html"
+      ]
+    },
+    {
+      "id": "mental-health-resources",
+      "title": "Mental Health Resources",
+      "updated": false,
+      "icon": "fa-brain",
+      "paragraphs": [
+        "Counseling Services: Your mental health is important. Everyone gets stressed out and sometimes you need someone to talk to. Your Institution has professional counselors on staff, so you have someone to speak with when you need it. Counseling services are voluntary, confidential and free to students. To begin the counseling process, fill out the Personal Counseling Services Intake Paperwork located on the Counseling Services webpage and a counselor will follow up with you within 24 business hours. *If you or someone you know is in crisis and in need of immediate mental health intervention, call or text 988 for 24-hour help.",
+        "Uwill: Your Institution has partnered with Uwill to offer access to free and immediate teletherapy and wellness support for students. Uwill's team of licensed counselors and curated wellness programs provide the flexibility of teletherapy with free high-quality care from any location. Services are available day, night and on weekends, and can be scheduled within a few minutes. Uwill is also private, secure, and confidential. In addition to therapy, you have free access to on-demand wellness programming through Uwill such as yoga, meditation, mindfulness and more! Learn more about Uwill: https://students.example.edu/counseling/mental-health-support.html ",
+        "Support for Those with Substance Use Disorder: Collegiate Recovery Education Wellness (CREW) is a free, on campus resource for issues related to alcohol and other drugs. Their services include wellness coaching, peer support groups, and substance-free socials. For more information, please contact Campus contact: D-121, email campus-contact@example.edu, or call [campus phone]."
+      ]
+    },
+    {
+      "id": "equal-opportunity",
+      "title": "Equal Opportunity",
+      "updated": true,
+      "icon": "fa-people-group",
+      "paragraphs": [
+        "Your Institution embraces equal opportunity as a core value: we actively promote, advocate, respect and value differences, and we foster a welcoming environment of openness and appreciation for all. In accordance with federal and state law, the College prohibits unlawful discrimination and harassment on the basis of race, color, national origin, religion, age, disability, height, weight, genetic information, arrest record, veteran status, marital or familial status, or pregnancy. The College also prohibits discrimination and harassment based on sex, sexual orientation, gender identity, or gender expression. Policies and procedures regarding discrimination based on sex, including sexual harassment, are not addressed in this policy, but are instead addressed in the College’s Title IX Sexual Harassment Policy and the Sexual Misconduct and Gender Discrimination Policy and Procedures. Direct inquiries to the Equity Officer, Your Institution, Office J101, [campus address], MI 48710, telephone [campus phone], or email equityoffice@example.edu. "
+      ]
+    },
+    {
+      "id": "student-handbook-and-resources",
+      "title": "Student Handbook and Resources",
+      "updated": false,
+      "icon": "fa-book",
+      "paragraphs": [
+        "Student Handbook - http://www.example.edu/studenthandbook ",
+        "Your Institution Student Resources - students.example.edu"
+      ]
+    },
+    {
+      "id": "library-and-research-services",
+      "title": "Library and Research Services",
+      "updated": true,
+      "icon": "fa-book-open",
+      "paragraphs": [
+        "As a Your Institution student, you have full access to the services and resources of the Your Institution Library. Resources include books, eBooks, streaming media, full text article databases, research guides, government documents and the college archives. Services include research assistance from librarians (via email, chat, video conference or in-person), interlibrary loan, textbook reserves and equipment loans and group and quiet study space.Search: https://library.example.edu/homeA-Z Database list: https://library.example.edu/az.phpEmail: library@example.eduChat: https://library.example.edu/askText: [campus phone]Circulation Help: [campus phone]Research Help: [campus phone]Technology Services",
+        "The Library houses the open computer lab which provides access to PC and MAC computers and software and black and white and color printing (printing limits may apply). Scanners are also available. Phone chargers, headphones, laptops and calculators are available to check out at the front desk. The library also offers a semester laptop lending program.Course Reserves ",
+        "Material placed on reserve by faculty in the library or semester equipment loans can be requested at the Circulation/Front Desk near the entrance to the Library. To check out the materials students should bring a Institution ID or borrower card and have the course number and instructor name available."
+      ]
+    },
+    {
+      "id": "emergency-notifications-and-campus-closures",
+      "title": "Emergency Notifications and Campus Closures",
+      "updated": true,
+      "icon": "fa-bell",
+      "paragraphs": [
+        "To stay informed about emergency situations, weather-related campus closures and other critical updates, all students are strongly encouraged to sign up for Your Institution's Nixle Alert System. This is the fastest way to receive real-time notifications via text and/or email.",
+        "Sign up is quick and free:",
+        "Text [ALERTCODE] to 888777 or visit Alert Sign Up for more information.",
+        "Please note: Text alerts are oftentimes the fastest, most reliable way to obtain information in an emergency. To ensure you are notified of emergency updates in a timely manner, please sign up for Nixle as soon as possible. "
+      ]
+    },
+    {
+      "id": "honors-program",
+      "title": "Honors Program",
+      "updated": false,
+      "icon": "fa-award",
+      "paragraphs": [
+        "The Honors Program offers talented and motivated students an opportunity to enhance and enrich their college learning experience. These specially designed courses offer more discussion and critical thinking and less lecturing and memorization.",
+        "The Honors Program isn’t more work, but an opportunity to do work that is more engaging, challenging and rewarding. Our flexible program allows students to take as few or as many honors courses as they like to fit their program and interests.",
+        "For more information, head to the following website:  https://students.example.edu/honors/index.html"
+      ]
+    }
+  ]
+}

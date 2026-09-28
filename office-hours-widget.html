@@ -1,0 +1,1955 @@
+<!--
+  Live Office Hours — Brightspace Custom Widget
+  ==============================================
+  Paste this entire file into a Custom Widget (HTML Source view).
+
+  Setup
+  1. Admin Tools → Widgets → Create Custom Widget → paste this HTML.
+  2. On the course homepage, add the widget (Homepage → Edit → Add Widgets).
+  3. Ensure roles can use Custom Widget Data:
+       • Instructors: View / Manage Custom Widget Data for the org unit
+         and View other users' Custom Widget Data (needed to see the waiting room)
+       • Students: View / Manage their Own Custom Widget Data
+       Note: Instructors do NOT need Manage-other-users write permission —
+       admission and instructor messages are stored in shared widget data.
+  4. Brightspace replaces {OrgUnitId}, {widgetid}, and {RoleName} automatically.
+     You normally do NOT need to edit course ID or instructor IDs.
+
+  Instructor view shows Open / Close Office Hours and can run multiple student
+  chats at once. Students see Join Waiting Room when hours are open.
+  Ending a chat automatically downloads the transcript for the instructor.
+-->
+<div id="ohw-app">
+  <div id="ohw-loading" style="padding:24px;text-align:center;font-family:Arial,sans-serif;color:#4b5563;">
+    Loading Office Hours…
+  </div>
+</div>
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     CONFIGURATION
+     Brightspace replace strings are substituted when the widget renders.
+     Optional overrides are available if auto-detection is wrong for a role.
+     ============================================================ */
+  const CONFIG = Object.freeze({
+    // Becomes a real number when Brightspace replaces {OrgUnitId}.
+    COURSE_ID: parseInt("{OrgUnitId}", 10) || 0,
+
+    LP_VERSION: "1.51",
+    LE_VERSION: "1.82",
+
+    // Optional hard overrides. Leave empty — role auto-detect is preferred.
+    INSTRUCTOR_USER_IDS: [
+      // 123456
+    ],
+
+    // RoleId filters. Used for waiting-room scanning AND instructor detection.
+    // Institution commonly uses Student=101, Incomplete Student=107, Student View=112, Instructor=102.
+    STUDENT_ROLE_IDS: [101, 107, 112],
+    INSTRUCTOR_ROLE_IDS: [102],
+
+    // Replaced by Brightspace with the custom widget's numeric ID.
+    CUSTOM_WIDGET_ID: "{widgetid}",
+
+    // Replaced by Brightspace with the viewer's course role name.
+    ROLE_NAME: "{RoleName}",
+
+    POLL_INTERVAL_MS: 5000,
+    QUEUE_REFRESH_MS: 10000,
+    WAITING_EXPIRATION_MINUTES: 120,
+    MAX_MESSAGE_LENGTH: 1500,
+    MAX_MESSAGES_PER_SESSION: 100,
+    // 0 = unlimited concurrent student chats for the instructor.
+    MAX_CONCURRENT_CHATS: 0,
+    AUTO_DOWNLOAD_ON_END: true,
+
+    WIDGET_TITLE: "Live Office Hours"
+  });
+
+  const INSTRUCTOR_ROLE_PATTERN =
+    /\b(instructor|faculty|teacher|facilitator|designer|admin|administrator|staff|grader|teaching assistant|\bta\b)\b/i;
+  const STUDENT_ROLE_PATTERN = /\b(student|learner|participant)\b/i;
+
+  /* ============================================================
+     INTERNAL STATE
+     ============================================================ */
+  const state = {
+    me: null,
+    isInstructor: false,
+    roleName: "",
+    courseId: 0,
+    widgetId: "",
+    shared: null,
+    myData: null,
+    classlist: [],
+    waitingStudents: [],
+    // Instructor: [{ user, data }] for each concurrent active chat
+    activeSessions: [],
+    busy: false,
+    pollTimer: null,
+    queueTimer: null,
+    lastRenderedMessageSignature: "",
+    statusMessage: "",
+    drafts: {},
+    focusedInputStudentId: null,
+    inputWasFocused: false
+  };
+
+  const app = document.getElementById("ohw-app");
+
+  /* ============================================================
+     DEFAULT DATA STRUCTURES
+     ============================================================ */
+  function defaultSharedData() {
+    return {
+      schemaVersion: 3,
+      officeOpen: false,
+      openedAt: null,
+      openedBy: null,
+      sessionId: null,
+      // Map of studentId -> active chat (instructor messages live here).
+      activeChats: {},
+      // Legacy fields kept only for migration of older widget data.
+      activeStudentId: null,
+      activeChat: null,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  function defaultActiveChat(studentId, sessionId) {
+    return {
+      studentId: Number(studentId),
+      sessionId: sessionId || null,
+      activatedAt: new Date().toISOString(),
+      endedAt: null,
+      messages: []
+    };
+  }
+
+  function defaultUserData(userId) {
+    return {
+      schemaVersion: 1,
+      userId: Number(userId),
+      status: "idle",
+      joinedAt: null,
+      activatedAt: null,
+      endedAt: null,
+      sessionId: null,
+      messages: [],
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  function chatKey(studentId) {
+    return String(studentId);
+  }
+
+  function getActiveChatsMap(shared) {
+    return (shared && shared.activeChats && typeof shared.activeChats === "object")
+      ? shared.activeChats
+      : {};
+  }
+
+  function getActiveStudentIds(shared) {
+    return Object.keys(getActiveChatsMap(shared))
+      .map(function (key) { return Number(key); })
+      .filter(function (id) { return Number.isFinite(id) && id > 0; });
+  }
+
+  function isStudentInActiveChat(shared, studentId) {
+    return !!getActiveChatsMap(shared)[chatKey(studentId)];
+  }
+
+  function getActiveChat(shared, studentId) {
+    return getActiveChatsMap(shared)[chatKey(studentId)] || null;
+  }
+
+  // Keep legacy mirrors in sync with activeChats (source of truth).
+  function syncLegacyActiveFields(shared) {
+    if (!shared || typeof shared !== "object") return shared;
+    if (!shared.activeChats || typeof shared.activeChats !== "object") {
+      shared.activeChats = {};
+    }
+    const ids = getActiveStudentIds(shared);
+    shared.activeStudentId = ids.length ? ids[0] : null;
+    shared.activeChat = ids.length ? shared.activeChats[chatKey(ids[0])] : null;
+    shared.schemaVersion = 3;
+    return shared;
+  }
+
+  function normalizeShared(shared) {
+    const incomingVersion = Number(shared && shared.schemaVersion) || 1;
+    const base = Object.assign(defaultSharedData(), shared || {});
+    if (!base.activeChats || typeof base.activeChats !== "object") {
+      base.activeChats = {};
+    }
+
+    // Migrate legacy single-chat schema only for pre-v3 records.
+    // Do NOT rebuild chats from leftover activeStudentId after an end/close.
+    if (
+      incomingVersion < 3 &&
+      base.activeStudentId &&
+      !base.activeChats[chatKey(base.activeStudentId)]
+    ) {
+      const legacy =
+        base.activeChat && Number(base.activeChat.studentId) === Number(base.activeStudentId)
+          ? base.activeChat
+          : defaultActiveChat(base.activeStudentId, base.sessionId);
+      base.activeChats[chatKey(base.activeStudentId)] = legacy;
+    }
+
+    Object.keys(base.activeChats).forEach(function (key) {
+      if (!base.activeChats[key] || typeof base.activeChats[key] !== "object") {
+        delete base.activeChats[key];
+        return;
+      }
+      if (!Array.isArray(base.activeChats[key].messages)) {
+        base.activeChats[key].messages = [];
+      }
+      base.activeChats[key].studentId = Number(base.activeChats[key].studentId || key);
+    });
+
+    return syncLegacyActiveFields(base);
+  }
+
+  function instructorMessagesFromShared(shared, studentId) {
+    const chat = getActiveChat(shared, studentId);
+    if (!chat || !Array.isArray(chat.messages)) return [];
+    return chat.messages.filter(function (m) {
+      return m && m.sender === "instructor";
+    });
+  }
+
+  function mergeConversationMessages(studentData, shared, studentId) {
+    const studentMsgs = (studentData && Array.isArray(studentData.messages))
+      ? studentData.messages.filter(function (m) {
+          return m && m.sender !== "instructor";
+        })
+      : [];
+    const instructorMsgs = instructorMessagesFromShared(shared, studentId);
+    return studentMsgs.concat(instructorMsgs).sort(function (a, b) {
+      return new Date(a.timestamp || 0) - new Date(b.timestamp || 0);
+    });
+  }
+
+  function buildActiveConversationView(studentData, shared, studentId) {
+    const base = Object.assign(
+      defaultUserData(studentId),
+      studentData || {}
+    );
+    const chat = getActiveChat(shared, studentId);
+    base.status = "active";
+    base.sessionId = (chat && chat.sessionId) || shared.sessionId || base.sessionId;
+    base.activatedAt = (chat && chat.activatedAt) || base.activatedAt;
+    base.messages = mergeConversationMessages(studentData, shared, studentId);
+    return base;
+  }
+
+  /* ============================================================
+     CONTEXT / ROLE HELPERS
+     ============================================================ */
+  function detectCourseIdFromLocation() {
+    const pathMatchers = [
+      /\/d2l\/home\/(\d+)/i,
+      /\/content\/enforced\/(\d+)-/i,
+      /\/d2l\/le\/content\/(\d+)\//i
+    ];
+
+    function fromHref(href) {
+      if (!href) return 0;
+      try {
+        const url = new URL(href, window.location.origin);
+        const ou = url.searchParams.get("ou") || url.searchParams.get("orgUnitId");
+        if (ou && /^\d+$/.test(ou)) return Number(ou);
+        for (let i = 0; i < pathMatchers.length; i++) {
+          const match = url.pathname.match(pathMatchers[i]);
+          if (match) return Number(match[1]);
+        }
+      } catch (error) {
+        /* ignore */
+      }
+      return 0;
+    }
+
+    let found = fromHref(window.location.href);
+    if (found) return found;
+
+    try {
+      found = fromHref(window.parent.location.href);
+      if (found) return found;
+    } catch (error) {
+      /* cross-origin parent */
+    }
+
+    return 0;
+  }
+
+  function resolveCourseId() {
+    if (Number.isFinite(CONFIG.COURSE_ID) && CONFIG.COURSE_ID > 0) {
+      return CONFIG.COURSE_ID;
+    }
+    return detectCourseIdFromLocation();
+  }
+
+  // Build sentinel tokens at runtime so Brightspace replace-strings do not
+  // rewrite comparisons like id !== "{widgetid}" into id !== "25647".
+  function unreplacedToken(name) {
+    return "{" + name + "}";
+  }
+
+  function resolveWidgetId() {
+    const id = String(CONFIG.CUSTOM_WIDGET_ID || "").trim();
+    if (/^\d+$/.test(id)) return id;
+    return "";
+  }
+
+  function looksLikeStudentRole(roleName) {
+    const name = String(roleName || "").trim();
+    if (!name || name === unreplacedToken("RoleName")) return false;
+    // Prefer student when both patterns could somehow match.
+    if (STUDENT_ROLE_PATTERN.test(name) && !INSTRUCTOR_ROLE_PATTERN.test(name)) {
+      return true;
+    }
+    return STUDENT_ROLE_PATTERN.test(name) && !/\binstructor\b/i.test(name);
+  }
+
+  function looksLikeInstructorRole(roleName) {
+    const name = String(roleName || "").trim();
+    if (!name || name === unreplacedToken("RoleName")) return false;
+    if (looksLikeStudentRole(name)) return false;
+    return INSTRUCTOR_ROLE_PATTERN.test(name);
+  }
+
+  function roleIdIsInstructor(roleId) {
+    const id = Number(roleId);
+    if (!Number.isFinite(id)) return false;
+    return CONFIG.INSTRUCTOR_ROLE_IDS.indexOf(id) !== -1;
+  }
+
+  function roleIdIsStudent(roleId) {
+    const id = Number(roleId);
+    if (!Number.isFinite(id)) return false;
+    return CONFIG.STUDENT_ROLE_IDS.indexOf(id) !== -1;
+  }
+
+  function isStudentClasslistUser(user) {
+    if (!user) return false;
+    if (Number(user.Identifier) === Number(state.me && state.me.Identifier)) {
+      return false;
+    }
+
+    const roleId = Number(user.RoleId);
+    if (roleIdIsInstructor(roleId)) return false;
+
+    if (CONFIG.STUDENT_ROLE_IDS.length) {
+      return roleIdIsStudent(roleId);
+    }
+
+    return true;
+  }
+
+  /**
+   * Resolve course role for the current (impersonated) user.
+   * Priority: known RoleIds → enrollment Role name → {RoleName} →
+   * classlist capability ONLY when no role was found (never override a known student).
+   */
+  async function detectIsInstructor(me) {
+    if (CONFIG.INSTRUCTOR_USER_IDS.indexOf(Number(me.Identifier)) !== -1) {
+      state.roleName = "Configured instructor";
+      return true;
+    }
+
+    // Brightspace {RoleName} for the viewer in this org unit (respects impersonation).
+    if (looksLikeStudentRole(CONFIG.ROLE_NAME)) {
+      state.roleName = CONFIG.ROLE_NAME;
+      return false;
+    }
+    if (looksLikeInstructorRole(CONFIG.ROLE_NAME)) {
+      state.roleName = CONFIG.ROLE_NAME;
+      return true;
+    }
+
+    // Enrollment for this user in this course is the source of truth.
+    try {
+      const enrollment = await apiRequest(
+        "/d2l/api/lp/" + CONFIG.LP_VERSION +
+        "/enrollments/orgUnits/" + state.courseId +
+        "/users/" + me.Identifier
+      );
+      const roleId =
+        (enrollment && enrollment.Role && (enrollment.Role.Id || enrollment.Role.Identifier)) ||
+        null;
+      const roleName =
+        (enrollment && enrollment.Role && enrollment.Role.Name) ||
+        (enrollment && enrollment.Access && enrollment.Access.ClasslistRoleName) ||
+        "";
+      state.roleName = roleName || (roleId != null ? "Role " + roleId : "");
+
+      if (roleIdIsStudent(roleId) || looksLikeStudentRole(roleName)) {
+        return false;
+      }
+      if (roleIdIsInstructor(roleId) || looksLikeInstructorRole(roleName)) {
+        return true;
+      }
+
+      // Role exists but is ambiguous (e.g. custom role) — do not elevate via classlist.
+      if (roleName || roleId != null) {
+        console.warn(
+          "Office Hours: course role is neither recognized instructor nor student:",
+          roleName || roleId
+        );
+        return false;
+      }
+    } catch (error) {
+      console.warn("Could not read enrollment role; trying limited fallbacks.", error);
+    }
+
+    try {
+      // Last resort ONLY when enrollment/RoleName gave no usable role.
+      // Under admin impersonation of a student, classlist often still works —
+      // so this must never run after we already know the course role is Student.
+      await getClasslist();
+      if (!state.roleName || state.roleName === unreplacedToken("RoleName")) {
+        state.roleName = "Classlist access";
+      }
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /* ============================================================
+     BRIGHTSPACE API HELPERS
+     ============================================================ */
+  async function ensureXsrfToken() {
+    try {
+      const cached = localStorage.getItem("XSRF.Token");
+      if (cached) return cached;
+    } catch (error) {
+      /* private mode */
+    }
+
+    try {
+      const response = await fetch("/d2l/lp/auth/xsrf-tokens", {
+        credentials: "include"
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const token = data && (data.referrerToken || data.ReferrerToken);
+        if (token) {
+          try { localStorage.setItem("XSRF.Token", token); } catch (e) { /* ignore */ }
+          return token;
+        }
+      }
+    } catch (error) {
+      console.warn("XSRF token refresh failed.", error);
+    }
+
+    try {
+      return localStorage.getItem("XSRF.Token") || "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  async function apiRequest(url, options, allowRetry) {
+    const opts = Object.assign({
+      method: "GET",
+      credentials: "include",
+      headers: {}
+    }, options || {});
+
+    const token = await ensureXsrfToken();
+    if (token) {
+      opts.headers["X-CSRF-TOKEN"] = token;
+    }
+
+    if (opts.body && !opts.headers["Content-Type"]) {
+      opts.headers["Content-Type"] = "application/json";
+    }
+
+    const response = await fetch(url, opts);
+
+    if (
+      (response.status === 403 || response.status === 401) &&
+      allowRetry !== false &&
+      opts.method &&
+      opts.method.toUpperCase() !== "GET"
+    ) {
+      try { localStorage.removeItem("XSRF.Token"); } catch (e) { /* ignore */ }
+      await ensureXsrfToken();
+      return apiRequest(url, options, false);
+    }
+
+    if (!response.ok) {
+      const body = await response.text().catch(function () { return ""; });
+      const error = new Error(
+        "Brightspace API error " + response.status + " for " + url +
+        (body ? ": " + body.substring(0, 300) : "")
+      );
+      error.status = response.status;
+      error.url = url;
+      error.body = body;
+      throw error;
+    }
+
+    if (response.status === 204) return null;
+
+    const text = await response.text();
+    if (!text) return null;
+
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      return text;
+    }
+  }
+
+  function widgetBaseUrl() {
+    return "/d2l/api/lp/" + CONFIG.LP_VERSION + "/" +
+      state.courseId + "/widgetdata/" + state.widgetId;
+  }
+
+  function parseWidgetData(response, fallback) {
+    if (!response) return clone(fallback);
+
+    const raw = response.Data;
+    if (raw == null || raw === "") return clone(fallback);
+
+    let parsed = null;
+    if (typeof raw === "object") {
+      // Some Brightspace responses already deserialize Data.
+      parsed = raw;
+    } else if (typeof raw === "string") {
+      if (!raw.trim()) return clone(fallback);
+      try {
+        parsed = JSON.parse(raw);
+      } catch (error) {
+        console.warn("Could not parse widget data; using defaults.", error);
+        return clone(fallback);
+      }
+    } else {
+      return clone(fallback);
+    }
+
+    return Object.assign(clone(fallback), parsed || {});
+  }
+
+  function widgetDataBody(data) {
+    return JSON.stringify({
+      Data: JSON.stringify(data)
+    });
+  }
+
+  async function putWidgetData(url, data) {
+    try {
+      const response = await apiRequest(url, {
+        method: "PUT",
+        body: widgetDataBody(data)
+      });
+      return parseWidgetData(response, data);
+    } catch (error) {
+      // Some orgs return 400 until a record exists; retry once with a seed write.
+      if (error.status === 400) {
+        try {
+          await apiRequest(url, {
+            method: "PUT",
+            body: JSON.stringify({ Data: "{}" })
+          });
+          const response = await apiRequest(url, {
+            method: "PUT",
+            body: widgetDataBody(data)
+          });
+          return parseWidgetData(response, data);
+        } catch (retryError) {
+          throw retryError;
+        }
+      }
+      throw error;
+    }
+  }
+
+  async function getSharedData() {
+    try {
+      const response = await apiRequest(widgetBaseUrl());
+      return normalizeShared(parseWidgetData(response, defaultSharedData()));
+    } catch (error) {
+      if (error.status === 404) return defaultSharedData();
+      throw error;
+    }
+  }
+
+  async function saveSharedData(data) {
+    syncLegacyActiveFields(data);
+    data.updatedAt = new Date().toISOString();
+    return normalizeShared(await putWidgetData(widgetBaseUrl(), data));
+  }
+
+  async function getMyData() {
+    const fallback = defaultUserData(state.me.Identifier);
+    try {
+      const response = await apiRequest(widgetBaseUrl() + "/mydata");
+      return parseWidgetData(response, fallback);
+    } catch (error) {
+      if (error.status === 404) return fallback;
+      throw error;
+    }
+  }
+
+  async function saveMyData(data) {
+    data.updatedAt = new Date().toISOString();
+    return putWidgetData(widgetBaseUrl() + "/mydata", data);
+  }
+
+  async function getUserData(userId) {
+    const fallback = defaultUserData(userId);
+    try {
+      const response = await apiRequest(widgetBaseUrl() + "/" + userId);
+      return parseWidgetData(response, fallback);
+    } catch (error) {
+      if (error.status === 404 || error.status === 403) return fallback;
+      throw error;
+    }
+  }
+
+  async function saveUserData(userId, data) {
+    data.updatedAt = new Date().toISOString();
+    return putWidgetData(widgetBaseUrl() + "/" + userId, data);
+  }
+
+  async function getWhoAmI() {
+    return apiRequest("/d2l/api/lp/" + CONFIG.LP_VERSION + "/users/whoami");
+  }
+
+  async function getClasslist() {
+    const url = "/d2l/api/le/" + CONFIG.LE_VERSION + "/" +
+      state.courseId + "/classlist/";
+    const response = await apiRequest(url);
+    return Array.isArray(response) ? response : [];
+  }
+
+  /* ============================================================
+     GENERAL HELPERS
+     ============================================================ */
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function displayName(user) {
+    if (!user) return "Student";
+    return user.DisplayName ||
+      [user.FirstName, user.LastName].filter(Boolean).join(" ") ||
+      ("User " + user.Identifier);
+  }
+
+  function formatDateTime(iso) {
+    if (!iso) return "";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString();
+  }
+
+  /** Local computer time for chat logs: mm-dd-yyyy h:mmAM/PM (e.g. 07-23-2026 4:45PM). */
+  function formatLogDateTime(iso) {
+    if (!iso) return "";
+    const date = iso instanceof Date ? iso : new Date(iso);
+    if (Number.isNaN(date.getTime())) return String(iso);
+
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const yyyy = date.getFullYear();
+
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
+
+    return mm + "-" + dd + "-" + yyyy + " " + hours + ":" + minutes + ampm;
+  }
+
+  function resolveOrgDefinedId(studentId) {
+    studentId = Number(studentId);
+
+    if (state.me && Number(state.me.Identifier) === studentId) {
+      return String(state.me.OrgDefinedId || state.me.OrgDefinedID || "").trim();
+    }
+
+    const fromClasslist = (state.classlist || []).find(function (entry) {
+      return Number(entry.Identifier) === studentId;
+    });
+    if (fromClasslist) {
+      return String(fromClasslist.OrgDefinedId || fromClasslist.OrgDefinedID || "").trim();
+    }
+
+    const session = (state.activeSessions || []).find(function (entry) {
+      return Number(entry.user && entry.user.Identifier) === studentId;
+    });
+    if (session && session.user) {
+      return String(session.user.OrgDefinedId || session.user.OrgDefinedID || "").trim();
+    }
+
+    return "";
+  }
+
+  function minutesWaiting(iso) {
+    if (!iso) return 0;
+    return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
+  }
+
+  function isExpired(iso) {
+    if (!iso) return true;
+    const age = Date.now() - new Date(iso).getTime();
+    return age > CONFIG.WAITING_EXPIRATION_MINUTES * 60000;
+  }
+
+  function makeId(prefix) {
+    if (window.crypto && crypto.randomUUID) {
+      return prefix + "-" + crypto.randomUUID();
+    }
+    return prefix + "-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+  }
+
+  function setStatus(message) {
+    state.statusMessage = message || "";
+  }
+
+  function messageSignature(messages) {
+    return (messages || []).map(function (m) {
+      return [m.id, m.timestamp, m.sender, m.text].join("|");
+    }).join("~");
+  }
+
+  function rememberDraftBeforeRender() {
+    const inputs = document.querySelectorAll("[id^='ohw-message-input']");
+    inputs.forEach(function (input) {
+      const studentId = input.getAttribute("data-student-id") || "self";
+      state.drafts[chatKey(studentId)] = input.value;
+      if (document.activeElement === input) {
+        state.inputWasFocused = true;
+        state.focusedInputStudentId = studentId;
+      }
+    });
+  }
+
+  function restoreDraftAfterRender() {
+    const inputs = document.querySelectorAll("[id^='ohw-message-input']");
+    inputs.forEach(function (input) {
+      const studentId = input.getAttribute("data-student-id") || "self";
+      const draft = state.drafts[chatKey(studentId)];
+      if (draft) input.value = draft;
+      if (
+        state.inputWasFocused &&
+        String(state.focusedInputStudentId) === String(studentId)
+      ) {
+        input.focus();
+        const len = input.value.length;
+        try { input.setSelectionRange(len, len); } catch (e) { /* ignore */ }
+      }
+    });
+    state.inputWasFocused = false;
+  }
+
+  function scrollMessagesToBottom() {
+    document.querySelectorAll(".ohw-messages").forEach(function (box) {
+      box.scrollTop = box.scrollHeight;
+    });
+  }
+
+  function pinChatToBottomAfterRender() {
+    scrollMessagesToBottom();
+    requestAnimationFrame(function () {
+      scrollMessagesToBottom();
+      requestAnimationFrame(scrollMessagesToBottom);
+    });
+  }
+
+  /* ============================================================
+     INSTRUCTOR OPERATIONS
+     ============================================================ */
+  async function toggleOfficeHours() {
+    if (state.busy) return;
+    state.busy = true;
+
+    try {
+      let latest = await getSharedData();
+
+      if (latest.officeOpen) {
+        const activeIds = getActiveStudentIds(latest);
+        if (activeIds.length) {
+          const proceed = window.confirm(
+            activeIds.length === 1
+              ? "A student chat is currently active. Close office hours, end the chat, and download the transcript?"
+              : activeIds.length + " student chats are active. Close office hours, end them, and download transcripts?"
+          );
+          if (!proceed) return;
+
+          for (let i = 0; i < activeIds.length; i++) {
+            await endChatForStudent(activeIds[i], true);
+          }
+          latest = await getSharedData();
+        }
+
+        latest.officeOpen = false;
+        latest.activeChats = {};
+        latest.activeStudentId = null;
+        latest.activeChat = null;
+        latest.openedAt = null;
+        latest.openedBy = null;
+        latest.sessionId = null;
+        state.shared = await saveSharedData(latest);
+        state.activeSessions = [];
+        setStatus("Office hours are now closed.");
+      } else {
+        latest.officeOpen = true;
+        latest.activeChats = {};
+        latest.activeStudentId = null;
+        latest.activeChat = null;
+        latest.openedAt = new Date().toISOString();
+        latest.openedBy = Number(state.me.Identifier);
+        latest.sessionId = makeId("office-hours");
+        state.shared = await saveSharedData(latest);
+        state.activeSessions = [];
+        setStatus("Office hours are now open. Students can join the waiting room.");
+      }
+
+      await refreshInstructorData();
+    } catch (error) {
+      showError(error, "Unable to change office-hours status.");
+    } finally {
+      state.busy = false;
+      render();
+    }
+  }
+
+  async function refreshWaitingRoom() {
+    if (!state.isInstructor || !state.shared || !state.shared.officeOpen) {
+      state.waitingStudents = [];
+      return;
+    }
+
+    if (!state.classlist.length) {
+      state.classlist = await getClasslist();
+    }
+
+    const students = state.classlist.filter(isStudentClasslistUser);
+    const waiting = [];
+    const concurrency = 6;
+    let index = 0;
+
+    async function worker() {
+      while (index < students.length) {
+        const student = students[index++];
+        const data = await getUserData(student.Identifier);
+
+        if (
+          data.status === "waiting" &&
+          data.joinedAt &&
+          !isExpired(data.joinedAt) &&
+          !isStudentInActiveChat(state.shared, student.Identifier)
+        ) {
+          waiting.push({
+            user: student,
+            data: data
+          });
+        }
+      }
+    }
+
+    const workers = [];
+    for (let i = 0; i < Math.min(concurrency, students.length); i++) {
+      workers.push(worker());
+    }
+    await Promise.all(workers);
+
+    waiting.sort(function (a, b) {
+      return new Date(a.data.joinedAt) - new Date(b.data.joinedAt);
+    });
+
+    state.waitingStudents = waiting;
+  }
+
+  async function startChat(studentId) {
+    if (state.busy) return;
+    state.busy = true;
+    studentId = Number(studentId);
+
+    try {
+      const latestShared = await getSharedData();
+
+      if (!latestShared.officeOpen) {
+        throw new Error("Office hours are closed.");
+      }
+
+      if (isStudentInActiveChat(latestShared, studentId)) {
+        throw new Error("That student already has an active chat.");
+      }
+
+      const activeCount = getActiveStudentIds(latestShared).length;
+      if (
+        CONFIG.MAX_CONCURRENT_CHATS > 0 &&
+        activeCount >= CONFIG.MAX_CONCURRENT_CHATS
+      ) {
+        throw new Error(
+          "You already have " + CONFIG.MAX_CONCURRENT_CHATS +
+          " active chats. End one before starting another."
+        );
+      }
+
+      const student = state.classlist.find(function (u) {
+        return Number(u.Identifier) === studentId;
+      });
+
+      const latestStudentData = await getUserData(studentId);
+      if (latestStudentData.status !== "waiting") {
+        throw new Error("This student is no longer waiting.");
+      }
+
+      latestShared.activeChats[chatKey(studentId)] =
+        defaultActiveChat(studentId, latestShared.sessionId);
+      state.shared = await saveSharedData(latestShared);
+      setStatus("Chat started with " + displayName(student || { Identifier: studentId }) + ".");
+
+      await refreshInstructorData();
+    } catch (error) {
+      showError(error, "Unable to start the chat.");
+    } finally {
+      state.busy = false;
+      render();
+      pinChatToBottomAfterRender();
+    }
+  }
+
+  async function sendInstructorMessage(studentId) {
+    studentId = Number(studentId);
+    const input = document.getElementById("ohw-message-input-" + studentId) ||
+      document.querySelector('[data-student-id="' + studentId + '"].ohw-input');
+    if (!input || state.busy) return;
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (text.length > CONFIG.MAX_MESSAGE_LENGTH) {
+      window.alert("Message is too long. Maximum: " + CONFIG.MAX_MESSAGE_LENGTH + " characters.");
+      return;
+    }
+
+    state.busy = true;
+    input.disabled = true;
+
+    try {
+      const shared = await getSharedData();
+      if (!isStudentInActiveChat(shared, studentId)) {
+        throw new Error("That student chat is no longer active.");
+      }
+
+      let chat = getActiveChat(shared, studentId);
+      if (!chat) {
+        chat = defaultActiveChat(studentId, shared.sessionId);
+        shared.activeChats[chatKey(studentId)] = chat;
+      }
+      chat.messages = Array.isArray(chat.messages) ? chat.messages : [];
+
+      const studentData = await getUserData(studentId);
+      const currentCount = mergeConversationMessages(studentData, shared, studentId).length;
+      if (currentCount >= CONFIG.MAX_MESSAGES_PER_SESSION) {
+        throw new Error("This chat reached the message limit. End the session to download the log.");
+      }
+
+      chat.messages.push({
+        id: makeId("msg"),
+        sender: "instructor",
+        senderId: Number(state.me.Identifier),
+        timestamp: new Date().toISOString(),
+        text: text
+      });
+
+      state.shared = await saveSharedData(shared);
+      state.drafts[chatKey(studentId)] = "";
+      input.value = "";
+      setStatus("");
+      await refreshInstructorData();
+    } catch (error) {
+      showError(error, "Unable to send the message.");
+    } finally {
+      state.busy = false;
+      render();
+      pinChatToBottomAfterRender();
+    }
+  }
+
+  async function endChatForStudent(studentId, skipConfirmation) {
+    studentId = Number(studentId);
+    if (!studentId) return false;
+
+    if (!skipConfirmation) {
+      const proceed = window.confirm(
+        CONFIG.AUTO_DOWNLOAD_ON_END
+          ? "End this chat? The transcript will download automatically."
+          : "End this chat?"
+      );
+      if (!proceed) return false;
+    }
+
+    const shared = await getSharedData();
+    if (!isStudentInActiveChat(shared, studentId)) return false;
+
+    const studentData = await getUserData(studentId);
+    const view = buildActiveConversationView(studentData, shared, studentId);
+
+    if (CONFIG.AUTO_DOWNLOAD_ON_END) {
+      downloadTranscriptFor(studentId, view, shared, { silent: true });
+    }
+
+    delete shared.activeChats[chatKey(studentId)];
+    syncLegacyActiveFields(shared);
+    state.shared = await saveSharedData(shared);
+    delete state.drafts[chatKey(studentId)];
+
+    // Best-effort: mark the student record ended so their UI clears immediately.
+    try {
+      const latestStudent = await getUserData(studentId);
+      latestStudent.status = "ended";
+      latestStudent.endedAt = new Date().toISOString();
+      await saveUserData(studentId, latestStudent);
+    } catch (error) {
+      console.warn("Could not mark student chat as ended in user data.", error);
+    }
+
+    setStatus(
+      "Chat ended" +
+      (CONFIG.AUTO_DOWNLOAD_ON_END
+        ? (view.messages && view.messages.length
+          ? ". Transcript downloaded."
+          : ". No messages to download.")
+        : ".")
+    );
+    return true;
+  }
+
+  async function endChatButton(studentId) {
+    if (state.busy) return;
+    state.busy = true;
+    try {
+      await endChatForStudent(studentId, false);
+      await refreshInstructorData();
+    } catch (error) {
+      showError(error, "Unable to end the chat.");
+    } finally {
+      state.busy = false;
+      render();
+    }
+  }
+
+  /* ============================================================
+     STUDENT OPERATIONS
+     ============================================================ */
+  async function joinWaitingRoom() {
+    if (state.busy) return;
+    state.busy = true;
+
+    try {
+      const shared = await getSharedData();
+      if (!shared.officeOpen) throw new Error("Office hours are currently closed.");
+
+      const latest = await getMyData();
+
+      if (latest.status === "active") {
+        state.myData = latest;
+        return;
+      }
+
+      latest.userId = Number(state.me.Identifier);
+      latest.status = "waiting";
+      latest.joinedAt = new Date().toISOString();
+      latest.activatedAt = null;
+      latest.endedAt = null;
+      latest.sessionId = shared.sessionId;
+      latest.messages = [];
+      state.myData = await saveMyData(latest);
+      setStatus("You joined the waiting room.");
+    } catch (error) {
+      showError(error, "Unable to join the waiting room.");
+    } finally {
+      state.busy = false;
+      render();
+    }
+  }
+
+  async function leaveWaitingRoom() {
+    if (state.busy) return;
+
+    const proceed = window.confirm("Leave the office-hours waiting room?");
+    if (!proceed) return;
+
+    state.busy = true;
+    try {
+      const latest = await getMyData();
+      latest.status = "idle";
+      latest.joinedAt = null;
+      latest.sessionId = null;
+      latest.messages = [];
+      state.myData = await saveMyData(latest);
+      setStatus("You left the waiting room.");
+    } catch (error) {
+      showError(error, "Unable to leave the waiting room.");
+    } finally {
+      state.busy = false;
+      render();
+    }
+  }
+
+  async function sendStudentMessage() {
+    const input = document.getElementById("ohw-message-input");
+    if (!input || state.busy) return;
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (text.length > CONFIG.MAX_MESSAGE_LENGTH) {
+      window.alert("Message is too long. Maximum: " + CONFIG.MAX_MESSAGE_LENGTH + " characters.");
+      return;
+    }
+
+    state.busy = true;
+    input.disabled = true;
+
+    try {
+      const shared = await getSharedData();
+      if (!isStudentInActiveChat(shared, state.me.Identifier)) {
+        throw new Error("Your active chat is no longer available.");
+      }
+
+      const latest = await getMyData();
+      latest.messages = Array.isArray(latest.messages) ? latest.messages : [];
+
+      const currentCount = mergeConversationMessages(
+        latest,
+        shared,
+        state.me.Identifier
+      ).length;
+      if (currentCount >= CONFIG.MAX_MESSAGES_PER_SESSION) {
+        throw new Error("This chat reached its message limit.");
+      }
+
+      latest.messages.push({
+        id: makeId("msg"),
+        sender: "student",
+        senderId: Number(state.me.Identifier),
+        timestamp: new Date().toISOString(),
+        text: text
+      });
+
+      state.myData = await saveMyData(latest);
+      state.drafts.self = "";
+      input.value = "";
+      setStatus("");
+    } catch (error) {
+      showError(error, "Unable to send the message.");
+    } finally {
+      state.busy = false;
+      render();
+      pinChatToBottomAfterRender();
+    }
+  }
+
+  /* ============================================================
+     TRANSCRIPT
+     ============================================================ */
+  function downloadTranscriptFor(studentId, data, shared, options) {
+    options = options || {};
+    studentId = Number(studentId);
+    shared = shared || state.shared || defaultSharedData();
+
+    if (!studentId || !data || !Array.isArray(data.messages) || !data.messages.length) {
+      if (!options.silent) window.alert("There are no messages to download.");
+      return false;
+    }
+
+    const orgDefinedId = resolveOrgDefinedId(studentId);
+    const studentOrgLabel = orgDefinedId || "Unavailable";
+
+    const lines = [
+      "BRIGHTSPACE OFFICE HOURS CHAT LOG",
+      "",
+      "Course ID: " + state.courseId,
+      "Student Organization ID: " + studentOrgLabel,
+      "Session ID: " + (data.sessionId || shared.sessionId || ""),
+      "Joined: " + formatLogDateTime(data.joinedAt),
+      "Activated: " + formatLogDateTime(data.activatedAt),
+      "Generated: " + formatLogDateTime(new Date()),
+      "",
+      "------------------------------------------------------------",
+      ""
+    ];
+
+    data.messages.forEach(function (message) {
+      const label = message.sender === "student"
+        ? "STUDENT " + studentOrgLabel
+        : "INSTRUCTOR";
+
+      lines.push("[" + formatLogDateTime(message.timestamp) + "] " + label);
+      lines.push(message.text);
+      lines.push("");
+    });
+
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/plain;charset=utf-8"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const fileStudentId = (orgDefinedId || String(studentId)).replace(/[^A-Za-z0-9_-]/g, "");
+
+    link.href = url;
+    link.download = "office-hours-course-" + state.courseId +
+      "-student-" + fileStudentId + "-" + stamp + ".txt";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    return true;
+  }
+
+  function downloadTranscript(studentId) {
+    const shared = state.shared || defaultSharedData();
+
+    if (state.isInstructor) {
+      studentId = Number(studentId);
+      const session = state.activeSessions.find(function (entry) {
+        return Number(entry.user.Identifier) === studentId;
+      });
+      const data = session
+        ? session.data
+        : buildActiveConversationView(null, shared, studentId);
+      downloadTranscriptFor(studentId, data, shared, { silent: false });
+      return;
+    }
+
+    const data = Object.assign({}, state.myData || {}, {
+      messages: mergeConversationMessages(state.myData, shared, state.me.Identifier)
+    });
+    downloadTranscriptFor(state.me.Identifier, data, shared, { silent: false });
+  }
+
+  /* ============================================================
+     POLLING AND REFRESH
+     ============================================================ */
+  async function loadActiveSessions(shared) {
+    const ids = getActiveStudentIds(shared);
+    if (!ids.length) {
+      state.activeSessions = [];
+      return;
+    }
+
+    if (!state.classlist.length) {
+      state.classlist = await getClasslist();
+    }
+
+    const sessions = [];
+    for (let i = 0; i < ids.length; i++) {
+      const activeId = ids[i];
+      const user = state.classlist.find(function (entry) {
+        return Number(entry.Identifier) === activeId;
+      }) || {
+        Identifier: activeId,
+        DisplayName: "Student " + activeId
+      };
+      const studentData = await getUserData(activeId);
+      sessions.push({
+        user: user,
+        data: buildActiveConversationView(studentData, shared, activeId)
+      });
+    }
+
+    sessions.sort(function (a, b) {
+      return new Date(a.data.activatedAt || 0) - new Date(b.data.activatedAt || 0);
+    });
+    state.activeSessions = sessions;
+  }
+
+  async function refreshInstructorData() {
+    state.shared = await getSharedData();
+    await loadActiveSessions(state.shared);
+    await refreshWaitingRoom();
+  }
+
+  async function poll() {
+    if (state.busy) return;
+
+    try {
+      if (state.isInstructor) {
+        state.shared = await getSharedData();
+        await loadActiveSessions(state.shared);
+      } else {
+        state.shared = await getSharedData();
+        state.myData = await getMyData();
+
+        if (
+          state.myData.status === "waiting" &&
+          isStudentInActiveChat(state.shared, state.me.Identifier)
+        ) {
+          state.myData.status = "active";
+          state.myData.activatedAt = new Date().toISOString();
+          state.myData.sessionId = state.shared.sessionId;
+          state.myData.messages = [];
+          state.myData = await saveMyData(state.myData);
+          setStatus("You were admitted. The chat is now active.");
+        }
+
+        if (
+          state.myData.status === "active" &&
+          !isStudentInActiveChat(state.shared, state.me.Identifier)
+        ) {
+          state.myData.status = "ended";
+          state.myData.endedAt = new Date().toISOString();
+          try {
+            state.myData = await saveMyData(state.myData);
+          } catch (e) {
+            /* still show ended locally */
+          }
+          setStatus("The instructor ended the chat.");
+        }
+      }
+
+      render();
+    } catch (error) {
+      console.warn("Office-hours polling error:", error);
+    }
+  }
+
+  async function queuePoll() {
+    if (!state.isInstructor || state.busy) return;
+    try {
+      state.shared = await getSharedData();
+      await loadActiveSessions(state.shared);
+      await refreshWaitingRoom();
+      render();
+    } catch (error) {
+      console.warn("Waiting-room refresh error:", error);
+    }
+  }
+
+  /* ============================================================
+     RENDERING
+     ============================================================ */
+  function styles() {
+    return `
+      <style id="ohw-styles">
+        #ohw-app, #ohw-app * { box-sizing: border-box; }
+        #ohw-app {
+          font-family: Arial, Helvetica, sans-serif;
+          color: #1f2937;
+          line-height: 1.45;
+          max-width: 100%;
+          overflow: hidden;
+        }
+        #ohw-app .ohw-shell {
+          max-width: 100%;
+          margin: 0 auto;
+          background: #ffffff;
+          border: 1px solid #d7dde5;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 4px 14px rgba(0,0,0,.08);
+        }
+        #ohw-app .ohw-header {
+          padding: 18px 20px;
+          background: #00416B;
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          flex-wrap: wrap;
+        }
+        #ohw-app .ohw-title { margin: 0; font-size: 22px; font-weight: 700; }
+        #ohw-app .ohw-subtitle { margin: 3px 0 0; font-size: 13px; opacity: .9; }
+        #ohw-app .ohw-body { padding: 16px; }
+        /* Always stack in homepage widgets — two columns stretch sidebars and inflate height. */
+        #ohw-app .ohw-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 14px;
+        }
+        #ohw-app .ohw-card {
+          border: 1px solid #d7dde5;
+          border-radius: 10px;
+          background: #ffffff;
+          overflow: hidden;
+        }
+        #ohw-app .ohw-card-head {
+          padding: 12px 14px;
+          background: #f4f6f8;
+          border-bottom: 1px solid #d7dde5;
+          font-weight: 700;
+        }
+        #ohw-app .ohw-card-body { padding: 14px; }
+        #ohw-app .ohw-status-row {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          font-weight: 700;
+        }
+        #ohw-app .ohw-dot {
+          width: 11px;
+          height: 11px;
+          border-radius: 50%;
+          display: inline-block;
+          flex: 0 0 auto;
+        }
+        #ohw-app .ohw-dot-open { background: #17823b; }
+        #ohw-app .ohw-dot-closed { background: #b42318; }
+        #ohw-app .ohw-btn {
+          appearance: none;
+          border: 0;
+          border-radius: 7px;
+          padding: 10px 15px;
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: opacity .15s ease, transform .05s ease;
+        }
+        #ohw-app .ohw-btn:hover { opacity: .9; }
+        #ohw-app .ohw-btn:active { transform: translateY(1px); }
+        #ohw-app .ohw-btn:disabled { opacity: .55; cursor: not-allowed; }
+        #ohw-app .ohw-btn-primary { background: #1264a3; color: #ffffff; }
+        #ohw-app .ohw-btn-success { background: #187c3b; color: #ffffff; }
+        #ohw-app .ohw-btn-danger { background: #b42318; color: #ffffff; }
+        #ohw-app .ohw-btn-secondary { background: #e7ebef; color: #1f2937; }
+        #ohw-app .ohw-btn-small { padding: 7px 10px; font-size: 12px; }
+        #ohw-app .ohw-actions {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          align-items: center;
+        }
+        #ohw-app .ohw-alert {
+          margin: 0 0 15px;
+          padding: 11px 13px;
+          border-radius: 7px;
+          background: #eef6fc;
+          border: 1px solid #b9d9ef;
+          color: #174b70;
+        }
+        #ohw-app .ohw-alert-error {
+          background: #fff1f0;
+          border-color: #f0b8b4;
+          color: #8f1d16;
+        }
+        #ohw-app .ohw-muted { color: #667085; font-size: 13px; }
+        #ohw-app .ohw-empty {
+          padding: 16px 14px;
+          text-align: center;
+          color: #667085;
+        }
+        #ohw-app .ohw-queue {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          max-height: 260px;
+          overflow-y: auto;
+        }
+        #ohw-app .ohw-queue-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 10px;
+          padding: 11px 0;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        #ohw-app .ohw-queue-item:last-child { border-bottom: 0; }
+        #ohw-app .ohw-person { font-weight: 700; }
+        #ohw-app .ohw-wait { font-size: 12px; color: #667085; }
+        #ohw-app .ohw-messages {
+          height: 240px;
+          max-height: 240px;
+          overflow-y: auto;
+          padding: 14px;
+          background: #f8fafc;
+          border-bottom: 1px solid #d7dde5;
+        }
+        #ohw-app .ohw-message-row {
+          display: flex;
+          margin: 0 0 12px;
+        }
+        #ohw-app .ohw-message-row-me { justify-content: flex-end; }
+        #ohw-app .ohw-bubble {
+          max-width: 78%;
+          padding: 10px 12px;
+          border-radius: 12px;
+          background: #ffffff;
+          border: 1px solid #d7dde5;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+        }
+        #ohw-app .ohw-message-row-me .ohw-bubble {
+          background: #ddecf8;
+          border-color: #b7d5ea;
+        }
+        #ohw-app .ohw-message-meta {
+          margin-top: 5px;
+          font-size: 11px;
+          color: #667085;
+        }
+        #ohw-app .ohw-compose {
+          display: flex;
+          gap: 9px;
+          padding: 12px;
+          background: #ffffff;
+        }
+        #ohw-app .ohw-input {
+          flex: 1;
+          min-width: 0;
+          padding: 10px 11px;
+          border: 1px solid #aeb8c4;
+          border-radius: 7px;
+          font-size: 14px;
+        }
+        #ohw-app .ohw-center { text-align: center; padding: 8px 4px; }
+        #ohw-app .ohw-large-status { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        #ohw-app .ohw-id-note {
+          margin-top: 12px;
+          font-size: 12px;
+          color: #667085;
+        }
+      </style>
+    `;
+  }
+
+  function statusAlertHtml() {
+    if (!state.statusMessage) return "";
+    return '<div class="ohw-alert">' + escapeHtml(state.statusMessage) + "</div>";
+  }
+
+  function renderMessages(messages, viewerRole) {
+    const list = Array.isArray(messages) ? messages : [];
+
+    if (!list.length) {
+      return '<div class="ohw-empty">No messages yet.</div>';
+    }
+
+    return list.map(function (message) {
+      const mine = message.sender === viewerRole;
+      const label = message.sender === "student" ? "Student" : "Instructor";
+
+      return (
+        '<div class="ohw-message-row ' + (mine ? "ohw-message-row-me" : "") + '">' +
+          '<div class="ohw-bubble">' +
+            '<div>' + escapeHtml(message.text) + '</div>' +
+            '<div class="ohw-message-meta">' +
+              escapeHtml(label) + " · " + escapeHtml(formatDateTime(message.timestamp)) +
+            '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join("");
+  }
+
+  function chatPanelHtml(messages, viewerRole, canSend, studentId) {
+    const suffix = studentId != null ? "-" + studentId : "";
+    const inputId = "ohw-message-input" + (studentId != null ? "-" + studentId : "");
+    const sendId = "ohw-send-btn" + (studentId != null ? "-" + studentId : "");
+    const studentAttr = studentId != null
+      ? ' data-student-id="' + escapeHtml(studentId) + '"'
+      : ' data-student-id="self"';
+
+    return (
+      '<div class="ohw-card">' +
+        '<div class="ohw-card-head">Conversation</div>' +
+        '<div id="ohw-messages' + suffix + '" class="ohw-messages">' +
+          renderMessages(messages, viewerRole) +
+        '</div>' +
+        (canSend
+          ? '<div class="ohw-compose">' +
+              '<input id="' + inputId + '" class="ohw-input" type="text" ' +
+                studentAttr + " " +
+                'maxlength="' + CONFIG.MAX_MESSAGE_LENGTH + '" ' +
+                'placeholder="Type a message…" aria-label="Chat message">' +
+              '<button type="button" id="' + sendId + '" class="ohw-btn ohw-btn-primary ohw-send-btn"' +
+                studentAttr + ">Send</button>" +
+            '</div>'
+          : "") +
+      '</div>'
+    );
+  }
+
+  function renderInstructor() {
+    const shared = state.shared || defaultSharedData();
+    const open = !!shared.officeOpen;
+    const activeCount = state.activeSessions.length;
+    const atLimit =
+      CONFIG.MAX_CONCURRENT_CHATS > 0 &&
+      activeCount >= CONFIG.MAX_CONCURRENT_CHATS;
+
+    const queueHtml = !open
+      ? '<div class="ohw-empty">Open office hours to view the waiting room.</div>'
+      : state.waitingStudents.length
+        ? '<ol class="ohw-queue">' +
+            state.waitingStudents.map(function (entry, index) {
+              return (
+                '<li class="ohw-queue-item">' +
+                  '<div>' +
+                    '<div class="ohw-person">' +
+                      (index + 1) + '. ' + escapeHtml(displayName(entry.user)) +
+                    '</div>' +
+                    '<div class="ohw-wait">Waiting ' +
+                      minutesWaiting(entry.data.joinedAt) + ' min</div>' +
+                  '</div>' +
+                  '<button type="button" class="ohw-btn ohw-btn-success ohw-btn-small ohw-start-chat" ' +
+                    'data-student-id="' + escapeHtml(entry.user.Identifier) + '" ' +
+                    (atLimit ? "disabled" : "") + '>Start Chat</button>' +
+                '</li>'
+              );
+            }).join("") +
+          '</ol>'
+        : '<div class="ohw-empty">No students are currently waiting.</div>';
+
+    const activeHtml = activeCount
+      ? state.activeSessions.map(function (session) {
+          const sid = session.user.Identifier;
+          return (
+            '<div class="ohw-active-session" style="margin-bottom:14px;">' +
+              '<div class="ohw-card" style="margin-bottom:0;">' +
+                '<div class="ohw-card-head">Chat with ' +
+                  escapeHtml(displayName(session.user)) +
+                '</div>' +
+                '<div class="ohw-card-body">' +
+                  '<div class="ohw-muted">Started ' +
+                    escapeHtml(formatDateTime(session.data.activatedAt)) +
+                  '</div>' +
+                  '<div class="ohw-actions" style="margin-top:12px;">' +
+                    '<button type="button" class="ohw-btn ohw-btn-secondary ohw-btn-small ohw-download-btn" ' +
+                      'data-student-id="' + escapeHtml(sid) + '">Download Log</button>' +
+                    '<button type="button" class="ohw-btn ohw-btn-danger ohw-btn-small ohw-end-chat" ' +
+                      'data-student-id="' + escapeHtml(sid) + '">End Chat</button>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+              '<div style="margin-top:10px;">' +
+                chatPanelHtml(
+                  session.data.messages || [],
+                  "instructor",
+                  true,
+                  sid
+                ) +
+              '</div>' +
+            '</div>'
+          );
+        }).join("")
+      : (
+        '<div class="ohw-card">' +
+          '<div class="ohw-card-head">Active Chats</div>' +
+          '<div class="ohw-empty">No active student chats.</div>' +
+        '</div>'
+      );
+
+    rememberDraftBeforeRender();
+
+    app.innerHTML =
+      styles() +
+      '<div class="ohw-shell">' +
+        '<div class="ohw-header">' +
+          '<div>' +
+            '<h2 class="ohw-title">' + escapeHtml(CONFIG.WIDGET_TITLE) + '</h2>' +
+            '<p class="ohw-subtitle">Instructor controls' +
+              (state.roleName ? ' · ' + escapeHtml(state.roleName) : '') +
+              ' · ' + activeCount + ' active chat' + (activeCount === 1 ? '' : 's') +
+            '</p>' +
+          '</div>' +
+          '<button type="button" id="ohw-toggle-btn" class="ohw-btn ' +
+            (open ? "ohw-btn-danger" : "ohw-btn-success") + '">' +
+            (open ? "Close Office Hours" : "Open Office Hours") +
+          '</button>' +
+        '</div>' +
+        '<div class="ohw-body">' +
+          statusAlertHtml() +
+          '<div class="ohw-card" style="margin-bottom:14px;">' +
+            '<div class="ohw-card-body">' +
+              '<div class="ohw-status-row">' +
+                '<span class="ohw-dot ' + (open ? "ohw-dot-open" : "ohw-dot-closed") + '"></span>' +
+                '<span>Office hours are ' + (open ? "open" : "closed") + '.</span>' +
+              '</div>' +
+              (shared.openedAt
+                ? '<div class="ohw-muted" style="margin-top:5px;">Opened ' +
+                    escapeHtml(formatDateTime(shared.openedAt)) + '</div>'
+                : '<div class="ohw-muted" style="margin-top:5px;">Use Open Office Hours so students can join.</div>') +
+            '</div>' +
+          '</div>' +
+          '<div class="ohw-grid">' +
+            '<div>' + activeHtml + '</div>' +
+            '<div class="ohw-card">' +
+              '<div class="ohw-card-head">Waiting Room (' +
+                state.waitingStudents.length + ')</div>' +
+              '<div class="ohw-card-body">' + queueHtml + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="ohw-id-note">You can chat with multiple students at once. Transcripts download automatically when you end a chat.</div>' +
+        '</div>' +
+      '</div>';
+
+    bindInstructorEvents();
+    restoreDraftAfterRender();
+    pinChatToBottomAfterRender();
+    state.lastRenderedMessageSignature = state.activeSessions.map(function (session) {
+      return messageSignature(session.data.messages || []);
+    }).join("||");
+  }
+
+  function renderStudent() {
+    const shared = state.shared || defaultSharedData();
+    const myData = state.myData || defaultUserData(state.me.Identifier);
+    const conversationMessages = mergeConversationMessages(
+      myData,
+      shared,
+      state.me.Identifier
+    );
+    const isActive =
+      isStudentInActiveChat(shared, state.me.Identifier) &&
+      (myData.status === "active" || myData.status === "waiting");
+
+    let body;
+
+    if (isActive) {
+      body =
+        '<div class="ohw-alert">The instructor is ready. You are now in the private chat.</div>' +
+        chatPanelHtml(conversationMessages, "student", true) +
+        '<div class="ohw-actions" style="margin-top:12px;">' +
+          '<button type="button" id="ohw-download-btn" class="ohw-btn ohw-btn-secondary ohw-btn-small">Download My Log</button>' +
+        '</div>';
+    } else if (myData.status === "waiting" && shared.officeOpen) {
+      body =
+        '<div class="ohw-card">' +
+          '<div class="ohw-center">' +
+            '<div class="ohw-large-status">You are in the waiting room</div>' +
+            '<div class="ohw-muted">Joined ' +
+              escapeHtml(formatDateTime(myData.joinedAt)) + '</div>' +
+            '<p>Keep this page open. The chat appears when the instructor admits you.</p>' +
+            '<button type="button" id="ohw-leave-btn" class="ohw-btn ohw-btn-secondary">Leave Waiting Room</button>' +
+          '</div>' +
+        '</div>';
+    } else if (myData.status === "ended") {
+      body =
+        '<div class="ohw-card">' +
+          '<div class="ohw-center">' +
+            '<div class="ohw-large-status">Your office-hours chat has ended</div>' +
+            '<p class="ohw-muted">Download your copy before joining another session.</p>' +
+            '<div class="ohw-actions" style="justify-content:center;">' +
+              (conversationMessages.length
+                ? '<button type="button" id="ohw-download-btn" class="ohw-btn ohw-btn-secondary">Download My Log</button>'
+                : '') +
+              (shared.officeOpen
+                ? '<button type="button" id="ohw-join-btn" class="ohw-btn ohw-btn-primary">Join Again</button>'
+                : '') +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    } else if (shared.officeOpen) {
+      body =
+        '<div class="ohw-card">' +
+          '<div class="ohw-center">' +
+            '<div class="ohw-large-status">The instructor is available</div>' +
+            '<p>Join the waiting room for a private chat with the instructor.</p>' +
+            '<button type="button" id="ohw-join-btn" class="ohw-btn ohw-btn-primary">Join Waiting Room</button>' +
+          '</div>' +
+        '</div>';
+    } else {
+      body =
+        '<div class="ohw-card">' +
+          '<div class="ohw-center">' +
+            '<div class="ohw-large-status">Office hours are closed</div>' +
+            '<p class="ohw-muted">The instructor will open this chat during scheduled office hours.</p>' +
+          '</div>' +
+        '</div>';
+    }
+
+    rememberDraftBeforeRender();
+
+    app.innerHTML =
+      styles() +
+      '<div class="ohw-shell">' +
+        '<div class="ohw-header">' +
+          '<div>' +
+            '<h2 class="ohw-title">' + escapeHtml(CONFIG.WIDGET_TITLE) + '</h2>' +
+            '<p class="ohw-subtitle">Welcome, ' +
+              escapeHtml(displayName(state.me)) + '</p>' +
+          '</div>' +
+          '<div class="ohw-status-row">' +
+            '<span class="ohw-dot ' +
+              (shared.officeOpen ? "ohw-dot-open" : "ohw-dot-closed") + '"></span>' +
+            '<span>' + (shared.officeOpen ? "Open" : "Closed") + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ohw-body">' +
+          statusAlertHtml() +
+          body +
+        '</div>' +
+      '</div>';
+
+    bindStudentEvents();
+    restoreDraftAfterRender();
+    pinChatToBottomAfterRender();
+    state.lastRenderedMessageSignature = messageSignature(conversationMessages);
+  }
+
+  function render() {
+    if (!state.me) return;
+    if (state.isInstructor) renderInstructor();
+    else renderStudent();
+  }
+
+  function bindInstructorEvents() {
+    const toggle = document.getElementById("ohw-toggle-btn");
+    if (toggle) toggle.addEventListener("click", toggleOfficeHours);
+
+    document.querySelectorAll(".ohw-start-chat").forEach(function (button) {
+      button.addEventListener("click", function () {
+        startChat(Number(button.getAttribute("data-student-id")));
+      });
+    });
+
+    document.querySelectorAll(".ohw-end-chat").forEach(function (button) {
+      button.addEventListener("click", function () {
+        endChatButton(Number(button.getAttribute("data-student-id")));
+      });
+    });
+
+    document.querySelectorAll(".ohw-download-btn").forEach(function (button) {
+      button.addEventListener("click", function () {
+        downloadTranscript(Number(button.getAttribute("data-student-id")));
+      });
+    });
+
+    document.querySelectorAll(".ohw-send-btn").forEach(function (button) {
+      button.addEventListener("click", function () {
+        sendInstructorMessage(Number(button.getAttribute("data-student-id")));
+      });
+    });
+
+    document.querySelectorAll("[id^='ohw-message-input-']").forEach(function (input) {
+      const studentId = input.getAttribute("data-student-id");
+      input.addEventListener("input", function () {
+        state.drafts[chatKey(studentId)] = input.value;
+      });
+      input.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          sendInstructorMessage(Number(studentId));
+        }
+      });
+    });
+  }
+
+  function bindStudentEvents() {
+    const join = document.getElementById("ohw-join-btn");
+    if (join) join.addEventListener("click", joinWaitingRoom);
+
+    const leave = document.getElementById("ohw-leave-btn");
+    if (leave) leave.addEventListener("click", leaveWaitingRoom);
+
+    const send = document.getElementById("ohw-send-btn") ||
+      document.querySelector(".ohw-send-btn");
+    if (send) send.addEventListener("click", sendStudentMessage);
+
+    const input = document.getElementById("ohw-message-input");
+    if (input) {
+      input.addEventListener("input", function () {
+        state.drafts.self = input.value;
+      });
+      input.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          sendStudentMessage();
+        }
+      });
+    }
+
+    const download = document.getElementById("ohw-download-btn");
+    if (download) download.addEventListener("click", function () {
+      downloadTranscript();
+    });
+  }
+
+  function showError(error, friendlyMessage) {
+    console.error(error);
+    const detail = error && error.message ? error.message : "Unknown error";
+    state.statusMessage = friendlyMessage + " " + detail;
+  }
+
+  function renderFatal(error) {
+    console.error(error);
+    app.innerHTML =
+      styles() +
+      '<div class="ohw-shell">' +
+        '<div class="ohw-header"><h2 class="ohw-title">Office Hours Widget Error</h2></div>' +
+        '<div class="ohw-body">' +
+          '<div class="ohw-alert ohw-alert-error">' +
+            escapeHtml(error && error.message ? error.message : String(error)) +
+          '</div>' +
+          '<p>Confirm this HTML was pasted into a <strong>Custom Widget</strong> (not a Content topic), ' +
+          'role permissions allow Custom Widget Data, and you are viewing the course homepage.</p>' +
+        '</div>' +
+      '</div>';
+  }
+
+  /* ============================================================
+     STARTUP
+     ============================================================ */
+  async function initialize() {
+    try {
+      state.courseId = resolveCourseId();
+      state.widgetId = resolveWidgetId();
+
+      if (!state.courseId) {
+        throw new Error(
+          "Could not detect the course ID. Add this as a Custom Widget on a course homepage " +
+          "(so " + unreplacedToken("OrgUnitId") + " is replaced), or set COURSE_ID manually in the script."
+        );
+      }
+
+      if (!state.widgetId) {
+        throw new Error(
+          "Could not detect the widget ID. Paste this into a Brightspace Custom Widget so " +
+          unreplacedToken("widgetid") +
+          " is replaced automatically. Content topics do not support the Widget Data API."
+        );
+      }
+
+      state.me = await getWhoAmI();
+      state.isInstructor = await detectIsInstructor(state.me);
+      state.shared = await getSharedData();
+
+      if (state.isInstructor) {
+        state.classlist = await getClasslist();
+        await refreshInstructorData();
+      } else {
+        state.myData = await getMyData();
+      }
+
+      render();
+
+      state.pollTimer = window.setInterval(poll, CONFIG.POLL_INTERVAL_MS);
+      if (state.isInstructor) {
+        state.queueTimer = window.setInterval(queuePoll, CONFIG.QUEUE_REFRESH_MS);
+      }
+    } catch (error) {
+      renderFatal(error);
+    }
+  }
+
+  initialize();
+})();
+</script>

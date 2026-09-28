@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Accessibility checklist for PDF documents">
+    <title>PDF Documents — Accessibility - D2L Faculty Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+    <main id="main-content" class="main-content" role="main">
+        <nav class="a11y-guide-breadcrumb widget-container" aria-label="Breadcrumb">
+            <a href="accessibility.html" class="a11y-guide-back"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Accessibility</a>
+        </nav>
+        <div class="page-header">
+            <h1 class="page-title">PDF documents</h1>
+            <p class="page-subtitle">PDFs are widely used in courses; they need tags, reading order, and alt text like web pages.</p>
+        </div>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="pdf-source-heading">
+            <h2 id="pdf-source-heading">Start from an accessible source</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Whenever possible, author in Word or another structured editor, fix accessibility there, then export to PDF.</li>
+                <li>Scanned image-only PDFs are not accessible until you run OCR and add tags and reading order in Acrobat (or provide an equivalent accessible format).</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="pdf-acrobat-heading">
+            <h2 id="pdf-acrobat-heading">In Adobe Acrobat Pro</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Use <strong>Make Accessible</strong> or <strong>Autotag</strong> workflows as appropriate, then review the <strong>Tags</strong> tree.</li>
+                <li>Set document title and language in properties.</li>
+                <li>Verify <strong>reading order</strong> and fix tags (headings, lists, tables) where the structure is wrong.</li>
+                <li>Add alt text to figures via the tags or reading order tools.</li>
+                <li>Run <strong>Accessibility Check</strong> and address reported issues.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="pdf-d2l-heading">
+            <h2 id="pdf-d2l-heading">In D2L</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Upload the cleaned PDF and open its <strong>YuJa Panorama</strong> Accessibility Report; use Guided Remediation, AutoPilot, or Structural Remediation as needed. Students can also download alternative formats from the report.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="pdf-refs-heading">
+            <h2 id="pdf-refs-heading">Further reading</h2>
+            <ul class="a11y-guide-resource-links">
+                <li><a href="https://helpx.adobe.com/acrobat/using/create-verify-pdf-accessibility.html" target="_blank" rel="noopener noreferrer">Adobe — Create and verify PDF accessibility</a></li>
+                <li><a href="https://support.yuja.com/hc/en-us/articles/360053990193-Panorama-s-Accessibility-Checklist" target="_blank" rel="noopener noreferrer">YuJa — Panorama PDF checklist items</a></li>
+                <li><a href="https://webaim.org/techniques/acrobat/" target="_blank" rel="noopener noreferrer">WebAIM — PDF accessibility</a></li>
+            </ul>
+        </section>
+    </main>
+    <script src="js/navigation.js"></script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="D2L Faculty Dashboard - System Updates">
+    <title>System Updates - D2L Faculty Dashboard</title>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Universal Styles -->
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Navigation Sidebar (loaded dynamically) -->
+    <div id="nav-placeholder"></div>
+    
+    <!-- Main Content Area -->
+    <main id="main-content" class="main-content" role="main">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-header-content">
+                <div>
+                    <h1 class="page-title">System Updates</h1>
+                    <p class="page-subtitle">Stay current with platform improvements, new features, and system enhancements.</p>
+                </div>
+                <div class="page-header-actions">
+                    <a href="https://community.d2l.com/brightspace/categories/release-notes-en" class="btn-secondary" id="release-notes-btn" target="_blank">
+                        <i class="fas fa-file-alt"></i>
+                        Release Notes
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Version Banner (Removed) -->
+        
+        <!-- Summary Cards -->
+        <div class="updates-summary">
+            <div class="summary-card">
+                <div class="summary-card-header">
+                    <div class="summary-card-icon feature">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="summary-card-title">New Features</div>
+                </div>
+                <div class="summary-card-value" id="features-count">—</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-header">
+                    <div class="summary-card-icon improvement">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div class="summary-card-title">Improvements</div>
+                </div>
+                <div class="summary-card-value" id="improvements-count">—</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-header">
+                    <div class="summary-card-icon bug">
+                        <i class="fas fa-bug"></i>
+                    </div>
+                    <div class="summary-card-title">Bug Fixes</div>
+                </div>
+                <div class="summary-card-value" id="bug-fixes-count">—</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-header">
+                    <div class="summary-card-icon security">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="summary-card-title">Security Updates</div>
+                </div>
+                <div class="summary-card-value" id="security-count">—</div>
+            </div>
+        </div>
+        
+        <!-- Filter Tabs -->
+        <div class="updates-filters">
+            <button class="filter-tab active" data-filter="all">All Updates</button>
+            <button class="filter-tab" data-filter="feature">New Features</button>
+            <button class="filter-tab" data-filter="improvement">Improvements</button>
+            <button class="filter-tab" data-filter="bug">Bug Fixes</button>
+            <button class="filter-tab" data-filter="security">Security</button>
+        </div>
+        
+        <!-- Updates List -->
+        <div class="updates-section">
+            <div class="section-header">
+                <i class="fas fa-clock" style="color: var(--text-medium);"></i>
+                <h2 class="section-title">Latest Updates</h2>
+            </div>
+            <p class="updates-section-lead">Brightspace <strong>August 2026 / 20.26.08</strong> — scheduled for your environment on <strong>August 15, 2026</strong>. Summaries below are curated for teaching faculty; see <a href="https://community.d2l.com/brightspace/kb/articles/35155-august-2026-20-26-08" target="_blank" rel="noopener noreferrer">D2L release notes</a> for the full list.</p>
+            
+            <div id="updates-list">
+                <!-- Current release loaded dynamically -->
+            </div>
+        </div>
+
+        <div class="updates-section updates-section-upcoming">
+            <div class="section-header">
+                <i class="fas fa-calendar-plus" style="color: var(--text-medium);"></i>
+                <h2 class="section-title">Upcoming</h2>
+            </div>
+            <p class="updates-section-lead" id="upcoming-section-lead">Brightspace <strong>September 2026 / 20.26.09</strong> — scheduled for your environment on <strong>September 15, 2026</strong>. Faculty-focused summaries will be added to this page closer to that date; see <a href="https://community.d2l.com/brightspace/categories/release-notes-en" target="_blank" rel="noopener noreferrer">D2L release notes</a> for the full list when published.</p>
+            
+            <div id="updates-list-upcoming">
+                <!-- Upcoming release loaded dynamically -->
+            </div>
+        </div>
+
+        <div class="updates-section updates-section-archived">
+            <div class="section-header">
+                <i class="fas fa-box-archive" style="color: var(--text-medium);"></i>
+                <h2 class="section-title">Archived</h2>
+            </div>
+            <p class="updates-section-lead">Faculty-focused highlights from earlier releases (January–July 2026), including <a href="https://community.d2l.com/brightspace/kb/articles/35074-july-2026-20-26-07" target="_blank" rel="noopener noreferrer">July 2026 / 20.26.07</a> and <a href="https://community.d2l.com/brightspace/kb/articles/34976-june-2026-20-26-06" target="_blank" rel="noopener noreferrer">June 2026 / 20.26.06</a>. The same filter tabs above apply here.</p>
+            
+            <div id="updates-list-archived">
+                <!-- Archived releases loaded dynamically -->
+            </div>
+        </div>
+    </main>
+    
+    <!-- JavaScript -->
+    <script src="js/navigation.js"></script>
+    <script src="js/updates.js"></script>
+</body>
+</html>

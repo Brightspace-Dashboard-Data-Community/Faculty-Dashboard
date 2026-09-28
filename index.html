@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your Institution Faculty Dashboard — course tools, student insights, and training in one place">
+    <title>Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+
+    <link rel="prefetch" href="mycourses.html">
+    <link rel="prefetch" href="tools.html">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <!-- Work-in-Progress Modal -->
+    <div id="wip-modal" class="wip-modal" role="dialog" aria-labelledby="wip-modal-title" aria-modal="true" style="display: none;">
+        <div class="wip-modal-overlay"></div>
+        <div class="wip-modal-content">
+            <div class="wip-modal-header">
+                <div class="wip-modal-icon">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                </div>
+                <h2 id="wip-modal-title" class="wip-modal-title">Work in Progress</h2>
+            </div>
+            <div class="wip-modal-body">
+                <p>This site is currently a work-in-progress. The eLearning Office is actively building and improving the Faculty Dashboard.</p>
+                <p>If you notice any missing content or would like to request additional features, please submit a help desk ticket for review.</p>
+                <div class="wip-modal-ticket-link">
+                    <a href="https://helpdesk.example.edu/portal/en/newticket" target="_blank" rel="noopener noreferrer" class="wip-ticket-button">
+                        <i class="fas fa-ticket-alt" aria-hidden="true"></i>
+                        Submit Help Desk Ticket
+                        <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                    </a>
+                </div>
+                <p>Please be advised that some data may not be 100% accurate as we continue to develop and refine the site.</p>
+                <div class="wip-modal-ferpa" role="note">
+                    <p><strong>FERPA reminder:</strong> This dashboard may surface protected student information, including discussion content and grades. Do not share screenshots or exports without authorization.</p>
+                </div>
+            </div>
+            <div class="wip-modal-footer">
+                <button id="wip-modal-close" class="wip-modal-button" type="button" aria-label="Close modal">
+                    I Understand
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <main id="main-content" class="main-content" role="main">
+        <section class="home-hero" aria-labelledby="home-hero-title">
+            <div class="home-hero-copy">
+                <p class="home-hero-eyebrow">Your Institution</p>
+                <h1 id="home-hero-title" class="page-title">Faculty Dashboard</h1>
+                <p class="home-hero-lead">
+                    Your starting point for course tools, student insights, analytics, and faculty training — without leaving Brightspace.
+                </p>
+                <div class="home-hero-actions">
+                    <a href="mycourses.html" class="launch-tool-btn">
+                        <span>Go to My Courses</span>
+                        <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                    <a href="tools.html" class="launch-tool-btn launch-tool-btn-secondary">
+                        <span>Browse Tools &amp; Reports</span>
+                        <i class="fas fa-tools" aria-hidden="true"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="home-hero-aside">
+                <span class="semester-label" data-fd-semester-banner="active"></span>
+                <p class="home-hero-aside-text">
+                    Course counts, grades, and attention items now live on <a href="mycourses.html">My Courses</a>.
+                </p>
+            </div>
+        </section>
+
+        <section class="home-map" aria-labelledby="home-map-title">
+            <div class="tools-section-header">
+                <h2 id="home-map-title" class="tools-section-title">What you can do here</h2>
+                <div class="tools-section-separator"></div>
+            </div>
+            <p class="home-map-intro">Use the sidebar anytime, or jump into a section below.</p>
+
+            <div class="home-map-grid">
+                <a href="mycourses.html" class="home-map-card">
+                    <div class="home-map-icon" aria-hidden="true"><i class="fas fa-book"></i></div>
+                    <h3 class="home-map-card-title">My Courses</h3>
+                    <p class="home-map-card-text">See your course list plus semester overview metrics and what needs attention.</p>
+                </a>
+                <a href="students.html" class="home-map-card">
+                    <div class="home-map-icon" aria-hidden="true"><i class="fas fa-users"></i></div>
+                    <h3 class="home-map-card-title">Students</h3>
+                    <p class="home-map-card-text">Review student activity signals and follow up on learners who may need outreach.</p>
+                </a>
+                <a href="analytics.html" class="home-map-card">
+                    <div class="home-map-icon" aria-hidden="true"><i class="fas fa-chart-line"></i></div>
+                    <h3 class="home-map-card-title">Analytics</h3>
+                    <p class="home-map-card-text">Explore course health, assignments, discussions, and quizzes in more depth.</p>
+                </a>
+                <a href="tools.html" class="home-map-card">
+                    <div class="home-map-icon" aria-hidden="true"><i class="fas fa-tools"></i></div>
+                    <h3 class="home-map-card-title">Tools &amp; Reports</h3>
+                    <p class="home-map-card-text">Merge courses, create sandboxes, deploy agents, export grades, and run audits.</p>
+                </a>
+                <a href="faculty-training.html" class="home-map-card">
+                    <div class="home-map-icon" aria-hidden="true"><i class="fas fa-graduation-cap"></i></div>
+                    <h3 class="home-map-card-title">Faculty Training</h3>
+                    <p class="home-map-card-text">Short walkthroughs and tutorials for common Brightspace and dashboard tasks.</p>
+                </a>
+                <a href="accessibility.html" class="home-map-card">
+                    <div class="home-map-icon" aria-hidden="true"><i class="fas fa-universal-access"></i></div>
+                    <h3 class="home-map-card-title">Accessibility</h3>
+                    <p class="home-map-card-text">Guides and training to help make course materials accessible for every student.</p>
+                </a>
+            </div>
+        </section>
+
+        <section class="home-orient" aria-labelledby="home-orient-title">
+            <div class="home-orient-card">
+                <div class="home-orient-icon" aria-hidden="true">
+                    <i class="fas fa-compass"></i>
+                </div>
+                <div class="home-orient-copy">
+                    <h2 id="home-orient-title" class="home-orient-title">New here?</h2>
+                    <p class="home-orient-text">
+                        Take a guided walkthrough of every Faculty Dashboard section, then open My Courses for your live semester overview.
+                    </p>
+                </div>
+                <a href="dashboard-orientation.html" class="launch-tool-btn">
+                    <span>Start dashboard walkthrough</span>
+                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                </a>
+            </div>
+        </section>
+
+        <section class="home-orient" aria-labelledby="home-rollover-title">
+            <div class="home-orient-card">
+                <div class="home-orient-icon" aria-hidden="true">
+                    <i class="fas fa-rotate"></i>
+                </div>
+                <div class="home-orient-copy">
+                    <h2 id="home-rollover-title" class="home-orient-title">Preparing next term?</h2>
+                    <p class="home-orient-text">
+                        Use the Semester Rollover Kit to copy last term’s Brightspace course into
+                        <span data-fd-semester-text="future">the upcoming term</span>, then update dates, syllabus, and launch settings.
+                    </p>
+                </div>
+                <a href="semester-rollover-kit.html" class="launch-tool-btn">
+                    <span>Open rollover kit</span>
+                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/wip-modal.js"></script>
+</body>
+</html>

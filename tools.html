@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Faculty Dashboard - Tools and Reports">
+    <title>Faculty Tools & Reports - Faculty Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">Faculty Tools & Reports</h1>
+            <p class="page-subtitle">Open a category to browse its tools and reports separately.</p>
+        </div>
+
+        <div class="tools-main-content">
+            <section class="tools-section">
+                <div class="tools-section-header">
+                    <h2 class="tools-section-title">Browse by area</h2>
+                    <div class="tools-section-separator"></div>
+                </div>
+                <div class="primary-tools-grid">
+                    <div class="primary-tool-card" data-tool-category="course-management">
+                        <div class="primary-tool-header">
+                            <div class="primary-tool-icon"><i class="fas fa-cog"></i></div>
+                            <div class="primary-tool-title-wrapper">
+                                <h3 class="primary-tool-title">Course Management</h3>
+                            </div>
+                        </div>
+                        <p class="primary-tool-description">Course setup, term rollover, due dates, agents, merges, and course reports — organized as tools and reports.</p>
+                        <p class="hub-area-counts" aria-live="polite">
+                            <span class="hub-area-count" data-count="tools">— tools</span>
+                            <span class="hub-area-count-sep" aria-hidden="true">·</span>
+                            <span class="hub-area-count" data-count="reports">— reports</span>
+                        </p>
+                        <div class="primary-tool-actions">
+                            <a href="course-management-tools.html" class="launch-tool-btn">
+                                <span>Open Course Management</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="primary-tool-card" data-tool-category="student-management">
+                        <div class="primary-tool-header">
+                            <div class="primary-tool-icon"><i class="fas fa-users"></i></div>
+                            <div class="primary-tool-title-wrapper">
+                                <h3 class="primary-tool-title">User Management</h3>
+                            </div>
+                        </div>
+                        <p class="primary-tool-description">Accommodations, enrollment utilities, and student activity reports.</p>
+                        <p class="hub-area-counts" aria-live="polite">
+                            <span class="hub-area-count" data-count="tools">— tools</span>
+                            <span class="hub-area-count-sep" aria-hidden="true">·</span>
+                            <span class="hub-area-count" data-count="reports">— reports</span>
+                        </p>
+                        <div class="primary-tool-actions">
+                            <a href="student-management-tools.html" class="launch-tool-btn">
+                                <span>Open User Management</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="primary-tool-card" data-tool-category="analytics-reports">
+                        <div class="primary-tool-header">
+                            <div class="primary-tool-icon"><i class="fas fa-chart-bar"></i></div>
+                            <div class="primary-tool-title-wrapper">
+                                <h3 class="primary-tool-title">Analytics & Reports</h3>
+                            </div>
+                        </div>
+                        <p class="primary-tool-description">Analytics dashboards and operational audit reports.</p>
+                        <p class="hub-area-counts" aria-live="polite">
+                            <span class="hub-area-count" data-count="tools">— tools</span>
+                            <span class="hub-area-count-sep" aria-hidden="true">·</span>
+                            <span class="hub-area-count" data-count="reports">— reports</span>
+                        </p>
+                        <div class="primary-tool-actions">
+                            <a href="analytics-reports-tools.html" class="launch-tool-btn">
+                                <span>Open Analytics & Reports</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/tool-catalog.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (!window.ToolCatalog || !window.ToolCatalog.getByCategoryAndKind) return;
+
+            function pluralize(count, singular, plural) {
+                return count + " " + (count === 1 ? singular : plural);
+            }
+
+            var cards = document.querySelectorAll("[data-tool-category]");
+            for (var i = 0; i < cards.length; i++) {
+                var card = cards[i];
+                var category = card.getAttribute("data-tool-category");
+                var tools = window.ToolCatalog.getByCategoryAndKind(category, "tool");
+                var reports = window.ToolCatalog.getByCategoryAndKind(category, "report");
+                var toolsEl = card.querySelector('[data-count="tools"]');
+                var reportsEl = card.querySelector('[data-count="reports"]');
+                if (toolsEl) toolsEl.textContent = pluralize(tools.length, "tool", "tools");
+                if (reportsEl) reportsEl.textContent = pluralize(reports.length, "report", "reports");
+            }
+        });
+    </script>
+</body>
+</html>

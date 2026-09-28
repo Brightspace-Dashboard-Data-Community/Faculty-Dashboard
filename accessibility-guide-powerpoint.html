@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Accessibility checklist for Microsoft PowerPoint">
+    <title>PowerPoint — Accessibility - D2L Faculty Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+    <main id="main-content" class="main-content" role="main">
+        <nav class="a11y-guide-breadcrumb widget-container" aria-label="Breadcrumb">
+            <a href="accessibility.html" class="a11y-guide-back"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Accessibility</a>
+        </nav>
+        <div class="page-header">
+            <h1 class="page-title">Microsoft PowerPoint</h1>
+            <p class="page-subtitle">Slides are read in a specific order by assistive technology; titles, layouts, and reading order all matter.</p>
+        </div>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="ppt-basics-heading">
+            <h2 id="ppt-basics-heading">Slides &amp; layouts</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Start from accessible <strong>built-in themes</strong> and slide layouts with title placeholders.</li>
+                <li>Every slide should have a unique, descriptive <strong>title</strong> (even if you hide the title visually on a layout that still keeps it for assistive tech—prefer layouts that show the title when possible).</li>
+                <li>Avoid critical information only in speaker notes if students rely on the file without narration.</li>
+            </ul>
+        </section>
+
+        <section id="reading-order" class="widget-container a11y-guide-section" aria-labelledby="reading-order-heading">
+            <h2 id="reading-order-heading">Reading order</h2>
+            <p>Screen readers follow the internal order of objects on a slide, which may differ from left-to-right visual order.</p>
+            <ul class="a11y-guide-checklist">
+                <li>Open <strong>Home → Arrange → Selection Pane</strong> (Windows) or the equivalent on your platform.</li>
+                <li>List order is often read <strong>bottom to top</strong>; drag items so the sequence matches the intended reading flow.</li>
+                <li>Group related objects when it makes sense, and remove off-slide or decorative duplicates from the order.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="ppt-media-heading">
+            <h2 id="ppt-media-heading">Images &amp; media</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Add <strong>alt text</strong> to images and icons that carry meaning.</li>
+                <li>Embed or link to captioned video; describe important motion if audio alone is not enough.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="ppt-verify-heading">
+            <h2 id="ppt-verify-heading">Verify</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Use <strong>Review → Check Accessibility</strong> before exporting or uploading to D2L.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="ppt-refs-heading">
+            <h2 id="ppt-refs-heading">Further reading</h2>
+            <ul class="a11y-guide-resource-links">
+                <li><a href="https://support.microsoft.com/en-us/office/make-your-powerpoint-presentations-accessible-to-people-with-disabilities-6f7772b2-2f33-4bd2-8ca0-d3d386b4bc63" target="_blank" rel="noopener noreferrer">Microsoft — Accessible PowerPoint presentations</a></li>
+            </ul>
+        </section>
+    </main>
+    <script src="js/navigation.js"></script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="D2L Faculty Dashboard - End of Semester Course Report">
+    <title>End of Semester Course Report - D2L Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">End of Semester Course Report <span class="beta-badge">Beta</span></h1>
+            <p class="page-subtitle">Beta. Class-level retrospective of grades, access, content, due dates, quizzes, discussions, and assignments, with next-term suggestions. No student names. Last-access timing is measured from the course end date, not from today.</p>
+        </div>
+
+        <div class="sandbox-main-content">
+            <section class="sandbox-section">
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title">Build a report</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+
+                <p class="course-report-intro">
+                    Choose a course offering from <strong data-fd-semester-code="previous"></strong>,
+                    <strong data-fd-semester-code="active"></strong>, or
+                    <strong data-fd-semester-code="future"></strong>.
+                    The report pulls Brightspace gradebook, assignment, quiz, discussion, content, and last-access data,
+                    then summarizes patterns for course redesign. Counts and averages only — no roster names.
+                    <strong>Beta:</strong> last-access buckets are measured against the course end date (or last due date if Brightspace does not return an end date), not “days since today.” After a term ends, students typically cannot log in.
+                    Brightspace does not expose true clickstream to this dashboard; “what students looked at” is content visits and tool use.
+                </p>
+
+                <div class="tool-ferpa-note" role="note">
+                    <strong>FERPA:</strong> Even without names, this is a class education record. Generate and download only for legitimate educational purposes at Your Institution. Do not post or share the PDF outside that use.
+                    For named grade exports, use <a href="grade-export-utility.html">Course Report</a>.
+                </div>
+
+                <form id="eosForm" class="sandbox-form course-report-form" novalidate>
+                    <div class="form-group">
+                        <label for="eosCourse" class="form-label">Course (<span data-fd-semester-code="previous"></span>, <span data-fd-semester-code="active"></span>, <span data-fd-semester-code="future"></span>)</label>
+                        <select id="eosCourse" class="form-input" required aria-required="true">
+                            <option value="">Loading courses…</option>
+                        </select>
+                    </div>
+
+                    <div class="cr-actions">
+                        <button type="submit" class="form-button" id="eosRunBtn">
+                            <i class="fas fa-chart-pie" aria-hidden="true"></i>
+                            <span id="eosRunLabel">Generate report</span>
+                        </button>
+                        <button type="button" class="form-button form-button-secondary" id="eosPdfBtn" hidden>
+                            <i class="fas fa-file-pdf" aria-hidden="true"></i>
+                            Download PDF
+                        </button>
+                    </div>
+                </form>
+
+                <div id="eosMessage" class="message-container" style="display:none; margin-top:16px;" role="status"></div>
+            </section>
+
+            <section class="sandbox-section cr-preview-section" id="eosPreviewSection" hidden>
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title" id="eosPreviewTitle">Course retrospective</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+                <nav class="eos-jump" id="eosJump" aria-label="Report sections" hidden></nav>
+                <div id="eosPreview" class="cr-preview"></div>
+            </section>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/course-offerings.js"></script>
+    <script src="js/pdf-brand.js"></script>
+    <script src="js/end-of-semester-report.js"></script>
+</body>
+</html>

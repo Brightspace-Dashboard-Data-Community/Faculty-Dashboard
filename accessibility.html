@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="D2L Faculty Dashboard - YuJa Panorama accessibility resources and faculty training">
+    <title>Accessibility - D2L Faculty Dashboard</title>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Universal Styles -->
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Navigation Sidebar (loaded dynamically) -->
+    <div id="nav-placeholder"></div>
+    
+    <!-- Main Content Area -->
+    <main id="main-content" class="main-content" role="main">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Accessibility</h1>
+            <p class="page-subtitle">Create and improve accessible course content in D2L with YuJa Panorama, plus format guides and step-by-step faculty training.</p>
+        </div>
+
+        <!-- Platform switch notice -->
+        <div class="accessibility-switch-notice widget-container" role="status">
+            <div class="accessibility-switch-notice-icon" aria-hidden="true">
+                <i class="fas fa-bullhorn"></i>
+            </div>
+            <div>
+                <p class="accessibility-switch-notice-title">Platform change — July 2026</p>
+                <p class="accessibility-switch-notice-text">Your Institution switched from <strong>Ally</strong> to <strong>YuJa Panorama</strong> in July 2026. Use the accessibility indicator next to files in Content to open Panorama reports, remediate issues, and give students alternative formats. Ally indicators and workflows are no longer used.</p>
+            </div>
+        </div>
+        
+        <!-- Intro -->
+        <div class="accessibility-intro widget-container">
+            <p class="accessibility-intro-text">YuJa Panorama scans course files and HTML pages, scores accessibility against WCAG-aligned checks, guides you through fixes (including AI-assisted options), and automatically generates alternative formats for students. Start with the training below, then use the format checklists when you author new materials.</p>
+        </div>
+
+        <!-- YuJa Panorama overview -->
+        <section class="accessibility-section widget-container" aria-labelledby="panorama-heading">
+            <h2 id="panorama-heading" class="accessibility-section-title">
+                <i class="fas fa-universal-access" aria-hidden="true"></i>
+                YuJa Panorama in D2L
+            </h2>
+            <p class="accessibility-section-desc">Panorama is integrated into your course Content area. Look for the accessibility icon or score next to documents and pages.</p>
+            <ul class="accessibility-card-list">
+                <li class="accessibility-card">
+                    <div class="accessibility-card-icon"><i class="fas fa-chart-pie" aria-hidden="true"></i></div>
+                    <div>
+                        <h3 class="accessibility-card-title">Accessibility reports &amp; scores</h3>
+                        <p class="accessibility-card-desc">Open a file’s Accessibility Report to see its score, review individual issues, and follow Panorama’s guidance on how to fix each one.</p>
+                    </div>
+                </li>
+                <li class="accessibility-card">
+                    <div class="accessibility-card-icon"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i></div>
+                    <div>
+                        <h3 class="accessibility-card-title">Remediation tools</h3>
+                        <p class="accessibility-card-desc">Fix issues with Guided Remediation, AutoPilot AI suggestions, Structural Remediation (reading order and tagging), or by requesting help from YuJa Accessibility Experts when available.</p>
+                    </div>
+                </li>
+                <li class="accessibility-card">
+                    <div class="accessibility-card-icon"><i class="fas fa-file-export" aria-hidden="true"></i></div>
+                    <div>
+                        <h3 class="accessibility-card-title">Alternative formats for students</h3>
+                        <p class="accessibility-card-desc">Students can download formats such as audio, EPUB, braille, Immersive Reader, OCR outputs, math formats, and language translations—generated automatically without extra setup from you.</p>
+                    </div>
+                </li>
+                <li class="accessibility-card">
+                    <div class="accessibility-card-icon"><i class="fas fa-list-check" aria-hidden="true"></i></div>
+                    <div>
+                        <h3 class="accessibility-card-title">WCAG-aligned checklist</h3>
+                        <p class="accessibility-card-desc">Panorama checks PDFs, Office files, HTML, and more for issues like missing titles, alt text, headings, contrast, tables, and captions. See our training for the most common faculty-facing checks.</p>
+                    </div>
+                </li>
+            </ul>
+            <p class="accessibility-external-link-p" style="margin-top: 20px;">
+                <a href="accessibility-tutorials.html" class="accessibility-external-link">Open YuJa Panorama faculty training <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+            </p>
+        </section>
+
+        <!-- Quick start -->
+        <section class="accessibility-section widget-container" aria-labelledby="quickstart-heading">
+            <h2 id="quickstart-heading" class="accessibility-section-title">
+                <i class="fas fa-rocket" aria-hidden="true"></i>
+                Quick start in D2L
+            </h2>
+            <ol class="accessibility-steps">
+                <li>Open your course and go to <strong>Content</strong>.</li>
+                <li>Find a document or page and click its <strong>accessibility icon</strong> (or score) to open the <strong>Accessibility Report</strong>.</li>
+                <li>Select <strong>View All Issues</strong> to see what affects the score, then <strong>Fix Issue</strong> for guidance on each item.</li>
+                <li>Choose <strong>Fix This Document</strong> and pick Guided Remediation, AutoPilot, or Structural Remediation as needed.</li>
+                <li>When finished, apply fixes so the updated file replaces the original in your course.</li>
+            </ol>
+            <p class="accessibility-section-desc" style="margin-bottom: 0; margin-top: 16px;">
+                Official vendor walkthrough:
+                <a href="https://support.yuja.com/hc/en-us/articles/5373002025879-Getting-Started-with-Panorama-for-Instructors-in-D2L" target="_blank" rel="noopener noreferrer">Getting Started with Panorama for Instructors in D2L</a>
+            </p>
+        </section>
+
+        <!-- Other D2L accessibility tools -->
+        <section class="accessibility-section widget-container" aria-labelledby="d2l-heading">
+            <h2 id="d2l-heading" class="accessibility-section-title">
+                <i class="fas fa-toolbox" aria-hidden="true"></i>
+                Other accessibility tools in D2L
+            </h2>
+            <p class="accessibility-section-desc">Use these alongside Panorama when you build HTML content and media.</p>
+            <ul class="accessibility-card-list">
+                <li class="accessibility-card">
+                    <div class="accessibility-card-icon"><i class="fas fa-image" aria-hidden="true"></i></div>
+                    <div>
+                        <h3 class="accessibility-card-title">Alt text for images</h3>
+                        <p class="accessibility-card-desc">When adding images through the HTML Editor in D2L, add alt text so visual content is available to screen reader users.</p>
+                    </div>
+                </li>
+                <li class="accessibility-card">
+                    <div class="accessibility-card-icon"><i class="fas fa-check-double" aria-hidden="true"></i></div>
+                    <div>
+                        <h3 class="accessibility-card-title">D2L Accessibility Checker</h3>
+                        <p class="accessibility-card-desc">Scan HTML content in the Brightspace editor for potential issues before you publish a topic or page.</p>
+                    </div>
+                </li>
+                <li class="accessibility-card">
+                    <div class="accessibility-card-icon"><i class="fas fa-video" aria-hidden="true"></i></div>
+                    <div>
+                        <h3 class="accessibility-card-title">Captions &amp; audio descriptions</h3>
+                        <p class="accessibility-card-desc">Provide captions for video and narrate key visual elements when they are essential to understanding the content.</p>
+                    </div>
+                </li>
+                <li class="accessibility-card">
+                    <div class="accessibility-card-icon"><i class="fas fa-volume-up" aria-hidden="true"></i></div>
+                    <div>
+                        <h3 class="accessibility-card-title">ReadSpeaker</h3>
+                        <p class="accessibility-card-desc">Text-to-speech and reading tools for listening to documents and HTML pages in your D2L courses.</p>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Faculty training -->
+        <section class="accessibility-section widget-container" aria-labelledby="trainings-heading">
+            <h2 id="trainings-heading" class="accessibility-section-title">
+                <i class="fas fa-graduation-cap" aria-hidden="true"></i>
+                Faculty training (YuJa Panorama)
+            </h2>
+            <p class="accessibility-section-desc">Self-paced tutorials written for Your Institution faculty. Completion times are estimates.</p>
+            <ul class="accessibility-training-list">
+                <li class="accessibility-training-item">
+                    <strong>Open Accessibility Reports in D2L</strong> — 5–10 min. Find the accessibility icon, open a report, and read your score and issue list.
+                </li>
+                <li class="accessibility-training-item">
+                    <strong>Guided Remediation</strong> — 15–20 min. Fix issues one at a time with Panorama’s suggestions and apply changes back to your course file.
+                </li>
+                <li class="accessibility-training-item">
+                    <strong>AutoPilot AI remediation</strong> — 10–15 min. Let Panorama propose AI-assisted fixes for supported file types, then review and apply.
+                </li>
+                <li class="accessibility-training-item">
+                    <strong>Alternative formats for students</strong> — 5–10 min. Preview formats students can use and know where the student toggle lives.
+                </li>
+                <li class="accessibility-training-item">
+                    <strong>Common issues checklist</strong> — 10–15 min. Know the high-impact checks Panorama runs on PDFs, Word, PowerPoint, Excel, and HTML.
+                </li>
+            </ul>
+            <p class="accessibility-external-link-p">
+                <a href="accessibility-tutorials.html" class="accessibility-external-link">Start faculty training <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+            </p>
+        </section>
+
+        <!-- Guidelines by Content Type -->
+        <section class="accessibility-section widget-container" aria-labelledby="guidelines-heading">
+            <h2 id="guidelines-heading" class="accessibility-section-title">
+                <i class="fas fa-list-check" aria-hidden="true"></i>
+                Guidelines by content type
+            </h2>
+            <p class="accessibility-section-desc">Author accessible materials first; then use Panorama in D2L to catch remaining issues after upload.</p>
+            <div class="accessibility-grid">
+                <a href="accessibility-guide-d2l-webpages.html" class="accessibility-link-card">
+                    <i class="fas fa-globe" aria-hidden="true"></i>
+                    <span>D2L Webpages</span>
+                </a>
+                <a href="accessibility-guide-word.html" class="accessibility-link-card">
+                    <i class="fas fa-file-word" aria-hidden="true"></i>
+                    <span>Word Documents</span>
+                </a>
+                <a href="accessibility-guide-powerpoint.html" class="accessibility-link-card">
+                    <i class="fas fa-file-powerpoint" aria-hidden="true"></i>
+                    <span>PowerPoint</span>
+                </a>
+                <a href="accessibility-guide-pdf.html" class="accessibility-link-card">
+                    <i class="fas fa-file-pdf" aria-hidden="true"></i>
+                    <span>PDF Documents</span>
+                </a>
+                <a href="accessibility-guide-excel.html" class="accessibility-link-card">
+                    <i class="fas fa-file-excel" aria-hidden="true"></i>
+                    <span>Excel Spreadsheets</span>
+                </a>
+                <a href="accessibility-guide-multimedia.html" class="accessibility-link-card">
+                    <i class="fas fa-photo-video" aria-hidden="true"></i>
+                    <span>Multimedia (Audio, Video, Captioning)</span>
+                </a>
+                <a href="accessibility-guide-email.html" class="accessibility-link-card">
+                    <i class="fas fa-envelope" aria-hidden="true"></i>
+                    <span>Email</span>
+                </a>
+                <a href="accessibility-guide-google-docs.html" class="accessibility-link-card">
+                    <i class="fab fa-google-drive" aria-hidden="true"></i>
+                    <span>Google Docs</span>
+                </a>
+                <a href="accessibility-guide-google-slides.html" class="accessibility-link-card">
+                    <i class="fas fa-presentation" aria-hidden="true"></i>
+                    <span>Google Slides</span>
+                </a>
+                <a href="accessibility-guide-google-sheets.html" class="accessibility-link-card">
+                    <i class="fas fa-table" aria-hidden="true"></i>
+                    <span>Google Sheets</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- External Resources -->
+        <section class="accessibility-section widget-container" aria-labelledby="external-heading">
+            <h2 id="external-heading" class="accessibility-section-title">
+                <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                Official YuJa &amp; accessibility resources
+            </h2>
+            <p class="accessibility-section-desc">Primary vendor documentation and complementary tools for content created outside D2L.</p>
+            <ul class="accessibility-resource-list">
+                <li>
+                    <a href="https://support.yuja.com/hc/en-us/articles/5373002025879-Getting-Started-with-Panorama-for-Instructors-in-D2L" target="_blank" rel="noopener noreferrer">YuJa — Getting Started with Panorama for Instructors in D2L</a>
+                    — Reports, guided remediation, and alternative formats in Brightspace.
+                </li>
+                <li>
+                    <a href="https://support.yuja.com/hc/en-us/articles/360053990193-Panorama-s-Accessibility-Checklist" target="_blank" rel="noopener noreferrer">YuJa — Panorama’s Accessibility Checklist</a>
+                    — Issues Panorama checks by file type, and which remediation tools can help.
+                </li>
+                <li>
+                    <a href="https://support.yuja.com/hc/en-us/articles/21131489953559-Using-Panorama-s-AutoPilot-Remediation-for-Proposing-Accessibility-Fixes" target="_blank" rel="noopener noreferrer">YuJa — Using AutoPilot remediation</a>
+                    — AI-proposed fixes for PDF, DOCX, PPTX, and HTML.
+                </li>
+                <li>
+                    <a href="https://support.yuja.com/hc/en-us/articles/17383161633559-Resolving-the-Accessibility-Issues-for-Your-Documents" target="_blank" rel="noopener noreferrer">YuJa — Resolving accessibility issues</a>
+                    — Fix issues from the report and apply changes to the course file.
+                </li>
+                <li>
+                    <a href="https://support.microsoft.com/en-us/office/make-your-content-accessible-to-everyone-38059c2d-45ef-4830-9797-618f0e96f3ab" target="_blank" rel="noopener noreferrer">Microsoft — Make your content accessible</a>
+                    — Accessibility Checker and tips across Microsoft 365 apps.
+                </li>
+                <li>
+                    <a href="https://webaim.org/resources/contrastchecker/" target="_blank" rel="noopener noreferrer">WebAIM Color Contrast Checker</a>
+                    — Test foreground and background contrast for readability.
+                </li>
+            </ul>
+        </section>
+
+        <!-- Footer note -->
+        <div class="accessibility-footer-note widget-container">
+            <p>Faculty training on this page is based on YuJa’s official Panorama documentation for D2L instructors. For product changes or advanced features, refer to the YuJa Help Center links above. For Your Institution–specific questions, contact your instructional design or LMS support team.</p>
+        </div>
+    </main>
+    
+    <!-- JavaScript -->
+    <script src="js/navigation.js"></script>
+</body>
+</html>

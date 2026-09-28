@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your Institution Faculty Dashboard - Tone Checker">
+    <title>Tone Checker - D2L Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <style>
+      .tc-scope {
+        --db: var(--primary-green, #0f5b46);
+        --lb: var(--accent-green, #2d9d7a);
+        --gd: var(--feature-green, #10b981);
+        --dg: var(--text-dark, #111111);
+        --bg: var(--bg-light, #f9fafb);
+        --success: #0f5b46;
+        --warning: #f59e0b;
+        --danger: #dc2626;
+        --radius: 12px;
+        --shadow: none;
+        --shadow-hover: none;
+        --transition: all 0.2s ease;
+      }
+      .tc-scope .tc-input-wrap { position: relative; }
+      .tc-scope #tcInput {
+        width: 100%; box-sizing: border-box; min-height: 200px; resize: vertical;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+        font-size: 15px; line-height: 1.6; color: var(--dg);
+        padding: 14px 16px; border: 1px solid var(--border-gray-dark, #d1d5db);
+        border-radius: 8px; background: #fff;
+        transition: border-color .15s, box-shadow .15s;
+      }
+      .tc-scope #tcInput:focus {
+        outline: none;
+        border-color: var(--primary-green, #0f5b46);
+        box-shadow: 0 0 0 3px rgba(15, 91, 70, 0.15);
+      }
+      .tc-scope #tcInput::placeholder { color: #9aa0a6; }
+      .tc-scope .tc-toolbar {
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px;
+      }
+      .tc-scope .tc-toolbar .tc-count { color: var(--text-medium, #555); font-size: 12px; margin-left: auto; }
+      .tc-scope .tc-btn-primary {
+        display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border: none;
+        border-radius: 8px; background: var(--primary-green, #0f5b46); color: #fff;
+        font-weight: 600; font-size: 14px; cursor: pointer;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      }
+      .tc-scope .tc-btn-primary:hover { background: var(--primary-green-dark, #0a4536); }
+      .tc-scope .tc-btn-ghost {
+        display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px;
+        border: 1px solid var(--border-gray-dark, #d1d5db); border-radius: 8px;
+        background: #fff; color: var(--dg); font-weight: 600; font-size: 14px; cursor: pointer;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      }
+      .tc-scope .tc-btn-ghost:hover { background: var(--light-green, #e8f5f0); border-color: var(--border-green, #bfe5d7); }
+      .tc-scope .tc-btn-primary svg, .tc-scope .tc-btn-ghost svg { width: 16px; height: 16px; }
+      .tc-scope .tc-hint { color: var(--text-medium, #555); font-size: 12px; }
+      .tc-scope .tc-empty { color: var(--text-medium, #555); font-size: 14px; padding: 8px 2px; }
+      .tc-scope .tc-model-bar {
+        display: none; margin: 12px 0 0; padding: 12px 14px; background: var(--bg-light, #f9fafb);
+        border: 1px solid var(--border-gray, #e5e7eb); border-radius: 8px;
+      }
+      .tc-scope .tc-model-bar.active { display: block; }
+      .tc-scope .tc-model-label {
+        display: flex; justify-content: space-between; font-size: 12px; font-weight: 600;
+        color: var(--primary-green, #0f5b46);
+      }
+      .tc-scope .tc-model-track {
+        height: 6px; background: #e8edf2; border-radius: 4px; overflow: hidden; margin: 6px 0;
+      }
+      .tc-scope .tc-model-fill {
+        height: 100%; width: 0; background: var(--accent-green, #2d9d7a); border-radius: 4px;
+        transition: width .35s ease;
+      }
+      .tc-scope .tc-model-bar[data-state="ready"] .tc-model-fill { background: var(--success); }
+      .tc-scope .tc-model-bar[data-state="error"] .tc-model-fill { background: var(--danger); }
+      .tc-scope .tc-model-bar[data-state="keyword"] .tc-model-fill { background: var(--warning); }
+      .tc-scope .tc-model-detail { font-size: 11px; color: var(--text-medium, #555); }
+      .tc-scope .tc-overall {
+        display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+        padding: 16px 18px; background: var(--bg-light, #f9fafb);
+        border: 1px solid var(--border-gray, #e5e7eb); border-radius: 12px; margin-bottom: 12px;
+      }
+      .tc-scope .tc-overall-text { margin: 0; color: var(--dg); font-size: 14px; line-height: 1.5; flex: 1; min-width: 220px; }
+      .tc-scope .tone-badge { display: inline-block; padding: 4px 14px; border-radius: 14px; font-size: 13px; font-weight: 700; }
+      .tc-scope .tone-positive { background: #e8f5f0; color: #0f5b46; }
+      .tc-scope .tone-mixed { background: #dbeafe; color: #1d4ed8; }
+      .tc-scope .tone-neutral { background: #fef3c7; color: #92400e; }
+      .tc-scope .tone-negative { background: #fee2e2; color: #b91c1c; }
+      .tc-scope .kpi-row { display: flex; gap: 12px; padding: 0 0 12px; flex-wrap: wrap; }
+      .tc-scope .kpi-card {
+        flex: 1; min-width: 120px; background: #fff; border-radius: 12px; padding: 16px; text-align: center;
+        border: 1px solid var(--border-gray, #e5e7eb); border-top: 3px solid var(--accent-green, #2d9d7a);
+      }
+      .tc-scope .kpi-value {
+        font-size: clamp(22px, 3vw, 32px); font-weight: 800; color: var(--primary-green, #0f5b46);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      }
+      .tc-scope .kpi-label {
+        font-size: 12px; color: var(--text-medium, #555); text-transform: uppercase;
+        letter-spacing: .5px; margin-top: 4px; font-weight: 600;
+      }
+      .tc-scope .kpi-sub { font-size: 11px; color: var(--text-medium, #555); margin-top: 2px; }
+      .tc-scope .attr-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
+      .tc-scope .attr-col {
+        background: #fff; border-radius: 12px; border: 1px solid var(--border-gray, #e5e7eb); overflow: hidden;
+      }
+      .tc-scope .attr-col-header {
+        padding: 10px 16px; font-size: 14px; font-weight: 700; color: #fff;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      }
+      .tc-scope .attr-col-header.positive { background: var(--primary-green, #0f5b46); }
+      .tc-scope .attr-col-header.negative { background: var(--danger); }
+      .tc-scope .attr-col-body { padding: 12px 16px; }
+      .tc-scope .attr-category { margin-bottom: 10px; }
+      .tc-scope .attr-category-label {
+        font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+        color: var(--primary-green, #0f5b46); margin-bottom: 4px;
+      }
+      .tc-scope .attr-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+      .tc-scope .attr-tag {
+        display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+        border-radius: 10px; font-size: 11px; font-weight: 600;
+      }
+      .tc-scope .attr-tag.pos { background: #e8f5f0; color: #0f5b46; }
+      .tc-scope .attr-tag.neg { background: #fee2e2; color: #b91c1c; }
+      .tc-scope .attr-count {
+        font-size: 10px; background: rgba(0,0,0,0.08); border-radius: 8px; padding: 0 5px;
+        min-width: 16px; text-align: center;
+      }
+      .tc-scope .tc-none { color: var(--text-medium, #555); font-size: 13px; margin: 4px 0; }
+      .tc-scope .tc-highlight-body {
+        white-space: pre-wrap; word-break: break-word;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+        font-size: 15px; line-height: 1.8; color: var(--dg); background: var(--bg-light, #f9fafb);
+        border: 1px solid var(--border-gray, #e5e7eb); border-radius: 8px; padding: 16px;
+      }
+      .tc-scope .tc-hl { padding: 1px 2px; border-radius: 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+      .tc-scope .tc-hl-pos { background: #c8e6c9; color: #1b5e20; box-shadow: inset 0 -2px 0 rgba(15,91,70,.35); }
+      .tc-scope .tc-hl-neg { background: #ffcdd2; color: #b71c1c; box-shadow: inset 0 -2px 0 rgba(220,38,38,.35); }
+      .tc-scope .tc-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12px; color: var(--text-medium, #555); }
+      .tc-scope .tc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+      .tc-scope .tc-swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+      .tc-scope .tc-swatch.pos { background: #c8e6c9; }
+      .tc-scope .tc-swatch.neg { background: #ffcdd2; }
+      .tc-scope .dash-header { display: none; }
+      .tc-scope .dash-body { padding: 0; }
+      .tc-scope .card {
+        background: #fff; border: 1px solid var(--border-gray, #e5e7eb);
+        border-radius: 12px; padding: 20px 22px; margin-bottom: 1rem;
+      }
+      .tc-scope .card h2 {
+        margin: 0 0 8px; font-size: 1.1rem; font-weight: 700;
+        color: var(--primary-green, #0f5b46);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      }
+      .tc-scope .dash-foot {
+        font-size: 0.86rem; color: var(--text-medium, #555); line-height: 1.5; margin-top: 0.5rem;
+      }
+      .sr-only {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+      }
+      @media (max-width: 760px) {
+        .tc-scope .attr-summary { grid-template-columns: 1fr; }
+        .tc-scope .kpi-card { flex: 1 1 45%; }
+      }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">Tone Checker <span class="beta-badge">Beta</span></h1>
+            <p class="page-subtitle">Paste a discussion reply, feedback comment, email, or announcement and check its tone with the same local engine used by the tone dashboards.</p>
+        </div>
+
+        <div class="sandbox-main-content">
+            <div class="tc-scope">
+              <div class="dash-body">
+                <div class="card">
+                  <h2>Paste text to check</h2>
+                  <p class="section-desc" style="color:var(--text-medium,#555);font-size:14px;margin:0 0 12px;line-height:1.6">
+                    Paste any message — a discussion reply, feedback comment, email, or announcement — and it is evaluated by the
+                    same engine the Discussion Tone and Feedback Tone dashboards use.
+                  </p>
+                  <div class="tc-input-wrap">
+                    <label for="tcInput" class="sr-only">Text to analyze for tone</label>
+                    <textarea id="tcInput" placeholder="Paste or type your text here…"></textarea>
+                  </div>
+                  <div class="tc-toolbar">
+                    <button class="tc-btn-primary" id="tcAnalyzeBtn" type="button">
+                      <i class="fas fa-search" aria-hidden="true"></i>
+                      Analyze tone
+                    </button>
+                    <button class="tc-btn-ghost" id="tcResetBtn" type="button">Reset</button>
+                    <span class="tc-hint">Tip: press Ctrl/⌘ + Enter to analyze</span>
+                    <span class="tc-count" id="tcCount">0 words · 0 chars</span>
+                  </div>
+                  <div class="tc-model-bar" id="tcModelBar" role="status" aria-live="polite">
+                    <div class="tc-model-label"><span id="tcModelLabel">Loading AI sentiment model…</span><span id="tcModelPercent">0%</span></div>
+                    <div class="tc-model-track"><div class="tc-model-fill" id="tcModelFill" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="AI model loading progress"></div></div>
+                    <div class="tc-model-detail" id="tcModelDetail">Keyword analysis works right away; AI sentiment upgrades when the model finishes loading.</div>
+                  </div>
+                </div>
+
+                <p class="tc-empty" id="tcEmpty">Paste your text above, then choose Analyze tone to see the same tone attributes the dashboards detect.</p>
+
+                <div id="tcResults" hidden>
+                  <div class="card">
+                    <h2>Tone result</h2>
+                    <p class="section-desc" style="color:var(--text-medium,#555);font-size:14px;margin:0 0 12px;line-height:1.6">
+                      Positive attributes build trust, motivation, and engagement. Negative attributes may damage confidence or classroom climate.
+                    </p>
+                    <div id="tcResultBody"></div>
+                  </div>
+                </div>
+
+                <div class="card" id="tcHighlightCard" hidden>
+                  <h2>Highlighted text</h2>
+                  <div class="tc-legend">
+                    <span><i class="tc-swatch pos" aria-hidden="true"></i> Positive tone phrase</span>
+                    <span><i class="tc-swatch neg" aria-hidden="true"></i> Negative tone phrase</span>
+                    <span style="color:#9aa0a6">Hover a highlight to see the attribute it triggered.</span>
+                  </div>
+                  <div class="tc-highlight-body" id="tcHighlightBody"></div>
+                </div>
+
+                <div class="dash-foot">
+                  Runs entirely in your browser — pasted text is never sent to a server. Tone analysis is a guide, not a verdict;
+                  use professional judgment when interpreting results.
+                </div>
+              </div>
+              <span id="tcLive" class="sr-only" aria-live="polite"></span>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/tone-checker.js"></script>
+</body>
+</html>

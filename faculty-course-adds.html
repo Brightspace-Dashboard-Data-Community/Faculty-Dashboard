@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="D2L Faculty Dashboard - Faculty Course Adds">
+    <title>Faculty Course Adds - D2L Faculty Dashboard</title>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Universal Styles -->
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Navigation Sidebar (loaded dynamically) -->
+    <div id="nav-placeholder"></div>
+    
+    <!-- Main Content Area -->
+    <main id="main-content" class="main-content" role="main">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Faculty Course Adds</h1>
+            <p class="page-subtitle">Add users to your courses with appropriate roles</p>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="course-adds-main-content">
+            <section class="course-adds-section">
+                <div class="course-adds-section-header">
+                    <h2 class="course-adds-section-title">Add User to Course</h2>
+                    <div class="course-adds-section-separator"></div>
+                </div>
+                
+                <p class="course-adds-description">
+                    This tool allows an Instructor to add users to courses where they have Instructor access. 
+                    You can add users with roles such as Course Evaluator, Secondary Instructor, Copy Course, 
+                    Teaching Assistant, SLA, or CSC.
+                </p>
+                
+                <p class="course-adds-description">
+                    If you need assistance with this tool, please contact the eLearning Office through the 
+                    <a href="https://helpdesk.example.edu/portal" target="_blank" rel="noopener">Help Desk Ticketing System</a>.
+                </p>
+                
+                <form id="courseAddForm" class="course-adds-form">
+                    <!-- Course Selection -->
+                    <div class="form-group">
+                        <label for="courseSelect" class="form-label">Select Course:</label>
+                        <select id="courseSelect" class="form-select" required aria-required="true">
+                            <option value="">Loading courses...</option>
+                        </select>
+                    </div>
+                    
+                    <!-- User Search -->
+                    <div class="form-group">
+                        <label for="userSearch" class="form-label">Search for User (Username, Email, or Name):</label>
+                        <small class="course-adds-search-hint">Search by name, username, or campus email. Partial first names (for example Jon for Jonathan) are supported. The person does not need to be in the selected course already.</small>
+                        <div style="display: flex; gap: 8px;">
+                            <input 
+                                type="text" 
+                                id="userSearch" 
+                                class="form-input"
+                                placeholder="Enter username, email, or name"
+                                autocomplete="off"
+                            >
+                            <button 
+                                type="button" 
+                                id="searchButton" 
+                                class="form-button form-button-secondary"
+                            >
+                                <i class="fas fa-search" aria-hidden="true"></i>
+                                Search
+                            </button>
+                        </div>
+                        <div id="searchResults" class="search-results"></div>
+                        <div id="selectedUser" class="selected-user">
+                            <div class="selected-user-info">
+                                <div class="selected-user-details">
+                                    <div class="selected-user-name" id="selectedUserName"></div>
+                                    <div class="selected-user-meta" id="selectedUserMeta"></div>
+                                </div>
+                                <button type="button" class="remove-user-btn" id="removeUserBtn" aria-label="Remove selected user">
+                                    <i class="fas fa-times" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Role Selection (Your Institution role IDs) -->
+                    <div class="form-group">
+                        <label for="roleSelect" class="form-label">Select Role:</label>
+                        <select id="roleSelect" class="form-select" required aria-required="true">
+                            <option value="">Select a role...</option>
+                            <option value="183">Secondary Instructor</option>
+                            <option value="138">Course Evaluator</option>
+                            <option value="108">Teaching Assistant</option>
+                            <option value="170">Copy Course</option>
+                            <option value="152">Librarian</option>
+                            <option value="153">CSC</option>
+                        </select>
+                        <small style="display: block; margin-top: 0.5rem; color: var(--text-medium); font-size: 14px;">
+                            See the role descriptions below. Contact the eLearning Office if you need assistance.
+                        </small>
+                    </div>
+                    
+                    <!-- Roles helper note box -->
+                    <div class="course-adds-roles-helper" role="region" aria-labelledby="roles-helper-title">
+                        <h3 id="roles-helper-title" class="course-adds-roles-helper-title">
+                            <i class="fas fa-info-circle" aria-hidden="true"></i> Understanding course roles
+                        </h3>
+                        <p class="course-adds-roles-helper-intro">
+                            When adding someone to a course, choose the role that matches their responsibility. 
+                            Role names and IDs are defined by your institution in D2L. 
+                            <a href="https://docs.valence.desire2learn.com/res/user.html" target="_blank" rel="noopener">D2L Valence API – Users &amp; Roles</a>
+                        </p>
+                        <dl class="course-adds-roles-list">
+                            <dt>Secondary Instructor</dt>
+                            <dd>Same permissions as Instructor but does not appear on the Student Evaluation Form. Use for co-teachers or support instructors.</dd>
+                            <dt>Course Evaluator</dt>
+                            <dd>Instructor or Division Chair role for reviewing a course for promotion or other evaluation purposes.</dd>
+                            <dt>Teaching Assistant</dt>
+                            <dd>Can view all content but cannot make changes. Read-only access to support teaching.</dd>
+                            <dt>CSC (Course Success Coach)</dt>
+                            <dd>Course Success Coaches can view student information, send emails, and post content under Content. This role often replaces SLA and is commonly used by TLC.</dd>
+                            <dt>Librarian</dt>
+                            <dd>Role for library staff to access the course and support students with resources.</dd>
+                            <dt>Copy Course</dt>
+                            <dd>Instructor-style role used to copy a course into the enrollee’s own course offering.</dd>
+                        </dl>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button 
+                        type="button" 
+                        id="addUserButton" 
+                        class="form-button"
+                        aria-label="Add user to course"
+                        disabled
+                    >
+                        <i class="fas fa-user-plus" aria-hidden="true"></i>
+                        Add User to Course
+                    </button>
+                </form>
+                
+                <div id="successMessage" class="message-container" style="display: none;" role="alert"></div>
+            </section>
+        </div>
+    </main>
+    
+    <!-- JavaScript -->
+    <script src="js/navigation.js"></script>
+    <script>
+        const API_VERSION_LP = "1.62";
+        const API_VERSION_LE = "1.82";
+        let courses = [];
+        let selectedUser = null;
+        let searchTimeout = null;
+        let cachedOrgId = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadCourses();
+            document.getElementById("searchButton").addEventListener("click", searchUsers);
+            document.getElementById("userSearch").addEventListener("keypress", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    searchUsers();
+                }
+            });
+            document.getElementById("removeUserBtn").addEventListener("click", removeSelectedUser);
+            document.getElementById("addUserButton").addEventListener("click", addUserToCourse);
+            document.getElementById("courseSelect").addEventListener("change", updateAddButtonState);
+            document.getElementById("roleSelect").addEventListener("change", updateAddButtonState);
+        });
+
+        async function BrightspaceFetch(url, options) {
+            const token = localStorage.getItem("XSRF.Token");
+            const opts = options || {};
+            if (!opts.headers) opts.headers = {};
+            opts.headers["X-CSRF-Token"] = token;
+            opts.credentials = "include";
+
+            const res = await fetch(url, opts);
+            if (!res.ok) throw new Error("HTTP " + res.status + " - " + url);
+            return await res.json();
+        }
+
+        async function BrightspaceFetchWithMethod(fetchMethod, fetchUrl, fetchData) {
+            const token = localStorage.getItem("XSRF.Token");
+            const headers = {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": token,
+            };
+
+            const options = {
+                method: fetchMethod,
+                headers,
+                credentials: "include"
+            };
+
+            if (fetchData !== null) {
+                options.body = JSON.stringify(fetchData);
+            }
+
+            try {
+                const res = await fetch(fetchUrl, options);
+                const result = { status: res.status, data: {} };
+                const raw = await res.text();
+                try {
+                    result.data = raw ? JSON.parse(raw) : {};
+                } catch (_) {
+                    result.data = raw;
+                }
+                return result;
+            } catch (error) {
+                return { status: 500, data: error.toString() };
+            }
+        }
+
+        function getRoleId(item) {
+            if (item && item.Access) {
+                // First try ClasslistRoleId (if it exists)
+                if (typeof item.Access.ClasslistRoleId !== "undefined" && item.Access.ClasslistRoleId !== null) {
+                    const n = parseInt(item.Access.ClasslistRoleId, 10);
+                    if (!isNaN(n)) return n;
+                }
+                
+                // Fallback: Check ClasslistRoleName for "Instructor" (case-insensitive)
+                if (item.Access.ClasslistRoleName) {
+                    const roleName = (item.Access.ClasslistRoleName || "").toLowerCase();
+                    if (roleName.indexOf("instructor") >= 0 && roleName.indexOf("evaluator") === -1) {
+                        // If role name contains "instructor" but not "evaluator", treat as roleId 102
+                        return 102;
+                    }
+                }
+            }
+            return null;
+        }
+
+        async function loadCourses() {
+            const courseSelect = document.getElementById("courseSelect");
+            courseSelect.innerHTML = "<option value=''>Loading courses...</option>";
+            courseSelect.disabled = true;
+
+            try {
+                const allItems = [];
+                let bookmark = null;
+                let hasMore = true;
+
+                while (hasMore) {
+                    const endpoint = bookmark
+                        ? `/d2l/api/lp/${API_VERSION_LP}/enrollments/myenrollments/?bookmark=${encodeURIComponent(bookmark)}`
+                        : `/d2l/api/lp/${API_VERSION_LP}/enrollments/myenrollments/`;
+
+                    const data = await BrightspaceFetch(endpoint);
+
+                    if (data && data.Items && data.Items.length) {
+                        for (let i = 0; i < data.Items.length; i++) {
+                            const item = data.Items[i];
+                            if (item.OrgUnit && item.OrgUnit.Type && item.OrgUnit.Type.Id === 3) {
+                                // Only include courses where instructor has roleId == 102 (Instructor)
+                                // NO SEMESTER FILTER - load ALL courses from ANY semester
+                                const roleId = getRoleId(item);
+                                if (roleId === 102) {
+                                    allItems.push(item);
+                                }
+                            }
+                        }
+                    }
+
+                    if (data && data.PagingInfo && data.PagingInfo.HasMoreItems) {
+                        hasMore = true;
+                        bookmark = data.PagingInfo.Bookmark;
+                    } else {
+                        hasMore = false;
+                    }
+                }
+
+                courses = allItems;
+                
+                if (courses.length === 0) {
+                    courseSelect.innerHTML = "<option value=''>✓ No courses found where you are an Instructor</option>";
+                } else {
+                    courseSelect.innerHTML = "<option value=''>Select a course...</option>";
+                    courses.sort((a, b) => {
+                        const nameA = (a.OrgUnit && a.OrgUnit.Name) || "";
+                        const nameB = (b.OrgUnit && b.OrgUnit.Name) || "";
+                        return nameA.localeCompare(nameB);
+                    });
+                    
+                    courses.forEach(course => {
+                        const option = document.createElement("option");
+                        option.value = course.OrgUnit.Id;
+                        const courseName = course.OrgUnit.Name || "Unknown Course";
+                        const courseCode = course.OrgUnit.Code || "";
+                        option.textContent = `${courseName} (${courseCode})`;
+                        courseSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error("Error loading courses:", error);
+                courseSelect.innerHTML = "<option value=''>Error loading courses. Please refresh the page.</option>";
+            } finally {
+                courseSelect.disabled = false;
+            }
+        }
+
+        function extractUserRecords(data) {
+            if (!data) return [];
+            if (Array.isArray(data)) return data;
+            if (Array.isArray(data.Objects)) return data.Objects;
+            if (Array.isArray(data.Items)) return data.Items;
+            if (data.UserId != null || data.Identifier != null) return [data];
+            return [];
+        }
+
+        const FIRST_NAME_ALIASES = {
+            alex: ["alexander", "alexandra"],
+            alexander: ["alex"],
+            andy: ["andrew"],
+            andrew: ["andy", "drew"],
+            angie: ["angela", "angel"],
+            ann: ["anne", "anna"],
+            barb: ["barbara"],
+            bill: ["william", "will"],
+            bob: ["robert", "rob"],
+            brad: ["bradley"],
+            chris: ["christopher", "christine", "christina"],
+            dan: ["daniel", "danny"],
+            dave: ["david"],
+            david: ["dave"],
+            deb: ["deborah", "debra", "debbie"],
+            don: ["donald"],
+            ed: ["edward", "eddie", "edwin"],
+            liz: ["elizabeth", "beth"],
+            beth: ["elizabeth"],
+            gene: ["eugene"],
+            james: ["jim", "jimmy", "jamie"],
+            jim: ["james", "jimmy"],
+            jen: ["jennifer", "jenny"],
+            jenny: ["jennifer"],
+            joe: ["joseph", "joey"],
+            john: ["jon", "jonathan", "jonathon", "jack"],
+            jon: ["jonathan", "john", "jonathon"],
+            jonathan: ["jon", "john", "jonathon"],
+            jonathon: ["jon", "jonathan"],
+            kate: ["katherine", "katie", "cathy"],
+            kathy: ["katherine", "catherine", "katie"],
+            ken: ["kenneth"],
+            kim: ["kimberly", "kimberley"],
+            larry: ["lawrence"],
+            matt: ["matthew"],
+            mike: ["michael"],
+            michael: ["mike"],
+            nick: ["nicholas", "nicolas"],
+            pat: ["patricia", "patrick"],
+            peggy: ["margaret"],
+            rich: ["richard", "rick"],
+            rick: ["richard", "rich"],
+            rob: ["robert", "bob"],
+            ron: ["ronald"],
+            sam: ["samuel", "samantha"],
+            steve: ["steven", "stephen"],
+            sue: ["susan", "suzanne"],
+            ted: ["theodore", "edward"],
+            tim: ["timothy"],
+            tom: ["thomas"],
+            tony: ["anthony"],
+            vick: ["victor", "victoria"],
+            will: ["william", "bill"]
+        };
+
+        function uniqueStrings(values) {
+            const seen = {};
+            const out = [];
+            for (let i = 0; i < values.length; i++) {
+                const value = (values[i] || "").trim();
+                if (!value) continue;
+                const key = value.toLowerCase();
+                if (seen[key]) continue;
+                seen[key] = true;
+                out.push(value);
+            }
+            return out;
+        }
+
+        function parseSearchName(searchTerm) {
+            const cleaned = searchTerm.replace(/\s+/g, " ").trim();
+            let tokens = [];
+            if (cleaned.indexOf(",") >= 0) {
+                const parts = cleaned.split(",").map(function (part) { return part.trim(); }).filter(Boolean);
+                if (parts.length >= 2) {
+                    const last = parts[0];
+                    const firstParts = parts.slice(1).join(" ").split(" ").filter(Boolean);
+                    tokens = firstParts.concat([last]);
+                }
+            }
+            if (!tokens.length) {
+                tokens = cleaned.split(/[\s,]+/).filter(Boolean);
+            }
+            return {
+                tokens: tokens,
+                first: tokens.length >= 2 ? tokens[0] : "",
+                last: tokens.length >= 2 ? tokens[tokens.length - 1] : (tokens[0] || "")
+            };
+        }
+
+        function foldSearchText(value) {
+            return String(value == null ? "" : value)
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase();
+        }
+
+        function expandFirstNames(first) {
+            const folded = foldSearchText(first).replace(/[^a-z]/g, "");
+            if (!folded) return [];
+            const aliases = FIRST_NAME_ALIASES[folded] || [];
+            return uniqueStrings([folded].concat(aliases.map(function (name) {
+                return foldSearchText(name).replace(/[^a-z]/g, "");
+            })));
+        }
+
+        function userMatchesNameTokens(user, tokens) {
+            if (!user || !tokens.length) return false;
+            const firstName = foldSearchText(user.FirstName);
+            const lastName = foldSearchText(user.LastName);
+            const haystack = foldSearchText([
+                user.FirstName,
+                user.LastName,
+                user.DisplayName,
+                user.UserName,
+                user.Username,
+                user.UniqueName,
+                user.ExternalEmail,
+                user.Email,
+                user.OrgDefinedId
+            ].join(" "));
+            const firstAliases = expandFirstNames(tokens[0]);
+            for (let i = 0; i < tokens.length; i++) {
+                const token = foldSearchText(tokens[i]);
+                if (token.length < 2) continue;
+                if (i === 0 && tokens.length >= 2) {
+                    const firstHit = firstName.indexOf(token) === 0
+                        || firstAliases.some(function (alias) { return firstName === alias || firstName.indexOf(alias) === 0; })
+                        || haystack.indexOf(token) >= 0;
+                    if (!firstHit) return false;
+                    continue;
+                }
+                if (i === tokens.length - 1 && tokens.length >= 2) {
+                    if (lastName.indexOf(token) !== 0 && haystack.indexOf(token) === -1) return false;
+                    continue;
+                }
+                if (haystack.indexOf(token) === -1) return false;
+            }
+            return true;
+        }
+
+        function identifierGuesses(searchTerm) {
+            const parsed = parseSearchName(searchTerm);
+            const last = foldSearchText(parsed.last).replace(/[^a-z0-9]/g, "");
+            const firsts = expandFirstNames(parsed.first);
+            const primary = [];
+            const extra = [];
+            for (let i = 0; i < firsts.length; i++) {
+                const first = firsts[i];
+                if (first && last) {
+                    primary.push(first + last, first.charAt(0) + last);
+                    extra.push(first + "." + last, last + first);
+                }
+            }
+            return {
+                primary: uniqueStrings(primary),
+                extra: uniqueStrings(extra)
+            };
+        }
+
+        function identifiersFromEmail(email) {
+            const normalized = String(email || "").trim().toLowerCase();
+            const at = normalized.indexOf("@");
+            const local = at >= 0 ? normalized.slice(0, at) : normalized;
+            const compact = local.replace(/[._+\-]/g, "");
+            const ids = [normalized, local, compact];
+            const parts = local.split(/[._+\-]+/).filter(Boolean);
+            if (parts.length >= 2) {
+                const first = foldSearchText(parts[0]).replace(/[^a-z0-9]/g, "");
+                const last = foldSearchText(parts[parts.length - 1]).replace(/[^a-z0-9]/g, "");
+                if (first && last) {
+                    ids.push(first + last, first.charAt(0) + last, first + "." + last);
+                    const aliases = expandFirstNames(first);
+                    for (let i = 0; i < aliases.length; i++) {
+                        ids.push(aliases[i] + last);
+                    }
+                }
+            }
+            return uniqueStrings(ids);
+        }
+
+        function collectUniqueUsers(users) {
+            const seen = {};
+            const out = [];
+            for (let i = 0; i < users.length; i++) {
+                const user = normalizeUser(users[i]);
+                if (!user || user.UserId == null || isNaN(user.UserId) || user.UserId <= 0) continue;
+                if (seen[user.UserId]) continue;
+                seen[user.UserId] = true;
+                out.push(user);
+            }
+            return out;
+        }
+
+        async function lookupByIdentifiers(identifiers) {
+            const ids = uniqueStrings(identifiers);
+            if (!ids.length) return [];
+            const results = await Promise.all(ids.flatMap(function (id) {
+                const tasks = [tryFindByUserName(id), tryFindByOrgDefinedId(id)];
+                if (id.indexOf("@") >= 0) tasks.push(tryFindByEmail(id));
+                return tasks;
+            }));
+            return collectUniqueUsers(results);
+        }
+
+        async function searchUsers() {
+            const searchInput = document.getElementById("userSearch");
+            const searchTerm = searchInput.value.trim();
+            const searchResults = document.getElementById("searchResults");
+            const courseId = document.getElementById("courseSelect").value;
+            const looksLikeEmail = searchTerm.indexOf("@") >= 0;
+
+            if (!searchTerm) {
+                searchResults.classList.remove("show");
+                return;
+            }
+
+            searchResults.innerHTML = "<div class='loading'><i class='fas fa-spinner fa-spin'></i> Searching...</div>";
+            searchResults.classList.add("show");
+
+            try {
+                let matches = [];
+
+                let nameTerm = searchTerm;
+                if (looksLikeEmail) {
+                    matches = await lookupByIdentifiers(identifiersFromEmail(searchTerm));
+                    const local = searchTerm.split("@")[0];
+                    const parts = local.split(/[._+\-]+/).filter(Boolean);
+                    nameTerm = parts.length >= 2
+                        ? parts[0] + " " + parts[parts.length - 1]
+                        : local.replace(/[._+\-]/g, "");
+                } else {
+                    const guesses = identifierGuesses(searchTerm);
+                    matches = await lookupByIdentifiers([searchTerm].concat(guesses.primary));
+                    if (!matches.length && guesses.extra.length) {
+                        matches = await lookupByIdentifiers(guesses.extra);
+                    }
+                }
+
+                if (!matches.length) {
+                    matches = collectUniqueUsers(await tryFindByOrgClasslist(nameTerm));
+                }
+
+                if (!matches.length) {
+                    matches = collectUniqueUsers(await tryFindByUserDirectory(nameTerm));
+                }
+
+                if (!matches.length && courseId) {
+                    matches = collectUniqueUsers(await tryFindByClasslist(courseId, nameTerm));
+                }
+
+                if (matches.length) {
+                    displayUserResults(matches);
+                    return;
+                }
+
+                searchResults.innerHTML = "<div style='padding: 12px; color: var(--text-medium);'>No user found. Try the person's Brightspace username or campus email if a name search does not match.</div>";
+            } catch (error) {
+                console.error("Error searching users:", error);
+                searchResults.innerHTML = "<div style='padding: 12px; color: var(--text-error);'>Error searching for users. Please try again.</div>";
+            }
+        }
+
+        async function tryFindByUserName(searchTerm) {
+            if (!searchTerm) return null;
+            try {
+                const url = `/d2l/api/lp/${API_VERSION_LP}/users/?userName=${encodeURIComponent(searchTerm)}`;
+                const data = await BrightspaceFetch(url);
+                const list = extractUserRecords(data);
+                return list.length ? normalizeUser(list[0]) : null;
+            } catch (e) { /* 403/404 are expected when there is no exact match or no permission */ }
+            return null;
+        }
+
+        async function tryFindByEmail(searchTerm) {
+            if (!searchTerm) return null;
+            const email = String(searchTerm).trim().toLowerCase();
+            try {
+                const url = `/d2l/api/lp/${API_VERSION_LP}/users/?externalEmail=${encodeURIComponent(email)}`;
+                const data = await BrightspaceFetch(url);
+                const list = extractUserRecords(data);
+                return list.length ? normalizeUser(list[0]) : null;
+            } catch (e) { /* ignore — many Brightspace users have no visible ExternalEmail */ }
+            return null;
+        }
+
+        async function tryFindByOrgDefinedId(searchTerm) {
+            if (!searchTerm) return null;
+            try {
+                const url = `/d2l/api/lp/${API_VERSION_LP}/users/?orgDefinedId=${encodeURIComponent(searchTerm)}`;
+                const data = await BrightspaceFetch(url);
+                const list = extractUserRecords(data);
+                return list.length ? normalizeUser(list[0]) : null;
+            } catch (e) { /* ignore */ }
+            return null;
+        }
+
+        async function getOrgUnitId() {
+            if (cachedOrgId) return cachedOrgId;
+            try {
+                const info = await BrightspaceFetch(`/d2l/api/lp/${API_VERSION_LP}/organization/info`);
+                cachedOrgId = (info && (info.Identifier || info.Id)) ? String(info.Identifier || info.Id) : null;
+            } catch (e) {
+                cachedOrgId = null;
+            }
+            return cachedOrgId;
+        }
+
+        function classlistPageItems(data) {
+            if (!data) return [];
+            if (Array.isArray(data.Objects)) return data.Objects;
+            if (Array.isArray(data.Items)) return data.Items;
+            return Array.isArray(data) ? data : [];
+        }
+
+        function nextClasslistUrl(orgUnitId, searchTerm, page, items) {
+            const next = page && page.Next ? String(page.Next) : "";
+            if (!next || !items.length) return null;
+            if (next.indexOf("/d2l/api/") >= 0) {
+                const parts = next.split("/d2l/api/");
+                return parts.length > 1 ? "/d2l/api/" + parts[1] : null;
+            }
+            if (next.indexOf("/") === 0) return next;
+            const params = "bookmark=" + encodeURIComponent(next) + "&searchTerm=" + encodeURIComponent(searchTerm);
+            return `/d2l/api/le/${API_VERSION_LE}/${orgUnitId}/classlist/paged/?${params}`;
+        }
+
+        async function searchClasslistByName(orgUnitId, searchTerm) {
+            const parsed = parseSearchName(searchTerm);
+            const tokens = parsed.tokens.filter(function (token) { return foldSearchText(token).length >= 2; });
+            const serverTerm = parsed.last || tokens[0] || searchTerm;
+            const users = [];
+            let nextUrl = `/d2l/api/le/${API_VERSION_LE}/${orgUnitId}/classlist/paged/?searchTerm=${encodeURIComponent(serverTerm)}`;
+            const seenUrls = {};
+            let pageCount = 0;
+
+            while (nextUrl && pageCount < 10) {
+                pageCount++;
+                if (seenUrls[nextUrl]) break;
+                seenUrls[nextUrl] = true;
+                const data = await BrightspaceFetch(nextUrl);
+                const items = classlistPageItems(data);
+                for (let i = 0; i < items.length; i++) users.push(items[i]);
+                nextUrl = nextClasslistUrl(orgUnitId, serverTerm, data, items);
+            }
+
+            const normalized = users.map(classlistUserToNormalized);
+            if (tokens.length <= 1) return normalized;
+            return normalized.filter(function (user) { return userMatchesNameTokens(user, tokens); });
+        }
+
+        async function tryFindByClasslist(orgUnitId, searchTerm) {
+            try {
+                return await searchClasslistByName(orgUnitId, searchTerm);
+            } catch (e) {
+                return [];
+            }
+        }
+
+        async function tryFindByOrgClasslist(searchTerm) {
+            try {
+                const orgId = await getOrgUnitId();
+                if (!orgId) return [];
+                return await searchClasslistByName(orgId, searchTerm);
+            } catch (e) {
+                return [];
+            }
+        }
+
+        async function tryFindByUserDirectory(searchTerm) {
+            const parsed = parseSearchName(searchTerm);
+            const tokens = parsed.tokens.filter(function (token) { return foldSearchText(token).length >= 2; });
+            if (!tokens.length) return [];
+
+            const matches = [];
+            let bookmark = "";
+            let pageCount = 0;
+
+            try {
+                while (pageCount < 25 && matches.length < 25) {
+                    pageCount++;
+                    const url = bookmark
+                        ? `/d2l/api/lp/${API_VERSION_LP}/users/?bookmark=${encodeURIComponent(bookmark)}`
+                        : `/d2l/api/lp/${API_VERSION_LP}/users/`;
+                    const data = await BrightspaceFetch(url);
+                    const items = extractUserRecords(data);
+                    if (!items.length) break;
+                    for (let i = 0; i < items.length; i++) {
+                        const user = normalizeUser(items[i]);
+                        if (userMatchesNameTokens(user, tokens)) matches.push(user);
+                    }
+                    const paging = data && data.PagingInfo;
+                    if (paging && paging.HasMoreItems && paging.Bookmark) {
+                        bookmark = paging.Bookmark;
+                    } else {
+                        break;
+                    }
+                }
+            } catch (e) {
+                return matches;
+            }
+            return matches;
+        }
+
+        function classlistUserToNormalized(cl) {
+            return {
+                UserId: cl.Identifier != null ? parseInt(cl.Identifier, 10) : null,
+                FirstName: cl.FirstName ?? "",
+                LastName: cl.LastName ?? "",
+                UserName: cl.Username ?? cl.UserName ?? "",
+                ExternalEmail: cl.Email ?? cl.ExternalEmail ?? "",
+                OrgDefinedId: cl.OrgDefinedId ?? "",
+                DisplayName: cl.DisplayName ?? ""
+            };
+        }
+
+        /** Normalize API user shape to a single object with UserId, FirstName, LastName, UserName, ExternalEmail, OrgDefinedId */
+        function normalizeUser(raw) {
+            if (!raw) return null;
+            const nested = raw.User && typeof raw.User === "object" ? raw.User : null;
+            const source = nested || raw;
+            return {
+                UserId: source.UserId != null ? source.UserId : (source.Identifier != null ? parseInt(source.Identifier, 10) : null),
+                FirstName: source.FirstName ?? "",
+                LastName: source.LastName ?? "",
+                UserName: source.UserName ?? source.Username ?? source.UniqueName ?? "",
+                ExternalEmail: source.ExternalEmail ?? source.Email ?? "",
+                OrgDefinedId: source.OrgDefinedId ?? "",
+                DisplayName: source.DisplayName ?? ""
+            };
+        }
+
+        function formatUserMeta(user) {
+            const parts = [];
+            if (user.UserName) parts.push("Username: " + user.UserName);
+            if (user.ExternalEmail) parts.push("Email: " + user.ExternalEmail);
+            if (user.OrgDefinedId) parts.push("ID: " + user.OrgDefinedId);
+            return parts.length ? parts.join(" | ") : "—";
+        }
+
+        function displayUserResults(users) {
+            const searchResults = document.getElementById("searchResults");
+            searchResults.innerHTML = "";
+            if (!users || users.length === 0) return;
+            users.forEach(user => {
+                const resultItem = document.createElement("div");
+                resultItem.className = "search-result-item";
+                const name = document.createElement("div");
+                name.className = "search-result-name";
+                name.textContent = (user.DisplayName || (user.FirstName + " " + user.LastName).trim() || "Unknown");
+                const details = document.createElement("div");
+                details.className = "search-result-details";
+                details.textContent = formatUserMeta(user);
+                resultItem.appendChild(name);
+                resultItem.appendChild(details);
+                resultItem.addEventListener("click", () => selectUser(user));
+                searchResults.appendChild(resultItem);
+            });
+        }
+
+        function selectUser(user) {
+            selectedUser = user;
+            const selectedUserDiv = document.getElementById("selectedUser");
+            document.getElementById("selectedUserName").textContent = (user.DisplayName || (user.FirstName + " " + user.LastName).trim() || "Unknown");
+            document.getElementById("selectedUserMeta").textContent = formatUserMeta(user);
+            selectedUserDiv.classList.add("show");
+
+            document.getElementById("searchResults").classList.remove("show");
+            document.getElementById("userSearch").value = "";
+            updateAddButtonState();
+        }
+
+        function removeSelectedUser() {
+            selectedUser = null;
+            document.getElementById("selectedUser").classList.remove("show");
+            updateAddButtonState();
+        }
+
+        function updateAddButtonState() {
+            const courseSelect = document.getElementById("courseSelect");
+            const roleSelect = document.getElementById("roleSelect");
+            const addButton = document.getElementById("addUserButton");
+            
+            const hasCourse = courseSelect.value !== "";
+            const hasRole = roleSelect.value !== "";
+            const hasUser = selectedUser !== null;
+            
+            addButton.disabled = !(hasCourse && hasRole && hasUser);
+        }
+
+        async function addUserToCourse() {
+            const courseId = document.getElementById("courseSelect").value;
+            const roleId = parseInt(document.getElementById("roleSelect").value);
+            const addButton = document.getElementById("addUserButton");
+            const successMessage = document.getElementById("successMessage");
+
+            if (!courseId || !roleId || !selectedUser) {
+                successMessage.style.display = "block";
+                successMessage.className = "message-container message-error";
+                successMessage.innerHTML = "❌ Please select a course, user, and role.";
+                return;
+            }
+
+            // Student View (role 112) is not offered: enrolling it over an instructor
+            // enrollment can replace Instructor access and lock the faculty member out.
+            if (roleId === 112) {
+                successMessage.style.display = "block";
+                successMessage.className = "message-container message-error";
+                successMessage.innerHTML = "❌ The Student View role cannot be enrolled from this tool.";
+                return;
+            }
+
+            addButton.disabled = true;
+            addButton.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Adding...';
+            successMessage.style.display = "none";
+
+            try {
+                const userId = selectedUser.UserId != null ? selectedUser.UserId : (selectedUser.Identifier != null ? parseInt(selectedUser.Identifier, 10) : NaN);
+                if (isNaN(userId) || userId <= 0) {
+                    successMessage.style.display = "block";
+                    successMessage.className = "message-container message-error";
+                    successMessage.innerHTML = "❌ Invalid user. Please search and select the user again.";
+                    return;
+                }
+
+                // CreateEnrollmentData per https://docs.valence.desire2learn.com/res/enroll.html
+                const payload = {
+                    OrgUnitId: parseInt(courseId, 10),
+                    UserId: userId,
+                    RoleId: roleId,
+                    SendEnrollmentEmail: false
+                };
+
+                const enrollUrl = `/d2l/api/lp/${API_VERSION_LP}/enrollments/`;
+                // Docs specify JSON parameter "CreateEnrollmentData"; send flat payload (many D2L instances accept it)
+                let result = await BrightspaceFetchWithMethod("POST", enrollUrl, payload);
+                if (result.status !== 200 && result.status !== 201) {
+                    const wrapped = await BrightspaceFetchWithMethod("POST", enrollUrl, { CreateEnrollmentData: payload });
+                    if (wrapped.status === 200 || wrapped.status === 201) result = wrapped;
+                }
+
+                if (result.status === 200 || result.status === 201) {
+                    const course = courses.find(c => c.OrgUnit.Id.toString() === courseId);
+                    const courseName = course ? course.OrgUnit.Name : "Course";
+                    const roleName = document.getElementById("roleSelect").options[document.getElementById("roleSelect").selectedIndex].text;
+                    
+                    const courseUrl = `${window.location.origin}/d2l/home/${courseId}`;
+                    successMessage.style.display = "block";
+                    successMessage.className = "message-container message-success";
+                    successMessage.innerHTML = `✅ Successfully added ${selectedUser.FirstName} ${selectedUser.LastName} to <a href="${courseUrl}" target="_blank" rel="noopener">${courseName}</a> with role "${roleName}".`;
+                    
+                    // Reset form
+                    removeSelectedUser();
+                    document.getElementById("roleSelect").value = "";
+                    document.getElementById("courseSelect").value = "";
+                } else {
+                    let errorMsg;
+                    if (result.status === 403) {
+                        errorMsg = "This user cannot be added to the course. The person you selected has a higher permission level than the instructor role (for example, an administrator or another elevated role). Please choose a different user, or contact <a href=\"https://helpdesk.example.edu/portal\" target=\"_blank\" rel=\"noopener\">eLearning Support</a> if you need this user enrolled.";
+                    } else {
+                        errorMsg = "Failed to add user to course.";
+                        if (result.status) errorMsg += " (HTTP " + result.status + ")";
+                        if (result.data) {
+                            if (typeof result.data === "string") {
+                                errorMsg += " " + result.data;
+                            } else if (result.data.Message) {
+                                errorMsg += " " + result.data.Message;
+                            } else if (result.data.message) {
+                                errorMsg += " " + result.data.message;
+                            } else if (result.data.title) {
+                                errorMsg += " " + result.data.title;
+                            }
+                        }
+                    }
+                    successMessage.style.display = "block";
+                    successMessage.className = "message-container message-error";
+                    successMessage.innerHTML = `❌ ${errorMsg}`;
+                }
+            } catch (error) {
+                successMessage.style.display = "block";
+                successMessage.className = "message-container message-error";
+                successMessage.innerHTML = `❌ An error occurred: ${error.message}. Please try again or contact support.`;
+            } finally {
+                addButton.disabled = false;
+                addButton.innerHTML = '<i class="fas fa-user-plus" aria-hidden="true"></i> Add User to Course';
+                updateAddButtonState();
+            }
+        }
+    </script>
+</body>
+</html>

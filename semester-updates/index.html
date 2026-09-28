@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Semester Reminders - Your Institution Faculty</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="icon" type="image/png" href="institution-mark.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <main id="main-content" class="page-wrap" tabindex="-1">
+    <a href="../index.html" class="back-link">
+      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+      Back to Faculty Dashboard
+    </a>
+    <header class="page-header">
+      <div class="brand-row">
+        <img src="institution-mark.svg" alt="Your Institution Duck logo" class="hero-brand-image">
+        <span class="brand-pill">Faculty Resources</span>
+      </div>
+      <h1 id="page-heading">Semester Reminders</h1>
+      <p id="page-subtitle">Review and copy semester-start reminders for faculty email and course preparation.</p>
+      <div class="header-actions">
+        <button type="button" id="copy-full-email" class="btn btn-primary">
+          <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+          Copy full email text
+        </button>
+        <a href="../syllabus-updates/index.html" class="btn btn-secondary">
+          <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
+          Syllabus updates
+        </a>
+      </div>
+    </header>
+
+    <section class="intro-card card" aria-labelledby="intro-heading">
+      <div class="card-body">
+        <h2 id="intro-heading" class="intro-greeting"></h2>
+        <div id="intro-paragraphs" class="intro-copy"></div>
+        <p class="intro-note">
+          <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+          Sections marked with <span class="updated-mark" aria-label="highlighted this semester">*</span> are emphasized for the current term.
+        </p>
+      </div>
+    </section>
+
+    <section class="controls-card card" aria-label="Browse semester reminders">
+      <div class="card-body controls-body">
+        <div class="controls-row">
+          <div class="search-wrap">
+            <label for="page-search" class="sr-only">Search reminder sections</label>
+            <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+            <input id="page-search" type="search" placeholder="Search reminders..." autocomplete="off">
+          </div>
+          <div class="select-wrap">
+            <label for="module-select">Jump to section</label>
+            <select id="module-select">
+              <option value="">Choose a section...</option>
+            </select>
+          </div>
+        </div>
+        <div class="controls-row filters-row">
+          <label class="filter-check">
+            <input type="checkbox" id="updated-only">
+            Show highlighted sections only
+          </label>
+          <p id="modules-count" class="results-text" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <div class="layout-two-col">
+      <section aria-labelledby="modules-heading">
+        <h2 id="modules-heading" class="section-title">
+          <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+          Reminder Sections
+        </h2>
+        <div id="modules-grid" class="modules-grid" role="list"></div>
+      </section>
+
+      <section aria-labelledby="content-heading" class="content-panel">
+        <div class="content-panel-header">
+          <h2 id="content-heading" class="section-title">
+            <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
+            Section Content
+          </h2>
+          <div class="content-actions">
+            <button type="button" id="copy-section" class="btn btn-secondary" disabled>
+              <i class="fa-solid fa-copy" aria-hidden="true"></i>
+              Copy section text
+            </button>
+          </div>
+        </div>
+        <div id="module-content" class="card content-card">
+          <div class="card-body">
+            <p class="placeholder-text">Select a section from the list to view reminder text you can copy into email or announcements.</p>
+          </div>
+        </div>
+        <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+
+    <footer class="page-footer">
+      <img src="institution-mark.svg" alt="Your Institution flag logo" class="footer-flag-mark">
+      <p>Your Institution · Semester Reminders · eLearning</p>
+    </footer>
+  </main>
+  <script src="../js/semester-config.js" defer></script>
+  <script src="../js/readspeaker.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>

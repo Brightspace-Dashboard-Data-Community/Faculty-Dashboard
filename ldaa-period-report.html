@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="D2L Faculty Dashboard - LDAA Period Report">
+    <title>LDAA Period Report - D2L Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">LDAA Period Report</h1>
+            <p class="page-subtitle">Track Last Date of Academic Activity for a selected week or date range. Run the whole class or one student, then export CSV, Excel, or a branded PDF.</p>
+        </div>
+
+        <div class="sandbox-main-content">
+            <section class="sandbox-section">
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title">Build a report</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+
+                <p class="course-report-intro">
+                    Choose a course, a calendar range, and whether to include the entire class or one student.
+                    The snapshot shows the latest submission date in that window for assignments, quizzes, and discussion boards, plus last course login when it falls in the period.
+                    Detailed results list every matching submission date. Course login alone does not count as LDAA.
+                </p>
+
+                <div class="tool-ferpa-note" role="note">
+                    <strong>FERPA:</strong> These files contain student education records. Download only for legitimate educational purposes at Your Institution.
+                    For an all-time registrar-style LDAA PDF on one student, use
+                    <a href="student-ldaa-lookup.html">Student LDAA Lookup</a>.
+                </div>
+
+                <form id="lprForm" class="sandbox-form course-report-form" novalidate>
+                    <div class="form-group">
+                        <label for="lprCourse" class="form-label">Course (<span data-fd-semester-code="previous"></span>, <span data-fd-semester-code="active"></span>, <span data-fd-semester-code="future"></span>)</label>
+                        <select id="lprCourse" class="form-input" required aria-required="true">
+                            <option value="">Loading courses…</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <span class="form-label" id="lprRangeLabel">Date range</span>
+                        <div class="lpr-presets" role="group" aria-labelledby="lprRangeLabel">
+                            <button type="button" class="lpr-preset" data-preset="7days">Last 7 days</button>
+                            <button type="button" class="lpr-preset" data-preset="thisWeek">This week (Mon–Sun)</button>
+                            <button type="button" class="lpr-preset" data-preset="lastWeek">Previous week</button>
+                        </div>
+                        <div class="lpr-date-row">
+                            <div>
+                                <label for="lprStart" class="form-label">From</label>
+                                <input type="date" id="lprStart" class="form-input" required aria-required="true">
+                            </div>
+                            <div>
+                                <label for="lprEnd" class="form-label">Through</label>
+                                <input type="date" id="lprEnd" class="form-input" required aria-required="true">
+                            </div>
+                        </div>
+                    </div>
+
+                    <fieldset class="cr-type-fieldset">
+                        <legend class="form-label">Who to include</legend>
+                        <div class="lpr-scope-grid" role="radiogroup" aria-label="Who to include">
+                            <label class="cr-type-card is-selected">
+                                <input type="radio" name="lprScope" value="class" checked>
+                                <span class="cr-type-icon" aria-hidden="true"><i class="fas fa-users"></i></span>
+                                <span class="cr-type-title">Entire class</span>
+                                <span class="cr-type-desc">Snapshot and activity detail for every enrolled student.</span>
+                            </label>
+                            <label class="cr-type-card">
+                                <input type="radio" name="lprScope" value="student">
+                                <span class="cr-type-icon" aria-hidden="true"><i class="fas fa-user"></i></span>
+                                <span class="cr-type-title">One student</span>
+                                <span class="cr-type-desc">Run the same period report for a single classlist student.</span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <div class="form-group" id="lprStudentGroup" hidden>
+                        <label for="lprStudent" class="form-label">Student</label>
+                        <select id="lprStudent" class="form-input" disabled>
+                            <option value="">Select a course first…</option>
+                        </select>
+                    </div>
+
+                    <div class="cr-actions">
+                        <button type="submit" class="form-button" id="lprRunBtn">
+                            <i class="fas fa-play" aria-hidden="true"></i>
+                            <span id="lprRunLabel">Run report</span>
+                        </button>
+                    </div>
+                </form>
+
+                <div id="lprMessage" class="message-container" style="display:none; margin-top:16px;" role="status"></div>
+            </section>
+
+            <section class="sandbox-section cr-preview-section" id="lprPreviewSection" hidden>
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title" id="lprPreviewTitle">Period snapshot</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+                <div class="lpr-export-bar" role="group" aria-label="Export report">
+                    <button type="button" class="form-button form-button-secondary" id="lprCsvBtn">
+                        <i class="fas fa-file-csv" aria-hidden="true"></i>
+                        Export CSV
+                    </button>
+                    <button type="button" class="form-button form-button-secondary" id="lprXlsxBtn">
+                        <i class="fas fa-file-excel" aria-hidden="true"></i>
+                        Export Excel
+                    </button>
+                    <button type="button" class="form-button" id="lprPdfBtn">
+                        <i class="fas fa-file-pdf" aria-hidden="true"></i>
+                        Download PDF
+                    </button>
+                </div>
+                <div id="lprPreview" class="cr-preview"></div>
+            </section>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+            integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw"
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/course-offerings.js"></script>
+    <script src="js/brightspace-api.js"></script>
+    <script src="js/pdf-brand.js"></script>
+    <script src="js/ldaa-period-report.js"></script>
+</body>
+</html>

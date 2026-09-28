@@ -1,0 +1,2095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Section Profile Config Builder</title>
+  <!--
+    Section Profile Config Builder
+    Interactive tool for instructors and admins to create section-instructors.json
+    and resized profile photos for the Section Profile Widget.
+
+    Host same-origin in Brightspace (Admin Dashboard, Public/Manage Files, or
+    an instructor-facing Content/Custom Widget shell) so session cookies work.
+  -->
+  <style>
+    :root {
+      --ink: #202122;
+      --muted: #5b636a;
+      --line: #d5d9dd;
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --brand: #006fbf;
+      --brand-dark: #005a9c;
+      --brand-deep: #00416b;
+      --ok: #1f7a3f;
+      --ok-bg: #e8f6ec;
+      --warn: #8a6d00;
+      --warn-bg: #fff8db;
+      --err: #a11a1a;
+      --err-bg: #fdecec;
+      --radius: 10px;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.06);
+      --font: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--font);
+      background:
+        radial-gradient(circle at top left, rgba(0, 111, 191, 0.08), transparent 40%),
+        linear-gradient(180deg, #eef3f7 0%, var(--bg) 40%, #e9eef3 100%);
+      min-height: 100vh;
+    }
+
+    .shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+
+    header.app-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    header.app-header h1 {
+      margin: 0 0 4px;
+      font-size: 1.65rem;
+      color: var(--brand-deep);
+      letter-spacing: -0.02em;
+    }
+
+    header.app-header p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 42rem;
+      line-height: 1.45;
+    }
+
+    .user-pill {
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--card);
+      color: var(--muted);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .step-tab {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 999px;
+      padding: 10px 8px;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+
+    .step-tab[aria-current="step"] {
+      background: var(--brand-deep);
+      border-color: var(--brand-deep);
+      color: #fff;
+    }
+
+    .step-tab:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .panel h2 {
+      margin: 0 0 6px;
+      font-size: 1.2rem;
+    }
+
+    .panel .lede {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .hidden { display: none !important; }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .row.spread { justify-content: space-between; }
+
+    label.field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      flex: 1 1 180px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="search"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font: inherit;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    textarea { min-height: 72px; resize: vertical; }
+
+    .btn {
+      appearance: none;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+      background: var(--brand);
+      color: #fff;
+    }
+
+    .btn:hover { background: var(--brand-dark); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn.secondary {
+      background: #fff;
+      color: var(--brand-deep);
+      border-color: var(--line);
+    }
+
+    .btn.secondary:hover { background: #f3f7fb; }
+
+    .btn.danger {
+      background: #fff;
+      color: var(--err);
+      border-color: #f0c2c2;
+    }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--brand-deep);
+      border-color: transparent;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+
+    .status {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #f7f8f9;
+      color: var(--muted);
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .status.ok { background: var(--ok-bg); border-color: #b7e0c3; color: var(--ok); }
+    .status.warn { background: var(--warn-bg); border-color: #f0df8a; color: var(--warn); }
+    .status.err { background: var(--err-bg); border-color: #f0b4b4; color: var(--err); }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .tabs button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font: inherit;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .tabs button[aria-selected="true"] {
+      background: #e8f2fa;
+      border-color: #b7d4ea;
+      color: var(--brand-deep);
+    }
+
+    .course-list,
+    .section-list,
+    .instructor-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .course-card,
+    .section-card,
+    .instructor-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: #fbfcfd;
+    }
+
+    .course-card {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      font: inherit;
+    }
+
+    .course-card:hover,
+    .course-card.selected {
+      border-color: #9fc6e4;
+      background: #f0f7fc;
+    }
+
+    .course-card strong { display: block; margin-bottom: 2px; }
+    .course-card span { color: var(--muted); font-size: 0.86rem; }
+
+    .section-card {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .section-meta strong { display: block; }
+    .section-meta span { color: var(--muted); font-size: 0.84rem; }
+
+    .instructor-card {
+      display: grid;
+      grid-template-columns: 72px 1fr auto;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .avatar,
+    .avatar-preview {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #e6e9ec;
+      background: #eef1f4;
+    }
+
+    .avatar.placeholder,
+    .avatar-preview.placeholder {
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .instructor-card h3 {
+      margin: 0 0 4px;
+      font-size: 1rem;
+    }
+
+    .instructor-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.35;
+    }
+
+    .editor-grid {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .photo-box {
+      text-align: center;
+      min-width: 0;
+      max-width: 160px;
+    }
+
+    .photo-box .avatar-preview {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 10px;
+    }
+
+    .photo-box .file-btn {
+      display: inline-block;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--brand-deep);
+      font-size: 0.85rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .photo-box .file-btn:hover {
+      background: #f3f7fb;
+    }
+
+    .photo-box input[type="file"] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+    }
+
+    .photo-file-name {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      line-height: 1.35;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .photo-hint {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .fields .full { grid-column: 1 / -1; }
+
+    .preview-card {
+      max-width: 360px;
+      margin: 0 auto;
+      padding: 20px 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      text-align: center;
+      background: #fff;
+    }
+
+    .preview-card .avatar-preview {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 12px;
+    }
+
+    .preview-card .label {
+      margin: 0 0 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .preview-card h3 {
+      margin: 0 0 4px;
+      font-size: 1.25rem;
+    }
+
+    .preview-card .title {
+      margin: 0 0 12px;
+      color: #4f575e;
+      font-weight: 600;
+    }
+
+    .preview-card .details {
+      text-align: left;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+
+    .preview-card .details p { margin: 5px 0; }
+    .preview-card .bio { margin: 12px 0; text-align: left; font-size: 0.92rem; }
+    .preview-card .section-line {
+      margin: 14px 0 0;
+      color: #60676d;
+      font-size: 12px;
+      font-style: italic;
+      text-align: left;
+    }
+
+    .email-btn {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 9px 14px;
+      color: #fff;
+      background: var(--brand);
+      border-radius: 5px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .json-box {
+      width: 100%;
+      min-height: 220px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .nav-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    .chip {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e8f2fa;
+      color: var(--brand-deep);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .context-banner {
+      display: none;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border: 1px solid #b7d4ea;
+      border-radius: 10px;
+      background: #eaf4fb;
+      color: var(--brand-deep);
+      line-height: 1.45;
+    }
+
+    .context-banner strong { display: block; margin-bottom: 4px; }
+
+    @media (max-width: 800px) {
+      .steps { grid-template-columns: 1fr 1fr; }
+      .section-card,
+      .instructor-card,
+      .editor-grid,
+      .fields { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="app-header">
+      <div>
+        <h1>Section Profile Config Builder</h1>
+        <p>
+          Map each course section to an instructor profile, resize photos for the widget,
+          and publish <code>section-instructors.json</code> to Manage Files.
+          Built for instructors and admins.
+        </p>
+      </div>
+      <div id="userPill" class="user-pill">Signing in…</div>
+    </header>
+
+    <div id="contextBanner" class="context-banner" role="status"></div>
+
+    <nav class="steps" aria-label="Builder steps">
+      <button type="button" class="step-tab" data-step="1" aria-current="step">1. Course</button>
+      <button type="button" class="step-tab" data-step="2" disabled>2. Sections</button>
+      <button type="button" class="step-tab" data-step="3" disabled>3. Instructors</button>
+      <button type="button" class="step-tab" data-step="4" disabled>4. Map</button>
+      <button type="button" class="step-tab" data-step="5" disabled>5. Publish</button>
+    </nav>
+
+    <!-- Step 1 -->
+    <section id="step1" class="panel" aria-labelledby="step1-title">
+      <h2 id="step1-title">Choose a course</h2>
+      <p class="lede">
+        Instructors see courses they teach. Admins can also search by course org unit ID or code.
+      </p>
+
+      <div class="tabs" role="tablist">
+        <button type="button" id="tabCurrentCourse" aria-selected="false">Current course</button>
+        <button type="button" id="tabMyCourses" aria-selected="true">My teaching courses</button>
+        <button type="button" id="tabSearch" aria-selected="false">Search / ID</button>
+      </div>
+
+      <div id="currentCoursePane" class="hidden">
+        <p class="lede" style="margin-top:0;">
+          Use the Brightspace course this tool is open inside (from the Content URL
+          <code>/d2l/le/content/<strong>courseId</strong>/viewContent/…</code> — not the topic ID after <code>viewContent</code>).
+        </p>
+        <div class="row">
+          <button type="button" class="btn" id="btnUseCurrentCourse">Use current course</button>
+          <span id="currentCourseHint" class="chip" style="display:none;"></span>
+        </div>
+      </div>
+
+      <div id="myCoursesPane">
+        <div class="row">
+          <button type="button" class="btn secondary" id="btnRefreshCourses">Refresh my courses</button>
+          <input type="search" id="courseFilter" placeholder="Filter by name or code…" style="flex:1 1 220px; max-width: 360px;">
+        </div>
+        <div id="courseList" class="course-list" style="margin-top:14px;"></div>
+      </div>
+
+      <div id="searchPane" class="hidden">
+        <div class="row">
+          <label class="field">
+            Course org unit ID
+            <input type="text" id="searchOuId" placeholder="e.g. 2994358 (not the Content topic ID)" inputmode="numeric">
+          </label>
+          <label class="field">
+            Or course code
+            <input type="text" id="searchCode" placeholder="e.g. ENG-101-FA810">
+          </label>
+        </div>
+        <div class="row" style="margin-top:12px;">
+          <button type="button" class="btn" id="btnSearchCourse">Find course</button>
+        </div>
+        <div id="searchResult" class="course-list" style="margin-top:14px;"></div>
+      </div>
+
+      <div id="step1Status" class="status hidden" role="status"></div>
+      <div class="nav-actions">
+        <button type="button" class="btn" id="btnNext1" disabled>Continue to sections</button>
+      </div>
+    </section>
+
+    <!-- Step 2 -->
+    <section id="step2" class="panel hidden" aria-labelledby="step2-title">
+      <div class="row spread">
+        <div>
+          <h2 id="step2-title">Review sections</h2>
+          <p class="lede" id="selectedCourseLabel">No course selected.</p>
+        </div>
+        <button type="button" class="btn secondary" id="btnReloadSections">Reload sections &amp; config</button>
+      </div>
+      <div id="sectionSummary" class="status" role="status">Select a course first.</div>
+      <div id="sectionPreviewList" class="section-list" style="margin-top:14px;"></div>
+      <div class="nav-actions">
+        <button type="button" class="btn secondary" data-goto="1">Back</button>
+        <button type="button" class="btn" id="btnNext2">Continue to instructors</button>
+      </div>
+    </section>
+
+    <!-- Step 3 -->
+    <section id="step3" class="panel hidden" aria-labelledby="step3-title">
+      <h2 id="step3-title">Instructor profiles</h2>
+      <p class="lede">
+        Create one profile per instructor who teaches a section. Photos are resized to
+        <strong>400×400 JPEG</strong> for the widget.
+      </p>
+
+      <div class="row" style="margin-bottom:14px;">
+        <button type="button" class="btn" id="btnNewInstructor">Add instructor</button>
+        <button type="button" class="btn secondary" id="btnLoadClasslistInstructors">Suggest from course instructors</button>
+      </div>
+
+      <div id="instructorList" class="instructor-list"></div>
+
+      <div id="instructorEditor" class="panel hidden" style="margin-top:16px; box-shadow:none;">
+        <h2 style="font-size:1.05rem;">Edit instructor</h2>
+        <div class="editor-grid" style="margin-top:12px;">
+          <div class="photo-box">
+            <div id="photoPreview" class="avatar-preview placeholder">No photo</div>
+            <label class="file-btn" for="photoInput">Choose photo</label>
+            <input type="file" id="photoInput" accept="image/*">
+            <span id="photoFileLabel" class="photo-file-name">No file chosen</span>
+            <p class="photo-hint">Square crop, max 400×400 JPEG (~85% quality).</p>
+          </div>
+          <div class="fields">
+            <label class="field">First name *
+              <input type="text" id="fFirst" placeholder="Alex" autocomplete="given-name">
+            </label>
+            <label class="field">Last name *
+              <input type="text" id="fLast" placeholder="Smith" autocomplete="family-name">
+            </label>
+            <label class="field full">Title / role
+              <input type="text" id="fTitle" placeholder="Instructor, Professor, TA, …">
+            </label>
+            <label class="field">Email
+              <input type="email" id="fEmail" placeholder="name@college.edu">
+            </label>
+            <label class="field">Phone
+              <input type="tel" id="fPhone" placeholder="555-0100">
+            </label>
+            <label class="field">Office
+              <input type="text" id="fOffice" placeholder="B-115">
+            </label>
+            <label class="field">Office hours
+              <input type="text" id="fHours" placeholder="Tue/Thu 10:00 AM–12:00 PM">
+            </label>
+            <label class="field full">Bio
+              <textarea id="fBio" placeholder="Short welcome message for students"></textarea>
+            </label>
+            <input type="hidden" id="fKey" value="">
+            <input type="hidden" id="fImageName" value="">
+          </div>
+        </div>
+        <div class="nav-actions">
+          <button type="button" class="btn danger" id="btnCancelEdit">Cancel</button>
+          <button type="button" class="btn" id="btnSaveInstructor">Save instructor</button>
+        </div>
+      </div>
+
+      <div id="step3Status" class="status hidden" role="status"></div>
+      <div class="nav-actions">
+        <button type="button" class="btn secondary" data-goto="2">Back</button>
+        <button type="button" class="btn" id="btnNext3">Continue to mapping</button>
+      </div>
+    </section>
+
+    <!-- Step 4 -->
+    <section id="step4" class="panel hidden" aria-labelledby="step4-title">
+      <h2 id="step4-title">Map sections → instructors</h2>
+      <p class="lede">Choose who appears for each section. Set a default for any unmapped section.</p>
+
+      <label class="field" style="max-width:360px; margin-bottom:14px;">
+        Default instructor
+        <select id="defaultInstructor"></select>
+      </label>
+
+      <div id="mappingList" class="section-list"></div>
+
+      <div id="livePreview" class="preview-card" style="margin-top:18px;"></div>
+
+      <div class="nav-actions">
+        <button type="button" class="btn secondary" data-goto="3">Back</button>
+        <button type="button" class="btn" id="btnNext4">Review &amp; publish</button>
+      </div>
+    </section>
+
+    <!-- Step 5 -->
+    <section id="step5" class="panel hidden" aria-labelledby="step5-title">
+      <h2 id="step5-title">Publish configuration</h2>
+      <p class="lede">
+        Download the package for manual upload, or publish directly into this course’s Manage Files root
+        (<code>/content/enforced/{orgUnitId}/</code>.
+      </p>
+
+      <textarea id="jsonPreview" class="json-box" readonly aria-label="Generated JSON"></textarea>
+
+      <div class="row" style="margin-top:14px;">
+        <button type="button" class="btn" id="btnDownloadJson">Download JSON</button>
+        <button type="button" class="btn secondary" id="btnDownloadImages">Download images</button>
+        <button type="button" class="btn" id="btnPublish">Publish to Manage Files</button>
+      </div>
+
+      <div id="publishStatus" class="status hidden" role="status"></div>
+
+      <div class="nav-actions">
+        <button type="button" class="btn secondary" data-goto="4">Back</button>
+      </div>
+    </section>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  const CONFIG = Object.freeze({
+    LP_VERSION: "1.51",
+    INSTRUCTOR_ROLE_IDS: [102],
+    INSTRUCTOR_ROLE_NAMES: ["instructor", "teacher", "faculty"],
+    IMAGE_SIZE: 400,
+    IMAGE_QUALITY: 0.85,
+    CONFIG_FILE_NAME: "section-instructors.json"
+  });
+
+  const state = {
+    whoami: null,
+    courses: [],
+    selectedCourse: null,
+    sections: [],
+    instructors: {}, // key -> profile (+ _blob, _previewUrl)
+    sectionMap: {},  // sectionId -> instructorKey
+    defaultInstructorKey: "",
+    editingKey: null,
+    pendingPhoto: null, // { blob, previewUrl, fileName }
+    maxStepReached: 1
+  };
+
+  const $ = (id) => document.getElementById(id);
+
+  function setStatus(el, message, type) {
+    if (!el) return;
+    if (!message) {
+      el.className = "status hidden";
+      el.textContent = "";
+      return;
+    }
+    el.className = "status" + (type ? " " + type : "");
+    el.textContent = message;
+  }
+
+  function getCsrfToken() {
+    const match = document.cookie.match(/(?:^|;\s*)XSRF\.Token=([^;]+)/);
+    if (match && match[1]) return decodeURIComponent(match[1]);
+    return localStorage.getItem("XSRF.Token") || sessionStorage.getItem("XSRF.Token") || "";
+  }
+
+  async function api(url, options) {
+    const opts = options || {};
+    const headers = Object.assign({ Accept: "application/json" }, opts.headers || {});
+    const method = (opts.method || "GET").toUpperCase();
+    if (method !== "GET") {
+      const csrf = getCsrfToken();
+      if (csrf) {
+        headers["X-Csrf-Token"] = csrf;
+        headers["X-CSRF-Token"] = csrf;
+      }
+    }
+    const response = await fetch(url, {
+      method,
+      credentials: "include",
+      headers,
+      body: opts.body
+    });
+    const newToken = response.headers.get("x-csrf-token");
+    if (newToken) localStorage.setItem("XSRF.Token", newToken);
+    if (!response.ok) {
+      const text = await response.text().catch(function () { return ""; });
+      const err = new Error("Request failed (" + response.status + ") " + url + (text ? "\n" + text.slice(0, 300) : ""));
+      err.status = response.status;
+      throw err;
+    }
+    if (response.status === 204) return null;
+    const ct = response.headers.get("content-type") || "";
+    if (ct.includes("application/json")) return response.json();
+    const text = await response.text();
+    if (!text) return null;
+    try { return JSON.parse(text); } catch (e) { return text; }
+  }
+
+  async function fetchPaginated(endpoint) {
+    const all = [];
+    let bookmark = null;
+    for (let page = 0; page < 50; page++) {
+      const sep = endpoint.includes("?") ? "&" : "?";
+      let url = endpoint + sep + "pageSize=100";
+      if (bookmark) url += "&bookmark=" + encodeURIComponent(bookmark);
+      const data = await api(url);
+      const items = Array.isArray(data) ? data
+        : Array.isArray(data && data.Items) ? data.Items
+        : Array.isArray(data && data.Objects) ? data.Objects
+        : [];
+      all.push.apply(all, items);
+      bookmark = data && (data.Next || data.Bookmark || null);
+      if (!bookmark || items.length === 0) break;
+    }
+    return all;
+  }
+
+  function isInstructorEnrollment(item) {
+    const access = item && item.Access ? item.Access : {};
+    const roleId = Number(access.ClasslistRoleId || access.RoleId || 0);
+    if (CONFIG.INSTRUCTOR_ROLE_IDS.indexOf(roleId) !== -1) return true;
+    const name = String(access.ClasslistRoleName || access.RoleName || "").toLowerCase();
+    return CONFIG.INSTRUCTOR_ROLE_NAMES.some(function (n) { return name.indexOf(n) !== -1; });
+  }
+
+  function courseFromEnrollment(item) {
+    const ou = item.OrgUnit || {};
+    return {
+      id: String(ou.Id || ""),
+      name: ou.Name || "Untitled course",
+      code: ou.Code || "",
+      type: ou.Type && (ou.Type.Code || ou.Type.Name) || "",
+      roleName: (item.Access && (item.Access.ClasslistRoleName || item.Access.RoleName)) || "Instructor"
+    };
+  }
+
+  function detectCourseOrgUnitId() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const q = String(params.get("courseId") || params.get("ou") || "").trim();
+      if (/^\d+$/.test(q)) return q;
+    } catch (e) { /* ignore */ }
+
+    const paths = [window.location.pathname];
+    try { paths.push(window.parent.location.pathname); } catch (e) { /* cross-origin */ }
+    try { paths.push(window.top.location.pathname); } catch (e) { /* cross-origin */ }
+    try {
+      if (document.referrer) paths.push(new URL(document.referrer).pathname);
+    } catch (e) { /* ignore */ }
+
+    // Prefer Content / home / enforced course OU (first id in these paths).
+    // /d2l/le/content/{COURSE_OU}/viewContent/{TOPIC_ID}/View  → COURSE_OU only
+    const patterns = [
+      /\/d2l\/le\/content\/(\d+)(?:\/|$)/i,
+      /\/content\/enforced\/(\d+)\//i,
+      /\/d2l\/home\/(\d+)/i,
+      /\/d2l\/lp\/navbars\/(\d+)\//i
+    ];
+
+    for (let i = 0; i < paths.length; i++) {
+      for (let p = 0; p < patterns.length; p++) {
+        const match = String(paths[i] || "").match(patterns[p]);
+        if (match) return match[1];
+      }
+    }
+
+    const token = "{OrgUnitId}";
+    if (/^\d+$/.test(token)) return token;
+    return null;
+  }
+
+  function setStep1Tab(which) {
+    const tabs = {
+      current: $("tabCurrentCourse"),
+      mine: $("tabMyCourses"),
+      search: $("tabSearch")
+    };
+    const panes = {
+      current: $("currentCoursePane"),
+      mine: $("myCoursesPane"),
+      search: $("searchPane")
+    };
+    Object.keys(tabs).forEach(function (key) {
+      if (tabs[key]) tabs[key].setAttribute("aria-selected", key === which ? "true" : "false");
+      if (panes[key]) panes[key].classList.toggle("hidden", key !== which);
+    });
+  }
+
+  function updateCurrentCourseHint() {
+    const ou = detectCourseOrgUnitId();
+    const hint = $("currentCourseHint");
+    if (!hint) return;
+    if (ou) {
+      hint.style.display = "inline-block";
+      hint.textContent = "Detected OU " + ou;
+    } else {
+      hint.style.display = "none";
+      hint.textContent = "";
+    }
+    return ou;
+  }
+
+  async function useCurrentCourse(options) {
+    const opts = options || {};
+    const ou = detectCourseOrgUnitId();
+    if (!ou) {
+      setStatus(
+        $("step1Status"),
+        "Could not detect the current course ID from this page URL.\n" +
+          "Open the builder from a course Content topic or homepage, or use Search with the course org unit ID " +
+          "(the number in /d2l/le/content/THIS_NUMBER/… — not the topic ID after viewContent/).",
+        "err"
+      );
+      setStep1Tab("current");
+      return null;
+    }
+
+    setStatus($("step1Status"), "Loading current course " + ou + "…");
+    let course = state.courses.find(function (c) { return c.id === ou; });
+    if (!course) course = await resolveCourseById(ou);
+
+    // Verify it really is a course offering when possible
+    try {
+      await api("/d2l/api/lp/" + CONFIG.LP_VERSION + "/courses/" + ou);
+    } catch (e) {
+      setStatus(
+        $("step1Status"),
+        "Detected ID " + ou + " but /courses/" + ou + " returned an error.\n" +
+          (e && e.message ? e.message : "") +
+          "\nUse Search with the course org unit ID from the Content URL path /d2l/le/content/{courseId}/…",
+        "err"
+      );
+      return null;
+    }
+
+    selectCourse(course);
+    showContextBanner(course);
+    updateCurrentCourseHint();
+    if (opts.advance !== false) {
+      unlockThrough(2);
+      showStep(2);
+      await loadSectionsAndConfig();
+    }
+    return course;
+  }
+
+  function showContextBanner(course) {
+    const banner = $("contextBanner");
+    if (!banner || !course) return;
+    banner.style.display = "block";
+    banner.innerHTML =
+      "<strong>Course tool mode</strong>" +
+      "This page is running inside course <em></em> (OU <code></code>). " +
+      "Map sections for this offering, then publish. Keep this Content topic hidden from students.";
+    banner.querySelector("em").textContent = course.name || "this course";
+    banner.querySelector("code").textContent = course.id;
+  }
+
+  async function resolveCourseById(orgUnitId) {
+    try {
+      const data = await api("/d2l/api/lp/" + CONFIG.LP_VERSION + "/courses/" + orgUnitId);
+      return {
+        id: String(data.Identifier || orgUnitId),
+        name: data.Name || ("Course " + orgUnitId),
+        code: data.Code || "",
+        roleName: "Course context"
+      };
+    } catch (e) {
+      return {
+        id: String(orgUnitId),
+        name: "Course " + orgUnitId,
+        code: "",
+        roleName: "Course context"
+      };
+    }
+  }
+
+  function sanitizeKey(value) {
+    return String(value || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 40) || "instructor";
+  }
+
+  function uniqueKey(base) {
+    let key = sanitizeKey(base);
+    if (!state.instructors[key] || key === state.editingKey) return key;
+    let i = 2;
+    while (state.instructors[key + "_" + i]) i++;
+    return key + "_" + i;
+  }
+
+  function formatDisplayName(first, last) {
+    const f = String(first || "").trim();
+    const l = String(last || "").trim();
+    if (f && l) return f + " " + l;
+    return f || l || "";
+  }
+
+  function splitDisplayName(name) {
+    const s = String(name || "").trim();
+    if (!s) return { first: "", last: "" };
+    if (s.indexOf(",") !== -1) {
+      const parts = s.split(",");
+      return {
+        last: String(parts[0] || "").trim(),
+        first: parts.slice(1).join(",").trim()
+      };
+    }
+    const parts = s.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return { first: parts[0], last: "" };
+    return {
+      first: parts[0],
+      last: parts.slice(1).join(" ")
+    };
+  }
+
+  function showStep(n) {
+    for (let i = 1; i <= 5; i++) {
+      const panel = $("step" + i);
+      if (panel) panel.classList.toggle("hidden", i !== n);
+    }
+    document.querySelectorAll(".step-tab").forEach(function (btn) {
+      const step = Number(btn.getAttribute("data-step"));
+      btn.disabled = step > state.maxStepReached;
+      btn.setAttribute("aria-current", step === n ? "step" : "false");
+    });
+    if (n === 3) renderInstructorList();
+    if (n === 4) renderMapping();
+    if (n === 5) renderPublish();
+  }
+
+  function unlockThrough(n) {
+    state.maxStepReached = Math.max(state.maxStepReached, n);
+    document.querySelectorAll(".step-tab").forEach(function (btn) {
+      const step = Number(btn.getAttribute("data-step"));
+      btn.disabled = step > state.maxStepReached;
+    });
+  }
+
+  function selectCourse(course) {
+    state.selectedCourse = course;
+    document.querySelectorAll(".course-card").forEach(function (el) {
+      el.classList.toggle("selected", el.getAttribute("data-id") === course.id);
+    });
+    $("btnNext1").disabled = !course;
+    setStatus($("step1Status"), "Selected: " + course.name + " (" + course.id + ")", "ok");
+  }
+
+  function renderCourseList(list) {
+    const filter = String($("courseFilter").value || "").toLowerCase().trim();
+    const host = $("courseList");
+    const filtered = (list || []).filter(function (c) {
+      if (!filter) return true;
+      return (c.name + " " + c.code + " " + c.id).toLowerCase().indexOf(filter) !== -1;
+    });
+
+    if (!filtered.length) {
+      host.innerHTML = '<div class="status warn">No teaching courses found. Try Search / ID if you are an admin.</div>';
+      return;
+    }
+
+    host.innerHTML = "";
+    filtered.forEach(function (course) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "course-card" + (state.selectedCourse && state.selectedCourse.id === course.id ? " selected" : "");
+      btn.setAttribute("data-id", course.id);
+      btn.innerHTML =
+        "<div><strong></strong><span></span></div><span class=\"chip\"></span>";
+      btn.querySelector("strong").textContent = course.name;
+      btn.querySelector("span").textContent = (course.code ? course.code + " · " : "") + "OU " + course.id;
+      btn.querySelector(".chip").textContent = course.roleName || "Instructor";
+      btn.addEventListener("click", function () { selectCourse(course); });
+      host.appendChild(btn);
+    });
+  }
+
+  async function loadMyCourses() {
+    setStatus($("step1Status"), "Loading your teaching courses…");
+    try {
+      const items = await fetchPaginated(
+        "/d2l/api/lp/" + CONFIG.LP_VERSION + "/enrollments/myenrollments/"
+      );
+      const courses = [];
+      const seen = {};
+      items.forEach(function (item) {
+        const ou = item.OrgUnit || {};
+        const typeId = ou.Type && ou.Type.Id;
+        const typeCode = String((ou.Type && ou.Type.Code) || "").toLowerCase();
+        const isCourse = typeId === 3 || typeCode === "course offering" || typeCode === "courseoffering";
+        if (!isCourse || !isInstructorEnrollment(item)) return;
+        const course = courseFromEnrollment(item);
+        if (!course.id || seen[course.id]) return;
+        seen[course.id] = true;
+        courses.push(course);
+      });
+      courses.sort(function (a, b) {
+        return String(a.name).localeCompare(String(b.name));
+      });
+      state.courses = courses;
+      renderCourseList(courses);
+      setStatus(
+        $("step1Status"),
+        courses.length
+          ? "Found " + courses.length + " teaching course" + (courses.length === 1 ? "" : "s") + "."
+          : "No instructor-role courses found on your account.",
+        courses.length ? "ok" : "warn"
+      );
+    } catch (err) {
+      setStatus($("step1Status"), err.message, "err");
+    }
+  }
+
+  async function searchCourse() {
+    const ouId = String($("searchOuId").value || "").trim();
+    const code = String($("searchCode").value || "").trim();
+    const host = $("searchResult");
+    host.innerHTML = "";
+    setStatus($("step1Status"), "Searching…");
+
+    try {
+      let course = null;
+      if (ouId) {
+        if (!/^\d+$/.test(ouId)) throw new Error("Org unit ID must be numeric.");
+        const data = await api("/d2l/api/lp/" + CONFIG.LP_VERSION + "/courses/" + ouId);
+        course = {
+          id: String(data.Identifier || ouId),
+          name: data.Name || "Course " + ouId,
+          code: data.Code || "",
+          roleName: "Lookup"
+        };
+      } else if (code) {
+        const data = await api(
+          "/d2l/api/lp/" + CONFIG.LP_VERSION + "/orgstructure/?exactOrgUnitCode=" + encodeURIComponent(code)
+        );
+        const items = Array.isArray(data) ? data : Array.isArray(data && data.Items) ? data.Items : [];
+        if (!items.length) throw new Error("No org unit found for code " + code);
+        const match = items[0];
+        course = {
+          id: String(match.Identifier || match.Id),
+          name: match.Name || code,
+          code: match.Code || code,
+          roleName: "Lookup"
+        };
+      } else {
+        throw new Error("Enter a course org unit ID or course code.");
+      }
+
+      host.innerHTML = "";
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "course-card selected";
+      btn.innerHTML = "<div><strong></strong><span></span></div><span class=\"chip\">Selected</span>";
+      btn.querySelector("strong").textContent = course.name;
+      btn.querySelector("span").textContent = (course.code ? course.code + " · " : "") + "OU " + course.id;
+      btn.addEventListener("click", function () { selectCourse(course); });
+      host.appendChild(btn);
+      selectCourse(course);
+    } catch (err) {
+      const detected = detectCourseOrgUnitId();
+      let msg = err.message || String(err);
+      if (ouId && detected && ouId !== detected) {
+        msg +=
+          "\n\nNote: " + ouId + " is not a course offering. " +
+          "If you copied a number from the Content URL, use the course ID before viewContent/ " +
+          "(detected current course: " + detected + "). Click “Current course” → Use current course.";
+      } else if (ouId && /404|Not Found/i.test(msg)) {
+        msg +=
+          "\n\nThat ID is not a course offering. Content URLs look like " +
+          "/d2l/le/content/{COURSE_OU}/viewContent/{TOPIC_ID}/View — enter {COURSE_OU}, not {TOPIC_ID}.";
+      }
+      setStatus($("step1Status"), msg, "err");
+    }
+  }
+
+  async function loadSectionsAndConfig() {
+    if (!state.selectedCourse) return;
+    const course = state.selectedCourse;
+    $("selectedCourseLabel").textContent = course.name + " · OU " + course.id;
+    setStatus($("sectionSummary"), "Loading sections…");
+
+    try {
+      const sectionsRaw = await api(
+        "/d2l/api/lp/" + CONFIG.LP_VERSION + "/" + course.id + "/sections/"
+      );
+      const sections = (Array.isArray(sectionsRaw) ? sectionsRaw : []).map(function (s) {
+        return {
+          id: String(s.SectionId != null ? s.SectionId : s.Identifier || ""),
+          name: s.Name || "",
+          code: s.Code || ""
+        };
+      }).filter(function (s) { return s.id; });
+
+      state.sections = sections;
+      state.sectionMap = {};
+      sections.forEach(function (s) { state.sectionMap[s.id] = ""; });
+
+      // Try load existing config
+      let existing = null;
+      try {
+        existing = await api(
+          "/content/enforced/" + course.id + "/" + CONFIG.CONFIG_FILE_NAME
+        );
+      } catch (e) {
+        existing = null;
+      }
+
+      if (existing && existing.instructors) {
+        state.instructors = {};
+        Object.keys(existing.instructors).forEach(function (key) {
+          const src = existing.instructors[key] || {};
+          const parts = (src.firstName || src.lastName)
+            ? { first: src.firstName || "", last: src.lastName || "" }
+            : splitDisplayName(src.name || "");
+          const display = formatDisplayName(parts.first, parts.last) || src.name || key;
+          state.instructors[key] = {
+            name: display,
+            firstName: parts.first || "",
+            lastName: parts.last || "",
+            title: src.title || "Instructor",
+            email: src.email || "",
+            phone: src.phone || "",
+            office: src.office || "",
+            officeHours: src.officeHours || "",
+            bio: src.bio || "",
+            image: src.image || (sanitizeKey(key) + ".jpg"),
+            _blob: null,
+            _previewUrl: src.image
+              ? (/^https?:\/\//i.test(src.image) || src.image.startsWith("/")
+                ? src.image
+                : "/content/enforced/" + course.id + "/" + src.image)
+              : ""
+          };
+        });
+        state.defaultInstructorKey = existing.defaultInstructorKey || Object.keys(state.instructors)[0] || "";
+        if (existing.sections) {
+          sections.forEach(function (s) {
+            const mapped =
+              existing.sections[s.id] ||
+              existing.sections[s.code] ||
+              existing.sections[s.name] ||
+              "";
+            if (mapped) state.sectionMap[s.id] = mapped;
+          });
+        }
+        setStatus(
+          $("sectionSummary"),
+          "Loaded " + sections.length + " section(s). Existing config found and imported.",
+          "ok"
+        );
+      } else {
+        state.instructors = state.instructors || {};
+        setStatus(
+          $("sectionSummary"),
+          "Loaded " + sections.length + " section(s). No existing " + CONFIG.CONFIG_FILE_NAME + " found — starting fresh.",
+          sections.length ? "ok" : "warn"
+        );
+      }
+
+      const list = $("sectionPreviewList");
+      list.innerHTML = "";
+      if (!sections.length) {
+        list.innerHTML = '<div class="status warn">This course has no sections. Create sections in Course Admin before mapping instructors.</div>';
+      } else {
+        sections.forEach(function (s) {
+          const card = document.createElement("div");
+          card.className = "section-card";
+          card.innerHTML =
+            '<div class="section-meta"><strong></strong><span></span></div>' +
+            '<div><span class="chip">Section ID ' + s.id + "</span></div><div></div>";
+          card.querySelector("strong").textContent = s.name || "(unnamed section)";
+          card.querySelector("span").textContent = s.code ? "Code: " + s.code : "No section code";
+          list.appendChild(card);
+        });
+      }
+      unlockThrough(2);
+    } catch (err) {
+      setStatus($("sectionSummary"), err.message, "err");
+    }
+  }
+
+  function renderInstructorList() {
+    const host = $("instructorList");
+    const keys = Object.keys(state.instructors);
+    if (!keys.length) {
+      host.innerHTML = '<div class="status warn">No instructors yet. Add one or suggest from the course roster.</div>';
+      return;
+    }
+    host.innerHTML = "";
+    keys.forEach(function (key) {
+      const inst = state.instructors[key];
+      const card = document.createElement("div");
+      card.className = "instructor-card";
+      const imgHtml = inst._previewUrl
+        ? '<img class="avatar" alt="">'
+        : '<div class="avatar placeholder">No photo</div>';
+      card.innerHTML =
+        imgHtml +
+        "<div><h3></h3><p></p><p><span class=\"chip\"></span></p></div>" +
+        '<div class="row"><button type="button" class="btn secondary btn-edit">Edit</button>' +
+        '<button type="button" class="btn danger btn-del">Remove</button></div>';
+      if (inst._previewUrl) {
+        const img = card.querySelector("img");
+        img.src = inst._previewUrl;
+        img.alt = "Photo of " + inst.name;
+      }
+      card.querySelector("h3").textContent = inst.name;
+      card.querySelector("p").textContent =
+        [inst.title, inst.email, inst.officeHours].filter(Boolean).join(" · ") || "No contact details yet";
+      card.querySelector(".chip").textContent = key;
+      card.querySelector(".btn-edit").addEventListener("click", function () { openEditor(key); });
+      card.querySelector(".btn-del").addEventListener("click", function () {
+        if (!confirm("Remove instructor profile “" + inst.name + "”?")) return;
+        revokePreview(inst);
+        delete state.instructors[key];
+        Object.keys(state.sectionMap).forEach(function (sid) {
+          if (state.sectionMap[sid] === key) state.sectionMap[sid] = "";
+        });
+        if (state.defaultInstructorKey === key) state.defaultInstructorKey = Object.keys(state.instructors)[0] || "";
+        renderInstructorList();
+      });
+      host.appendChild(card);
+    });
+  }
+
+  function revokePreview(inst) {
+    if (inst && inst._previewUrl && String(inst._previewUrl).indexOf("blob:") === 0) {
+      try { URL.revokeObjectURL(inst._previewUrl); } catch (e) { /* ignore */ }
+    }
+  }
+
+  function openEditor(key) {
+    state.editingKey = key || null;
+    state.pendingPhoto = null;
+    const inst = key ? state.instructors[key] : {
+      name: "", firstName: "", lastName: "", title: "Instructor", email: "", phone: "",
+      office: "", officeHours: "", bio: "", image: "", _previewUrl: ""
+    };
+    const parts = (inst.firstName || inst.lastName)
+      ? { first: inst.firstName || "", last: inst.lastName || "" }
+      : splitDisplayName(inst.name);
+    $("fFirst").value = parts.first || "";
+    $("fLast").value = parts.last || "";
+    $("fTitle").value = inst.title || "Instructor";
+    $("fEmail").value = inst.email || "";
+    $("fPhone").value = inst.phone || "";
+    $("fOffice").value = inst.office || "";
+    $("fHours").value = inst.officeHours || "";
+    $("fBio").value = inst.bio || "";
+    $("fKey").value = key || "";
+    $("fImageName").value = inst.image || "";
+    $("photoFileLabel").textContent = inst.image || "No file chosen";
+    const preview = $("photoPreview");
+    if (inst._previewUrl) {
+      preview.className = "avatar-preview";
+      preview.innerHTML = "";
+      const img = document.createElement("img");
+      img.className = "avatar-preview";
+      img.src = inst._previewUrl;
+      img.alt = "";
+      preview.replaceWith(img);
+      img.id = "photoPreview";
+    } else {
+      preview.className = "avatar-preview placeholder";
+      if (preview.tagName === "IMG") {
+        const div = document.createElement("div");
+        div.id = "photoPreview";
+        div.className = "avatar-preview placeholder";
+        div.textContent = "No photo";
+        preview.replaceWith(div);
+      } else {
+        preview.textContent = "No photo";
+      }
+    }
+    $("photoInput").value = "";
+    $("instructorEditor").classList.remove("hidden");
+    $("instructorEditor").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function closeEditor() {
+    state.editingKey = null;
+    state.pendingPhoto = null;
+    $("instructorEditor").classList.add("hidden");
+  }
+
+  function resizeImageFile(file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onerror = function () { reject(new Error("Could not read image file.")); };
+      reader.onload = function () {
+        const img = new Image();
+        img.onerror = function () { reject(new Error("Could not decode image.")); };
+        img.onload = function () {
+          const size = CONFIG.IMAGE_SIZE;
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          const min = Math.min(img.width, img.height);
+          const sx = (img.width - min) / 2;
+          const sy = (img.height - min) / 2;
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, size, size);
+          ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+          canvas.toBlob(
+            function (blob) {
+              if (!blob) {
+                reject(new Error("Image resize failed."));
+                return;
+              }
+              resolve(blob);
+            },
+            "image/jpeg",
+            CONFIG.IMAGE_QUALITY
+          );
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function onPhotoSelected(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    try {
+      setStatus($("step3Status"), "Resizing photo…");
+      const blob = await resizeImageFile(file);
+      const previewUrl = URL.createObjectURL(blob);
+      const keyHint = sanitizeKey(
+        $("fKey").value ||
+        formatDisplayName($("fFirst").value, $("fLast").value) ||
+        "instructor"
+      );
+      const fileName = keyHint + ".jpg";
+      state.pendingPhoto = { blob: blob, previewUrl: previewUrl, fileName: fileName };
+      $("fImageName").value = fileName;
+      $("photoFileLabel").textContent = file.name + " → " + fileName;
+      const preview = $("photoPreview");
+      const img = document.createElement("img");
+      img.id = "photoPreview";
+      img.className = "avatar-preview";
+      img.src = previewUrl;
+      img.alt = "Photo preview";
+      preview.replaceWith(img);
+      setStatus(
+        $("step3Status"),
+        "Photo resized to " + CONFIG.IMAGE_SIZE + "×" + CONFIG.IMAGE_SIZE + " JPEG (" + Math.round(blob.size / 1024) + " KB).",
+        "ok"
+      );
+    } catch (err) {
+      setStatus($("step3Status"), err.message, "err");
+    }
+  }
+
+  function saveInstructorFromEditor() {
+    const firstName = String($("fFirst").value || "").trim();
+    const lastName = String($("fLast").value || "").trim();
+    const name = formatDisplayName(firstName, lastName);
+    if (!firstName && !lastName) {
+      setStatus($("step3Status"), "First name or last name is required.", "err");
+      return;
+    }
+    let key = String($("fKey").value || "").trim();
+    if (!state.editingKey) {
+      key = uniqueKey(key || (lastName || firstName || name));
+    } else {
+      key = state.editingKey;
+    }
+
+    const existing = state.instructors[key] || {};
+    const imageName = String($("fImageName").value || "").trim() || (sanitizeKey(key) + ".jpg");
+    const next = {
+      name: name,
+      firstName: firstName,
+      lastName: lastName,
+      title: String($("fTitle").value || "").trim() || "Instructor",
+      email: String($("fEmail").value || "").trim(),
+      phone: String($("fPhone").value || "").trim(),
+      office: String($("fOffice").value || "").trim(),
+      officeHours: String($("fHours").value || "").trim(),
+      bio: String($("fBio").value || "").trim(),
+      image: imageName,
+      _userId: existing._userId || "",
+      _blob: existing._blob || null,
+      _previewUrl: existing._previewUrl || ""
+    };
+
+    if (state.pendingPhoto) {
+      revokePreview(existing);
+      next._blob = state.pendingPhoto.blob;
+      next._previewUrl = state.pendingPhoto.previewUrl;
+      next.image = state.pendingPhoto.fileName || imageName;
+    }
+
+    state.instructors[key] = next;
+    if (!state.defaultInstructorKey) state.defaultInstructorKey = key;
+    closeEditor();
+    renderInstructorList();
+    setStatus($("step3Status"), "Saved instructor “" + name + "”.", "ok");
+  }
+
+  async function fetchInstructorsForOrgUnit(orgUnitId) {
+    const found = [];
+    const roleIds = CONFIG.INSTRUCTOR_ROLE_IDS && CONFIG.INSTRUCTOR_ROLE_IDS.length
+      ? CONFIG.INSTRUCTOR_ROLE_IDS
+      : [102];
+
+    for (let r = 0; r < roleIds.length; r++) {
+      try {
+        const users = await fetchPaginated(
+          "/d2l/api/lp/" + CONFIG.LP_VERSION +
+          "/enrollments/orgUnits/" + orgUnitId +
+          "/users/?roleId=" + roleIds[r] + "&isActive=true"
+        );
+        users.forEach(function (row) {
+          found.push({ row: row, orgUnitId: String(orgUnitId) });
+        });
+      } catch (e) {
+        // Section OUs can 403/404 depending on permissions; keep going
+      }
+    }
+    return found;
+  }
+
+  function enrollmentToInstructorDraft(row, orgUnitId) {
+    const user = row.User || row;
+    const role = row.Role || {};
+    const first = String(user.FirstName || "").trim();
+    const last = String(user.LastName || "").trim();
+    const username = user.UserName || "";
+    const name =
+      formatDisplayName(first, last) ||
+      String(user.DisplayName || "").trim() ||
+      username ||
+      "Instructor";
+    const userId = String(user.Identifier || user.Id || "");
+    const keyBase = (last || first || username || "instructor") + (userId ? "_" + userId : "");
+    return {
+      userId: userId,
+      keyBase: keyBase,
+      name: name,
+      firstName: first,
+      lastName: last,
+      title: role.Name || "Instructor",
+      email: user.ExternalEmail || user.EmailAddress || user.Email || "",
+      username: username,
+      sourceOu: String(orgUnitId || "")
+    };
+  }
+
+  async function suggestInstructorsFromCourse() {
+    if (!state.selectedCourse) return;
+    setStatus($("step3Status"), "Loading instructors from the course offering and each section…");
+
+    try {
+      // Ensure sections are available (needed for section-level instructor enrollments)
+      if (!state.sections.length) {
+        const sectionsRaw = await api(
+          "/d2l/api/lp/" + CONFIG.LP_VERSION + "/" + state.selectedCourse.id + "/sections/"
+        );
+        state.sections = (Array.isArray(sectionsRaw) ? sectionsRaw : []).map(function (s) {
+          return {
+            id: String(s.SectionId != null ? s.SectionId : s.Identifier || ""),
+            name: s.Name || "",
+            code: s.Code || ""
+          };
+        }).filter(function (s) { return s.id; });
+      }
+
+      const hits = [];
+      const offeringHits = await fetchInstructorsForOrgUnit(state.selectedCourse.id);
+      hits.push.apply(hits, offeringHits);
+
+      for (let i = 0; i < state.sections.length; i++) {
+        const sectionHits = await fetchInstructorsForOrgUnit(state.sections[i].id);
+        hits.push.apply(hits, sectionHits);
+      }
+
+      // Deduplicate by Brightspace user id (fallback: display name)
+      const byUser = {};
+      hits.forEach(function (hit) {
+        const draft = enrollmentToInstructorDraft(hit.row, hit.orgUnitId);
+        const dedupeKey = draft.userId || draft.name.toLowerCase();
+        if (!byUser[dedupeKey]) {
+          byUser[dedupeKey] = draft;
+          byUser[dedupeKey].sectionIds = [];
+        }
+        // Track section OUs where this person appears (for optional auto-map)
+        if (draft.sourceOu && draft.sourceOu !== String(state.selectedCourse.id)) {
+          if (byUser[dedupeKey].sectionIds.indexOf(draft.sourceOu) === -1) {
+            byUser[dedupeKey].sectionIds.push(draft.sourceOu);
+          }
+        }
+        if (!byUser[dedupeKey].email && draft.email) byUser[dedupeKey].email = draft.email;
+      });
+
+      const existingUserIds = {};
+      const existingNames = {};
+      Object.keys(state.instructors).forEach(function (k) {
+        const inst = state.instructors[k];
+        if (inst._userId) existingUserIds[String(inst._userId)] = k;
+        if (inst.name) existingNames[String(inst.name).toLowerCase()] = k;
+      });
+
+      let added = 0;
+      const addedKeys = [];
+      Object.keys(byUser).forEach(function (dedupeKey) {
+        const draft = byUser[dedupeKey];
+        if (draft.userId && existingUserIds[draft.userId]) return;
+        if (existingNames[draft.name.toLowerCase()]) return;
+
+        const key = uniqueKey(draft.keyBase);
+        state.instructors[key] = {
+          name: draft.name,
+          firstName: draft.firstName || "",
+          lastName: draft.lastName || "",
+          title: draft.title || "Instructor",
+          email: draft.email || "",
+          phone: "",
+          office: "",
+          officeHours: "",
+          bio: "",
+          image: sanitizeKey(key) + ".jpg",
+          username: draft.username || undefined,
+          _userId: draft.userId || "",
+          _blob: null,
+          _previewUrl: ""
+        };
+        existingUserIds[draft.userId || key] = key;
+        existingNames[draft.name.toLowerCase()] = key;
+        addedKeys.push(key);
+        added++;
+
+        // If this instructor only appears under one section OU, pre-map that section
+        if (draft.sectionIds && draft.sectionIds.length === 1) {
+          const sid = draft.sectionIds[0];
+          if (Object.prototype.hasOwnProperty.call(state.sectionMap, sid) && !state.sectionMap[sid]) {
+            state.sectionMap[sid] = key;
+          }
+        }
+      });
+
+      if (!state.defaultInstructorKey && Object.keys(state.instructors).length) {
+        state.defaultInstructorKey = Object.keys(state.instructors)[0];
+      }
+
+      const totalUnique = Object.keys(byUser).length;
+      const offeringUserIds = {};
+      offeringHits.forEach(function (hit) {
+        const draft = enrollmentToInstructorDraft(hit.row, hit.orgUnitId);
+        offeringUserIds[draft.userId || draft.name.toLowerCase()] = true;
+      });
+      const offeringUnique = Object.keys(offeringUserIds).length;
+
+      renderInstructorList();
+
+      let detail =
+        "Scanned course offering + " + state.sections.length + " section(s); " +
+        "found " + totalUnique + " unique instructor(s) (" + offeringUnique + " on the offering).";
+
+      if (added) {
+        setStatus(
+          $("step3Status"),
+          "Added " + added + " instructor(s). " + detail +
+            " Edit each to add photo and office details." +
+            (totalUnique > offeringUnique
+              ? " Some were enrolled on sections only (common in multi-section courses)."
+              : ""),
+          "ok"
+        );
+      } else if (totalUnique) {
+        setStatus(
+          $("step3Status"),
+          "No new instructors to add — " + totalUnique + " already in your list. " + detail,
+          "warn"
+        );
+      } else {
+        setStatus(
+          $("step3Status"),
+          "No instructors found with role ID(s) " + CONFIG.INSTRUCTOR_ROLE_IDS.join(", ") +
+            " on this offering or its sections.\n" +
+            "Add instructors manually, or confirm they are enrolled with your Instructor role.",
+          "warn"
+        );
+      }
+    } catch (err) {
+      setStatus(
+        $("step3Status"),
+        err.message + "\nTip: you need permission to read enrollments for this course and its sections.",
+        "err"
+      );
+    }
+  }
+
+  function instructorOptionsHtml(selected) {
+    const keys = Object.keys(state.instructors);
+    let html = '<option value="">— Not mapped —</option>';
+    keys.forEach(function (key) {
+      const sel = key === selected ? " selected" : "";
+      html += '<option value="' + key.replace(/"/g, "&quot;") + '"' + sel + ">" +
+        escapeHtml(state.instructors[key].name + " (" + key + ")") + "</option>";
+    });
+    return html;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+  }
+
+  function renderMapping() {
+    const def = $("defaultInstructor");
+    const keys = Object.keys(state.instructors);
+    def.innerHTML = keys.map(function (key) {
+      return '<option value="' + escapeHtml(key) + '">' + escapeHtml(state.instructors[key].name) + "</option>";
+    }).join("");
+    if (!keys.length) {
+      def.innerHTML = '<option value="">No instructors yet</option>';
+    } else if (!state.defaultInstructorKey || !state.instructors[state.defaultInstructorKey]) {
+      state.defaultInstructorKey = keys[0];
+    }
+    def.value = state.defaultInstructorKey || "";
+
+    const host = $("mappingList");
+    host.innerHTML = "";
+    if (!state.sections.length) {
+      host.innerHTML = '<div class="status warn">No sections to map.</div>';
+      updateLivePreview(null);
+      return;
+    }
+
+    state.sections.forEach(function (section) {
+      const card = document.createElement("div");
+      card.className = "section-card";
+      card.innerHTML =
+        '<div class="section-meta"><strong></strong><span></span></div>' +
+        '<label class="field" style="margin:0;">Instructor<select></select></label>' +
+        '<button type="button" class="btn ghost">Preview</button>';
+      card.querySelector("strong").textContent = section.name || "(unnamed)";
+      card.querySelector("span").textContent =
+        (section.code ? section.code + " · " : "") + "ID " + section.id;
+      const select = card.querySelector("select");
+      select.innerHTML = instructorOptionsHtml(state.sectionMap[section.id] || "");
+      select.addEventListener("change", function () {
+        state.sectionMap[section.id] = select.value;
+        updateLivePreview(section.id);
+      });
+      card.querySelector("button").addEventListener("click", function () {
+        updateLivePreview(section.id);
+      });
+      host.appendChild(card);
+    });
+
+    updateLivePreview(state.sections[0] && state.sections[0].id);
+  }
+
+  function updateLivePreview(sectionId) {
+    const host = $("livePreview");
+    const section = state.sections.find(function (s) { return s.id === sectionId; }) || state.sections[0];
+    const key = (section && state.sectionMap[section.id]) || state.defaultInstructorKey;
+    const inst = key && state.instructors[key];
+    if (!inst) {
+      host.innerHTML = '<p class="lede" style="margin:0;">Add and map an instructor to see a preview.</p>';
+      return;
+    }
+    host.innerHTML =
+      (inst._previewUrl
+        ? '<img class="avatar-preview" alt="">'
+        : '<div class="avatar-preview placeholder">No photo</div>') +
+      '<p class="label">Your Instructor</p>' +
+      "<h3></h3>" +
+      '<p class="title"></p>' +
+      '<div class="details"></div>' +
+      (inst.bio ? '<p class="bio"></p>' : "") +
+      (inst.email ? '<span class="email-btn">Email Instructor</span>' : "") +
+      '<p class="section-line"></p>';
+    if (inst._previewUrl) {
+      host.querySelector("img").src = inst._previewUrl;
+      host.querySelector("img").alt = "Photo of " + inst.name;
+    }
+    host.querySelector("h3").textContent = inst.name;
+    host.querySelector(".title").textContent = inst.title || "";
+    const details = host.querySelector(".details");
+    details.innerHTML = "";
+    [
+      ["Office hours", inst.officeHours],
+      ["Office", inst.office],
+      ["Phone", inst.phone]
+    ].forEach(function (pair) {
+      if (!pair[1]) return;
+      const p = document.createElement("p");
+      p.innerHTML = "<strong>" + escapeHtml(pair[0]) + ":</strong> " + escapeHtml(pair[1]);
+      details.appendChild(p);
+    });
+    if (inst.bio) host.querySelector(".bio").textContent = inst.bio;
+    host.querySelector(".section-line").textContent =
+      "Section: " + ((section && (section.name || section.code || section.id)) || "");
+  }
+
+  function buildConfigObject() {
+    const instructors = {};
+    Object.keys(state.instructors).forEach(function (key) {
+      const src = state.instructors[key];
+      instructors[key] = {
+        name: src.name,
+        firstName: src.firstName || undefined,
+        lastName: src.lastName || undefined,
+        title: src.title || undefined,
+        email: src.email || undefined,
+        phone: src.phone || undefined,
+        office: src.office || undefined,
+        officeHours: src.officeHours || undefined,
+        bio: src.bio || undefined,
+        image: src.image || (sanitizeKey(key) + ".jpg")
+      };
+      Object.keys(instructors[key]).forEach(function (k) {
+        if (instructors[key][k] === undefined || instructors[key][k] === "") delete instructors[key][k];
+      });
+      if (!instructors[key].image) instructors[key].image = sanitizeKey(key) + ".jpg";
+    });
+
+    const sections = {};
+    state.sections.forEach(function (s) {
+      const key = state.sectionMap[s.id] || state.defaultInstructorKey;
+      if (!key) return;
+      sections[s.id] = key;
+      if (s.name) sections[s.name] = key;
+      if (s.code) sections[s.code] = key;
+    });
+
+    return {
+      version: 1,
+      defaultInstructorKey: state.defaultInstructorKey || Object.keys(instructors)[0] || "",
+      instructors: instructors,
+      sections: sections
+    };
+  }
+
+  function renderPublish() {
+    const config = buildConfigObject();
+    $("jsonPreview").value = JSON.stringify(config, null, 2);
+    setStatus($("publishStatus"), "");
+  }
+
+  function downloadBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function downloadJson() {
+    const config = buildConfigObject();
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+    downloadBlob(blob, CONFIG.CONFIG_FILE_NAME);
+  }
+
+  async function downloadImages() {
+    const keys = Object.keys(state.instructors);
+    let count = 0;
+    for (let i = 0; i < keys.length; i++) {
+      const inst = state.instructors[keys[i]];
+      if (!inst._blob) continue;
+      downloadBlob(inst._blob, inst.image || (sanitizeKey(keys[i]) + ".jpg"));
+      count++;
+      await new Promise(function (r) { setTimeout(r, 250); });
+    }
+    setStatus(
+      $("publishStatus"),
+      count
+        ? "Downloaded " + count + " resized image(s). Instructors without a new photo were skipped — keep existing Manage Files images or upload manually."
+        : "No new resized images in memory. Upload photos in step 3, or rely on existing files already in Manage Files.",
+      count ? "ok" : "warn"
+    );
+  }
+
+  async function uploadFileToCourse(orgUnitId, fileName, blob, contentType) {
+    const csrf = getCsrfToken();
+    if (!csrf) throw new Error("Missing XSRF token. Open this tool while logged into Brightspace.");
+
+    const initUrl = "/d2l/api/lp/" + CONFIG.LP_VERSION + "/" + orgUnitId + "/managefiles/file/upload";
+    const initResp = await fetch(initUrl, {
+      method: "POST",
+      headers: {
+        "X-Csrf-Token": csrf,
+        "X-Upload-Content-Type": contentType,
+        "X-Upload-Content-Length": String(blob.size),
+        "X-Upload-File-Name": fileName
+      },
+      credentials: "include"
+    });
+
+    const locationHeader = initResp.headers.get("Location");
+    const uploadLocation = locationHeader
+      ? new URL(locationHeader, window.location.origin).toString()
+      : initResp.url;
+
+    if (!uploadLocation || uploadLocation.indexOf("/d2l/upload/") === -1) {
+      const text = await initResp.text().catch(function () { return ""; });
+      throw new Error("Upload init failed (" + initResp.status + "). " + text.slice(0, 200));
+    }
+
+    const chunkResp = await fetch(uploadLocation, {
+      method: "POST",
+      headers: {
+        "X-Csrf-Token": csrf,
+        "Content-Type": contentType,
+        "Content-Range": "bytes 0-" + (blob.size - 1) + "/" + blob.size
+      },
+      body: blob,
+      credentials: "include"
+    });
+    if (!chunkResp.ok) {
+      const text = await chunkResp.text().catch(function () { return ""; });
+      throw new Error("Chunk upload failed for " + fileName + " (" + chunkResp.status + ") " + text.slice(0, 200));
+    }
+
+    const fileKey = uploadLocation.replace(/\/+$/, "").split("/").pop();
+    const saveUrl =
+      "/d2l/api/lp/" + CONFIG.LP_VERSION + "/" + orgUnitId +
+      "/managefiles/file/save?overwriteFile=true";
+    const formData = new URLSearchParams();
+    formData.set("fileKey", fileKey);
+    formData.set("relativePath", "");
+    formData.set("name", fileName);
+
+    const saveResp = await fetch(saveUrl, {
+      method: "POST",
+      headers: {
+        "X-Csrf-Token": csrf,
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: formData.toString(),
+      credentials: "include"
+    });
+    if (!saveResp.ok) {
+      const text = await saveResp.text().catch(function () { return ""; });
+      throw new Error("Save failed for " + fileName + " (" + saveResp.status + ") " + text.slice(0, 200));
+    }
+  }
+
+  async function publishToManageFiles() {
+    if (!state.selectedCourse) return;
+    const orgUnitId = state.selectedCourse.id;
+    const config = buildConfigObject();
+    setStatus($("publishStatus"), "Publishing to Manage Files…");
+
+    try {
+      const jsonBlob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+      await uploadFileToCourse(orgUnitId, CONFIG.CONFIG_FILE_NAME, jsonBlob, "application/json");
+
+      let imageCount = 0;
+      const keys = Object.keys(state.instructors);
+      for (let i = 0; i < keys.length; i++) {
+        const inst = state.instructors[keys[i]];
+        if (!inst._blob) continue;
+        await uploadFileToCourse(
+          orgUnitId,
+          inst.image || (sanitizeKey(keys[i]) + ".jpg"),
+          inst._blob,
+          "image/jpeg"
+        );
+        imageCount++;
+      }
+
+      setStatus(
+        $("publishStatus"),
+        "Published " + CONFIG.CONFIG_FILE_NAME +
+          (imageCount ? " and " + imageCount + " image(s)" : "") +
+          " to /content/enforced/" + orgUnitId + "/\n" +
+          "Students will see updates after the Section Profile Widget refreshes.",
+        "ok"
+      );
+    } catch (err) {
+      setStatus(
+        $("publishStatus"),
+        err.message +
+          "\nIf publish fails, use Download JSON / Download images and upload manually in Course Admin → Manage Files.",
+        "err"
+      );
+    }
+  }
+
+  async function init() {
+    document.querySelectorAll(".step-tab").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const step = Number(btn.getAttribute("data-step"));
+        if (step <= state.maxStepReached) showStep(step);
+      });
+    });
+
+    document.querySelectorAll("[data-goto]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        showStep(Number(btn.getAttribute("data-goto")));
+      });
+    });
+
+    $("tabCurrentCourse").addEventListener("click", function () {
+      setStep1Tab("current");
+      updateCurrentCourseHint();
+    });
+    $("tabMyCourses").addEventListener("click", function () {
+      setStep1Tab("mine");
+    });
+    $("tabSearch").addEventListener("click", function () {
+      setStep1Tab("search");
+      const ou = detectCourseOrgUnitId();
+      if (ou && !$("searchOuId").value) $("searchOuId").value = ou;
+    });
+
+    $("btnUseCurrentCourse").addEventListener("click", function () {
+      useCurrentCourse({ advance: true });
+    });
+    $("btnRefreshCourses").addEventListener("click", loadMyCourses);
+    $("courseFilter").addEventListener("input", function () { renderCourseList(state.courses); });
+    $("btnSearchCourse").addEventListener("click", searchCourse);
+    $("btnNext1").addEventListener("click", async function () {
+      unlockThrough(2);
+      showStep(2);
+      await loadSectionsAndConfig();
+    });
+    $("btnReloadSections").addEventListener("click", loadSectionsAndConfig);
+    $("btnNext2").addEventListener("click", function () {
+      unlockThrough(3);
+      showStep(3);
+    });
+    $("btnNewInstructor").addEventListener("click", function () { openEditor(null); });
+    $("btnLoadClasslistInstructors").addEventListener("click", suggestInstructorsFromCourse);
+    $("btnCancelEdit").addEventListener("click", closeEditor);
+    $("btnSaveInstructor").addEventListener("click", saveInstructorFromEditor);
+    $("photoInput").addEventListener("change", onPhotoSelected);
+    $("btnNext3").addEventListener("click", function () {
+      if (!Object.keys(state.instructors).length) {
+        setStatus($("step3Status"), "Add at least one instructor before mapping.", "err");
+        return;
+      }
+      unlockThrough(4);
+      showStep(4);
+    });
+    $("defaultInstructor").addEventListener("change", function () {
+      state.defaultInstructorKey = $("defaultInstructor").value;
+      updateLivePreview(null);
+    });
+    $("btnNext4").addEventListener("click", function () {
+      unlockThrough(5);
+      showStep(5);
+    });
+    $("btnDownloadJson").addEventListener("click", downloadJson);
+    $("btnDownloadImages").addEventListener("click", downloadImages);
+    $("btnPublish").addEventListener("click", publishToManageFiles);
+
+    try {
+      state.whoami = await api("/d2l/api/lp/" + CONFIG.LP_VERSION + "/users/whoami");
+      $("userPill").textContent =
+        (state.whoami.FirstName || "") + " " + (state.whoami.LastName || "") +
+        (state.whoami.UniqueName ? " · " + state.whoami.UniqueName : "");
+    } catch (err) {
+      $("userPill").textContent = "Not signed in to Brightspace";
+      setStatus(
+        $("step1Status"),
+        "Open this page from inside Brightspace (same site) so your session can call the APIs.\n" + err.message,
+        "err"
+      );
+      return;
+    }
+
+    await loadMyCourses();
+    updateCurrentCourseHint();
+
+    const contextOu = detectCourseOrgUnitId();
+    if (contextOu) {
+      setStep1Tab("current");
+      await useCurrentCourse({ advance: true });
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>

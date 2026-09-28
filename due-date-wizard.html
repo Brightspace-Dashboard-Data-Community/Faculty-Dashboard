@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your Institution Faculty Dashboard - Due Date Wizard">
+    <title>Due Date Wizard - D2L Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">Due Date Wizard</h1>
+            <p class="page-subtitle">Bulk-update assignment and quiz due dates for a course. Cascade dates by session or week, then save all changes at once.</p>
+        </div>
+
+        <div class="sandbox-main-content">
+            <section class="sandbox-section">
+                <div class="sandbox-section-header">
+                    <h2 class="sandbox-section-title">Select a course</h2>
+                    <div class="sandbox-section-separator"></div>
+                </div>
+
+                <div class="info-card" style="margin-bottom: 1.25rem;">
+                    <div class="info-card-title">
+                        <i class="fas fa-circle-info" aria-hidden="true"></i>
+                        Your Institution due date policy
+                    </div>
+                    <div class="info-card-content">
+                        <p>All due dates are normalized to <strong>11:59 PM</strong> local time on the selected calendar day. Discussion topics are shown for reference; assignment and quiz dates can be edited and saved through Brightspace.</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="ddwCourse" class="form-label">Course offering</label>
+                    <select id="ddwCourse" class="form-select">
+                        <option value="">Loading your courses…</option>
+                    </select>
+                    <p class="form-hint">Lists your previous-term, current-term, and upcoming-term faculty course offerings plus sandboxes (<span data-fd-semester-code="previous"></span>, <span data-fd-semester-code="active"></span>, and <span data-fd-semester-code="future"></span>).</p>
+                </div>
+                <p class="tool-meta" id="ddHeaderMeta" aria-live="polite"></p>
+            </section>
+
+            <section class="tool-panel" id="ddBulkCard" style="display:none;">
+                <h3 class="tool-panel-title">Bulk update by session / week</h3>
+                <p style="margin:0 0 12px;color:#64748b;font-size:0.88rem;">Set an anchor date for Session 1 or Week 1 and the wizard cascades forward at 7-day intervals. Items matching “Session 2”, “Week 3”, GTKY, etc. are grouped automatically.</p>
+                <div id="ddBulk"></div>
+            </section>
+
+            <section class="tool-panel" id="ddEditorCard" style="display:none;">
+                <h3 class="tool-panel-title" id="ddEditorHeading">Due dates</h3>
+                <div id="ddEditor"></div>
+                <div class="dd-savebar" id="ddSaveBar" style="display:none;">
+                    <button type="button" class="form-button" id="ddSaveBtn">
+                        <i class="fas fa-save" aria-hidden="true"></i>
+                        Save all changes
+                    </button>
+                    <button type="button" class="form-button form-button-secondary" id="ddCalendarBtn">
+                        <i class="fas fa-calendar-plus" aria-hidden="true"></i>
+                        Add discussion reminders to calendar
+                    </button>
+                    <span class="dd-save-status" id="ddSaveStatus" aria-live="polite"></span>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/course-offerings.js"></script>
+    <script src="js/brightspace-api.js"></script>
+    <script src="js/due-date-wizard.js"></script>
+</body>
+</html>

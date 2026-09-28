@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ReadSpeaker webReader test page for the Faculty Dashboard">
+    <title>ReadSpeaker Test - D2L Faculty Dashboard</title>
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+
+    <!-- Universal Styles -->
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+
+    <!-- ReadSpeaker webReader (customer ID 00000) -->
+    <script type="text/javascript">
+        window.rsConf = {general: {usePost: true}};
+    </script>
+    <script src="https://cdn-na.readspeaker.com/script/00000/webReader/webReader.js?pids=wr"
+            type="text/javascript"
+            id="rs_req_Init"></script>
+</head>
+<body>
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Navigation Sidebar (loaded dynamically) -->
+    <div id="nav-placeholder"></div>
+
+    <!-- Main Content Area -->
+    <main id="main-content" class="main-content" role="main">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">ReadSpeaker Test</h1>
+            <p class="page-subtitle">Verify webReader before rolling it out across the Faculty Dashboard</p>
+        </div>
+
+        <!-- Listen button: outside the reading area; skipped by ReadSpeaker -->
+        <div class="widget-container" style="margin-bottom: 16px;">
+            <div id="readspeaker_button1" class="rs_skip rsbtn rs_preserve">
+                <a rel="nofollow"
+                   class="rsbtn_play"
+                   title="Listen to this page using ReadSpeaker webReader"
+                   href="https://app-na.readspeaker.com/cgi-bin/rsent?customerid=00000&amp;lang=en_us&amp;voice=Kayla&amp;readid=rs-read-area&amp;url=">
+                    <span class="rsbtn_left rsimg rspart"><span class="rsbtn_text"><span>Listen</span></span></span>
+                    <span class="rsbtn_right rsimg rsplay rspart"></span>
+                </a>
+            </div>
+            <p class="rs_skip" style="margin: 12px 0 0; font-size: 0.9rem; color: #555;">
+                Click <strong>Listen</strong> to hear the sample content below. This button and note are excluded from reading via <code>rs_skip</code>.
+            </p>
+        </div>
+
+        <!-- Reading area: readid=rs-read-area -->
+        <div id="rs-read-area">
+            <section class="widget-container" aria-labelledby="sample-heading">
+                <h2 id="sample-heading">Sample content for listening</h2>
+                <p>
+                    Welcome to the Faculty Dashboard ReadSpeaker test page. If webReader is working,
+                    clicking Listen should read this paragraph and the sections below aloud, with
+                    highlighting as it goes.
+                </p>
+                <p>
+                    Your Institution’s Faculty Dashboard helps instructors manage courses, check
+                    engagement, review accessibility resources, and access teaching tools in one place.
+                </p>
+            </section>
+
+            <section class="widget-container" aria-labelledby="how-it-works-heading">
+                <h2 id="how-it-works-heading">How reading areas work</h2>
+                <p>
+                    The Listen button’s <code>readid</code> parameter points to one or more HTML element IDs.
+                    On this page it is set to <code>rs-read-area</code>, so only content inside that element is read.
+                </p>
+                <ul>
+                    <li>Use <code>readid=section1,section2</code> for multiple IDs.</li>
+                    <li>Or switch to <code>readclass=my-class</code> to target CSS classes instead.</li>
+                    <li>Add class <code>rs_skip</code> on elements that should be visible but not spoken.</li>
+                </ul>
+            </section>
+
+            <section class="widget-container" aria-labelledby="skip-demo-heading">
+                <h2 id="skip-demo-heading">Skip demo</h2>
+                <p>This sentence should be read by ReadSpeaker.</p>
+                <p class="rs_skip" style="padding: 12px; background: #f5f5f5; border-left: 4px solid #888;">
+                    This paragraph has class <code>rs_skip</code>. You can see it on the page, but
+                    ReadSpeaker should mute it and continue to the next spoken sentence.
+                </p>
+                <p>This sentence should also be read, after the skipped paragraph above.</p>
+            </section>
+        </div>
+
+        <!-- Implementation checklist (skipped from reading) -->
+        <section class="widget-container rs_skip" aria-labelledby="checklist-heading">
+            <h2 id="checklist-heading">Test checklist</h2>
+            <ol>
+                <li>Host this page on an authorized ReadSpeaker domain (local <code>file://</code> often will not work).</li>
+                <li>Confirm the Listen button appears and styles load from the ReadSpeaker CDN.</li>
+                <li>Click Listen — audio should start and text inside <code>#rs-read-area</code> should highlight.</li>
+                <li>Confirm the gray “skip demo” paragraph is not spoken.</li>
+                <li>If you get a domain error, ask ReadSpeaker Support to add your D2L / hosting domain for customer ID <strong>00000</strong>.</li>
+            </ol>
+            <p style="margin-top: 16px; font-size: 0.9rem; color: #555;">
+                Docs:
+                <a href="https://wrdev.readspeaker.com/index.php/adaptation/adapt-the-reading" target="_blank" rel="noopener noreferrer">
+                    Adapt the reading
+                </a>
+            </p>
+        </section>
+    </main>
+
+    <!-- JavaScript -->
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+</body>
+</html>

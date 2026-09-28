@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="D2L Faculty Dashboard - Course Package Deployer">
+    <title>Course Package Deployer - D2L Faculty Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+
+    <main id="main-content" class="main-content" role="main">
+        <div class="page-header">
+            <h1 class="page-title">Course Package Deployer</h1>
+            <p class="page-subtitle">Build a course shell from one screen: materials, gradebook, assignments, quiz shells, discussions, content, and a welcome announcement.</p>
+        </div>
+
+        <div class="sandbox-main-content cpd-page">
+            <section class="sandbox-section cpd-section">
+                <div class="info-card" style="margin-bottom: 1.25rem;">
+                    <div class="info-card-title">
+                        <i class="fas fa-circle-info" aria-hidden="true"></i>
+                        What this deploys
+                    </div>
+                    <div class="info-card-content">
+                        <p><strong>Gradebook:</strong> calculation system, null-grade handling, default scheme, categories (weights / drop highest-lowest / even distribution), and grade items.</p>
+                        <p><strong>Assignments:</strong> submission folders with points, due dates, instructions, submission type, and optional linked grade items.</p>
+                        <p><strong>Quizzes:</strong> empty quiz shells with settings (attempts, time limit, shuffle, dates), optional Quizzes-tool categories, and optional linked grade items. Questions are added later in Brightspace (API cannot create questions).</p>
+                        <p><strong>Discussions:</strong> forums + topics (CSV supported), optional private per-student boards.</p>
+                        <p><strong>Content:</strong> weekly/module shells (titles + optional dates); topics added later by instructors.</p>
+                        <p><strong>Also:</strong> optional course banner, syllabus + office hours upload, welcome announcement, and a reminder to update your Single Profile Widget.</p>
+                    </div>
+                </div>
+
+                <form id="cpdForm" class="sandbox-form cpd-form" novalidate>
+
+                    <details class="cpd-accordion" open>
+                        <summary class="cpd-accordion-summary">1. Course &amp; materials</summary>
+                        <div class="cpd-accordion-body">
+                            <div class="form-group">
+                                <label for="cpdCourse" class="form-label">Course offering</label>
+                                <select id="cpdCourse" class="form-select" required aria-required="true">
+                                    <option value="">Loading your courses…</option>
+                                </select>
+                                <p class="form-hint">Current (<span data-fd-semester-code="active"></span>) and upcoming (<span data-fd-semester-code="future"></span>) teaching courses, plus sandboxes.</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cpdCourseBanner" class="form-label">Course banner image <span class="cpd-optional">(optional)</span></label>
+                                <input type="file" id="cpdCourseBanner" class="form-input cpd-file-input"
+                                       accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp">
+                                <p class="form-hint">Sets the course image (My Courses tile / Pulse). JPEG, PNG, or GIF under 2000&nbsp;KB. This does <strong>not</strong> turn on the homepage banner — after deploy, open <strong>Course Admin → Course Offering Information</strong> and check <strong>Display the image in a banner on the course homepage</strong>.</p>
+                                <p id="cpdCourseBannerName" class="cpd-file-name" hidden></p>
+                            </div>
+
+                            <div class="cpd-profile-reminder" role="note">
+                                <p class="form-label" style="margin:0 0 0.35rem;">After deploy — Single Profile Widget</p>
+                                <p class="form-hint" style="margin:0;">This tool cannot configure the Faculty / Single Profile Widget. After deploy you will be reminded to open the course homepage, choose <strong>Configure this widget</strong>, update your info, and upload a photo.</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cpdSyllabus" class="form-label">Syllabus <span class="cpd-optional">(optional)</span></label>
+                                <input type="file" id="cpdSyllabus" class="form-input cpd-file-input"
+                                       accept=".pdf,.doc,.docx,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                                <p class="form-hint">Uploaded into a <strong>Course Information</strong> content module.</p>
+                                <p id="cpdSyllabusName" class="cpd-file-name" hidden></p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cpdOfficeHours" class="form-label">Office hours <span class="cpd-optional">(optional)</span></label>
+                                <textarea id="cpdOfficeHours" class="form-textarea" rows="3"
+                                          placeholder="Example: Mon/Wed 10:00–11:30 a.m. in G-123, or by Zoom appointment"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cpdOfficeHoursFile" class="form-label">Office hours document <span class="cpd-optional">(optional)</span></label>
+                                <input type="file" id="cpdOfficeHoursFile" class="form-input cpd-file-input"
+                                       accept=".pdf,.doc,.docx,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                                <p id="cpdOfficeHoursFileName" class="cpd-file-name" hidden></p>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="cpd-accordion">
+                        <summary class="cpd-accordion-summary">2. Gradebook setup</summary>
+                        <div class="cpd-accordion-body">
+                            <fieldset class="cpd-fieldset">
+                                <legend class="form-label">Calculation system</legend>
+                                <div class="cpd-scheme-row" role="radiogroup" aria-label="Grade calculation system">
+                                    <label class="cpd-scheme-option">
+                                        <input type="radio" name="cpdScheme" value="Points" checked>
+                                        <span>Points</span>
+                                    </label>
+                                    <label class="cpd-scheme-option">
+                                        <input type="radio" name="cpdScheme" value="Weighted">
+                                        <span>Weighted</span>
+                                    </label>
+                                    <label class="cpd-scheme-option">
+                                        <input type="radio" name="cpdScheme" value="Formula">
+                                        <span>Formula</span>
+                                    </label>
+                                </div>
+                                <p id="cpdSchemeHint" class="form-hint">Points: final grade from total points earned. Weighted: categories/items contribute by percent. Formula: set system here; finish the formula in Brightspace Grades setup.</p>
+                            </fieldset>
+
+                            <div class="cpd-settings-grid">
+                                <div class="form-group">
+                                    <label class="cpd-check-label">
+                                        <input type="checkbox" id="cpdNullAsZero">
+                                        Treat ungraded items as zero
+                                    </label>
+                                    <p class="form-hint">Brightspace “Null grade is treated as zero” setting.</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cpdGradeSchemeSelect" class="form-label">Default grade scheme</label>
+                                    <select id="cpdGradeSchemeSelect" class="form-select">
+                                        <option value="">Course default (unchanged)</option>
+                                    </select>
+                                    <p class="form-hint">Loaded from the selected course when available.</p>
+                                </div>
+                            </div>
+
+                            <div class="cpd-sample-downloads" aria-label="Sample gradebook CSV downloads">
+                                <p class="cpd-sample-downloads-title">Sample grade upload files</p>
+                                <p class="form-hint" style="margin-top:0;">Optional <code>Category</code> / <code>CategoryWeight</code> columns place items into categories.</p>
+                                <div class="cpd-sample-download-row">
+                                    <button type="button" class="form-button form-button-secondary" id="cpdDownloadPointsCsv">
+                                        <i class="fas fa-download" aria-hidden="true"></i>
+                                        Points sample (.csv)
+                                    </button>
+                                    <button type="button" class="form-button form-button-secondary" id="cpdDownloadWeightedCsv">
+                                        <i class="fas fa-download" aria-hidden="true"></i>
+                                        Weighted + categories sample (.csv)
+                                    </button>
+                                </div>
+                                <div class="cpd-sample-previews">
+                                    <div class="cpd-sample-preview">
+                                        <p class="cpd-sample-preview-label">Points: <code>Name,MaxPoints</code></p>
+                                        <pre class="cpd-sample-preview-code" id="cpdPointsPreview"></pre>
+                                    </div>
+                                    <div class="cpd-sample-preview">
+                                        <p class="cpd-sample-preview-label">Weighted: <code>Category,CategoryWeight,Name,MaxPoints,Weight</code></p>
+                                        <pre class="cpd-sample-preview-code" id="cpdWeightedPreview"></pre>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="cpd-section-toolbar">
+                                    <span class="form-label" style="margin:0;">Grade categories</span>
+                                    <button type="button" class="form-button form-button-secondary" id="cpdAddCategory">
+                                        <i class="fas fa-plus" aria-hidden="true"></i>
+                                        Add category
+                                    </button>
+                                </div>
+                                <p class="form-hint">Use categories for weighted gradebooks (e.g. Assignments 40%, Exams 60%). Drop highest/lowest and even distribution apply within a category.</p>
+                                <div id="cpdCategoryRows" class="cpd-category-rows"></div>
+                                <p id="cpdCategoryWeightTotal" class="form-hint cpd-weight-total" hidden>
+                                    Category weights total: <strong id="cpdCategoryWeightSum">0</strong>%
+                                    <span id="cpdCategoryWeightStatus"></span>
+                                </p>
+                            </div>
+
+                            <div class="form-group">
+                                <span class="form-label">Standalone grade items</span>
+                                <p class="form-hint">For gradebook rows that are not created by the Assignment builder (participation, quiz average, midterm exam entry, etc.).</p>
+                                <div class="cpd-entry-tabs" role="tablist" aria-label="Grade item entry method">
+                                    <button type="button" class="cpd-tab is-active" id="cpdTabManual" role="tab" aria-selected="true" data-mode="manual">Enter manually</button>
+                                    <button type="button" class="cpd-tab" id="cpdTabCsv" role="tab" aria-selected="false" data-mode="csv">Upload CSV</button>
+                                </div>
+
+                                <div id="cpdManualPanel" class="cpd-panel" role="tabpanel">
+                                    <div class="cpd-grade-header" id="cpdGradeHeader">
+                                        <span>Name</span>
+                                        <span>Points</span>
+                                        <span class="cpd-weight-col" id="cpdWeightHeader" hidden>Weight %</span>
+                                        <span>Category</span>
+                                        <span class="cpd-flags-col">Options</span>
+                                        <span aria-hidden="true"></span>
+                                    </div>
+                                    <div id="cpdGradeRows" class="cpd-grade-rows"></div>
+                                    <button type="button" class="form-button form-button-secondary cpd-add-btn" id="cpdAddGradeItem">
+                                        <i class="fas fa-plus" aria-hidden="true"></i>
+                                        Add grade item
+                                    </button>
+                                    <p id="cpdWeightTotal" class="form-hint cpd-weight-total" hidden>
+                                        Item weights (uncategorized / manual): <strong id="cpdWeightSum">0</strong>%
+                                        <span id="cpdWeightStatus"></span>
+                                    </p>
+                                </div>
+
+                                <div id="cpdCsvPanel" class="cpd-panel" role="tabpanel" hidden>
+                                    <input type="file" id="cpdCsvFile" class="form-input cpd-file-input" accept=".csv,text/csv">
+                                    <p class="form-hint">CSV can include <code>Category</code> and <code>CategoryWeight</code> to create categories automatically.</p>
+                                    <p id="cpdCsvStatus" class="cpd-file-name" hidden></p>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="cpd-accordion">
+                        <summary class="cpd-accordion-summary">3. Assignments</summary>
+                        <div class="cpd-accordion-body">
+                            <p class="form-hint" style="margin-top:0;">Creates Brightspace Assignment (Dropbox) folders. When “Create &amp; link grade item” is checked, a gradebook item is created and connected — or, if a similarly named item already exists from your grade CSV/manual list, you will be asked whether to link that existing item or create a new one.</p>
+
+                            <div class="cpd-sample-downloads" aria-label="Sample assignment CSV download">
+                                <p class="cpd-sample-downloads-title">Sample assignment upload file</p>
+                                <p class="form-hint" style="margin-top:0;">Download the template, edit in Excel or Sheets, then upload below. Category names should match categories in the Gradebook section.</p>
+                                <div class="cpd-sample-download-row">
+                                    <button type="button" class="form-button form-button-secondary" id="cpdDownloadAssignmentsCsv">
+                                        <i class="fas fa-download" aria-hidden="true"></i>
+                                        Download assignments sample (.csv)
+                                    </button>
+                                </div>
+                                <pre class="cpd-sample-preview-code" id="cpdAssignmentsPreview" aria-label="Assignments CSV example"></pre>
+                            </div>
+
+                            <div class="cpd-entry-tabs" role="tablist" aria-label="Assignment entry method">
+                                <button type="button" class="cpd-tab is-active" id="cpdAsnTabManual" role="tab" aria-selected="true" data-mode="manual">
+                                    Enter manually
+                                </button>
+                                <button type="button" class="cpd-tab" id="cpdAsnTabCsv" role="tab" aria-selected="false" data-mode="csv">
+                                    Upload CSV
+                                </button>
+                            </div>
+
+                            <div id="cpdAsnManualPanel" class="cpd-panel" role="tabpanel">
+                                <div class="cpd-section-toolbar">
+                                    <span class="form-label" style="margin:0;">Assignment folders</span>
+                                    <button type="button" class="form-button form-button-secondary" id="cpdAddAssignment">
+                                        <i class="fas fa-plus" aria-hidden="true"></i>
+                                        Add assignment
+                                    </button>
+                                </div>
+                                <div id="cpdAssignmentRows" class="cpd-assignment-rows"></div>
+                                <p id="cpdAssignmentEmpty" class="form-hint">No assignments yet — optional for this deploy.</p>
+                            </div>
+
+                            <div id="cpdAsnCsvPanel" class="cpd-panel" role="tabpanel" hidden>
+                                <input type="file" id="cpdAssignmentCsvFile" class="form-input cpd-file-input" accept=".csv,text/csv">
+                                <p class="form-hint">Columns: <code>Name,Points,Category,DueDate,SubmissionType,Instructions,LinkGrade,Calendar,Hidden</code>. After upload, rows appear under Enter manually so you can edit them.</p>
+                                <p id="cpdAssignmentCsvStatus" class="cpd-file-name" hidden></p>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="cpd-accordion">
+                        <summary class="cpd-accordion-summary">4. Quizzes</summary>
+                        <div class="cpd-accordion-body">
+                            <p class="form-hint" style="margin-top:0;">Creates Brightspace quiz <strong>shells</strong> (settings + optional grade link). Questions cannot be added via API — after deploy, open Quizzes in the course to import or build questions. When “Create &amp; link grade item” is checked, deploy reuses a matching gradebook item or creates a new one (same prompt pattern as assignments).</p>
+
+                            <div class="cpd-sample-downloads" aria-label="Sample quiz CSV download">
+                                <p class="cpd-sample-downloads-title">Sample quiz upload file</p>
+                                <p class="form-hint" style="margin-top:0;">Download the template, edit in Excel or Sheets, then upload below. <code>Category</code> is the gradebook category; <code>QuizCategory</code> is the folder name in the Quizzes tool.</p>
+                                <div class="cpd-sample-download-row">
+                                    <button type="button" class="form-button form-button-secondary" id="cpdDownloadQuizzesCsv">
+                                        <i class="fas fa-download" aria-hidden="true"></i>
+                                        Download quizzes sample (.csv)
+                                    </button>
+                                </div>
+                                <pre class="cpd-sample-preview-code" id="cpdQuizzesPreview" aria-label="Quizzes CSV example"></pre>
+                            </div>
+
+                            <div class="cpd-quiz-defaults" style="margin-bottom:1rem;">
+                                <div class="cpd-section-toolbar">
+                                    <span class="form-label" style="margin:0;">Quick start</span>
+                                    <button type="button" class="form-button form-button-secondary" id="cpdAddWeeklyQuizPack">
+                                        <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                                        Add weekly quiz pack (5)
+                                    </button>
+                                </div>
+                                <p class="form-hint" style="margin-top:0.35rem;">Adds Quiz 1–5: 100 pts, 1 attempt, 30-minute limit, shuffle on, hidden, link grade on. Edit names/dates afterward.</p>
+                            </div>
+
+                            <div class="cpd-entry-tabs" role="tablist" aria-label="Quiz entry method">
+                                <button type="button" class="cpd-tab is-active" id="cpdQuizTabManual" role="tab" aria-selected="true">
+                                    Enter manually
+                                </button>
+                                <button type="button" class="cpd-tab" id="cpdQuizTabCsv" role="tab" aria-selected="false">
+                                    Upload CSV
+                                </button>
+                            </div>
+
+                            <div id="cpdQuizManualPanel" class="cpd-panel" role="tabpanel">
+                                <div class="cpd-section-toolbar">
+                                    <span class="form-label" style="margin:0;">Quiz shells</span>
+                                    <button type="button" class="form-button form-button-secondary" id="cpdAddQuiz">
+                                        <i class="fas fa-plus" aria-hidden="true"></i>
+                                        Add quiz
+                                    </button>
+                                </div>
+                                <div id="cpdQuizRows" class="cpd-assignment-rows"></div>
+                                <p id="cpdQuizEmpty" class="form-hint">No quizzes yet — optional for this deploy.</p>
+                            </div>
+
+                            <div id="cpdQuizCsvPanel" class="cpd-panel" role="tabpanel" hidden>
+                                <input type="file" id="cpdQuizCsvFile" class="form-input cpd-file-input" accept=".csv,text/csv">
+                                <p class="form-hint">Columns: <code>Name,Points,Category,QuizCategory,DueDate,StartDate,EndDate,Attempts,TimeLimitMinutes,Shuffle,Instructions,LinkGrade,Calendar,Hidden</code>. After upload, rows appear under Enter manually so you can edit them.</p>
+                                <p id="cpdQuizCsvStatus" class="cpd-file-name" hidden></p>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="cpd-accordion">
+                        <summary class="cpd-accordion-summary">5. Discussions</summary>
+                        <div class="cpd-accordion-body">
+                            <p class="form-hint" style="margin-top:0;">Create discussion forums and topics (with grading options). If a scored topic name closely matches a gradebook item, deploy will ask whether to skip ScoreOutOf to avoid a duplicate. Optionally auto-create a private board for every student using the same engine as Private Student Conversations.</p>
+
+                            <div class="cpd-sample-downloads" aria-label="Sample discussion CSV download">
+                                <p class="cpd-sample-downloads-title">Sample discussion upload file</p>
+                                <p class="form-hint" style="margin-top:0;">One row per topic. Matching <code>Forum</code> names are grouped into the same forum.</p>
+                                <div class="cpd-sample-download-row">
+                                    <button type="button" class="form-button form-button-secondary" id="cpdDownloadDiscussionsCsv">
+                                        <i class="fas fa-download" aria-hidden="true"></i>
+                                        Download discussions sample (.csv)
+                                    </button>
+                                </div>
+                                <pre class="cpd-sample-preview-code" id="cpdDiscussionsPreview" aria-label="Discussions CSV example"></pre>
+                            </div>
+
+                            <div class="cpd-entry-tabs" role="tablist" aria-label="Discussion entry method">
+                                <button type="button" class="cpd-tab is-active" id="cpdDiscTabManual" role="tab" aria-selected="true">Enter manually</button>
+                                <button type="button" class="cpd-tab" id="cpdDiscTabCsv" role="tab" aria-selected="false">Upload CSV</button>
+                            </div>
+
+                            <div id="cpdDiscManualPanel" class="cpd-panel" role="tabpanel">
+                                <div class="cpd-section-toolbar">
+                                    <span class="form-label" style="margin:0;">Forums</span>
+                                    <button type="button" class="form-button form-button-secondary" id="cpdAddForum">
+                                        <i class="fas fa-plus" aria-hidden="true"></i>
+                                        Add forum
+                                    </button>
+                                </div>
+                                <div id="cpdForumRows" class="cpd-forum-rows"></div>
+
+                                <div class="cpd-section-toolbar" style="margin-top:1.25rem;">
+                                    <span class="form-label" style="margin:0;">Topics</span>
+                                    <button type="button" class="form-button form-button-secondary" id="cpdAddTopic">
+                                        <i class="fas fa-plus" aria-hidden="true"></i>
+                                        Add topic
+                                    </button>
+                                </div>
+                                <div id="cpdTopicRows" class="cpd-topic-rows"></div>
+                                <p id="cpdDiscussionEmpty" class="form-hint">No forums/topics yet — optional for this deploy.</p>
+                            </div>
+
+                            <div id="cpdDiscCsvPanel" class="cpd-panel" role="tabpanel" hidden>
+                                <input type="file" id="cpdDiscussionCsvFile" class="form-input cpd-file-input" accept=".csv,text/csv">
+                                <p class="form-hint">Columns: <code>Forum,Topic,Description,ScoreOutOf,MustPostToParticipate,AllowAnonymous,RequiresApproval,DueDate,Hidden</code>.</p>
+                                <p id="cpdDiscussionCsvStatus" class="cpd-file-name" hidden></p>
+                            </div>
+
+                            <div class="cpd-private-boards" style="margin-top:1.25rem;">
+                                <label class="cpd-check-label">
+                                    <input type="checkbox" id="cpdPrivateBoards">
+                                    Also create private discussion boards for each student
+                                </label>
+                                <p class="form-hint">Uses the same Private Student Conversations engine: one forum, one-person groups, and a restricted topic per student. Safe to re-run if some already exist.</p>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="cpd-accordion">
+                        <summary class="cpd-accordion-summary">6. Content modules</summary>
+                        <div class="cpd-accordion-body">
+                            <p class="form-hint" style="margin-top:0;">Creates empty Content modules (no topics yet). Choose how many weeks/modules, how to name them, optional date ranges, and whether they start hidden.</p>
+
+                            <div class="cpd-settings-grid">
+                                <div class="form-group">
+                                    <label for="cpdModuleCount" class="form-label">Number of modules</label>
+                                    <input type="number" id="cpdModuleCount" class="form-input" min="0" max="52" value="0" step="1">
+                                    <p class="form-hint">Set to 0 to skip content modules on this deploy.</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cpdModuleNaming" class="form-label">Naming style</label>
+                                    <select id="cpdModuleNaming" class="form-select">
+                                        <option value="week">Week 1 … Week X</option>
+                                        <option value="module">Module 1 … Module X</option>
+                                        <option value="date">Date labels (from start date)</option>
+                                        <option value="custom">Custom names (edit list below)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="cpd-settings-grid">
+                                <div class="form-group">
+                                    <label for="cpdModuleStartDate" class="form-label">Course / module start date</label>
+                                    <input type="date" id="cpdModuleStartDate" class="form-input">
+                                    <p class="form-hint">Used for date labels and optional module start/end dates.</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cpdModuleLengthDays" class="form-label">Days per module</label>
+                                    <input type="number" id="cpdModuleLengthDays" class="form-input" min="1" max="31" value="7" step="1">
+                                </div>
+                            </div>
+
+                            <div class="cpd-assignment-options" style="margin-bottom:1rem;">
+                                <label class="cpd-check-label">
+                                    <input type="checkbox" id="cpdModuleApplyDates">
+                                    Apply start/end dates to modules
+                                </label>
+                                <label class="cpd-check-label">
+                                    <input type="checkbox" id="cpdModuleHidden" checked>
+                                    Create modules as hidden
+                                </label>
+                            </div>
+
+                            <div class="cpd-section-toolbar">
+                                <span class="form-label" style="margin:0;">Module list</span>
+                                    <button type="button" class="form-button form-button-secondary" id="cpdGenerateModules">
+                                        <i class="fas fa-list" aria-hidden="true"></i>
+                                        Generate / refresh list
+                                    </button>
+                            </div>
+                            <div class="cpd-module-header">
+                                <span>Title</span>
+                                <span>Start</span>
+                                <span>End</span>
+                                <span aria-hidden="true"></span>
+                            </div>
+                            <div id="cpdModuleRows" class="cpd-module-rows"></div>
+                            <p id="cpdModuleEmpty" class="form-hint">No content modules queued. Set a count above and choose Generate / refresh list.</p>
+                        </div>
+                    </details>
+
+                    <details class="cpd-accordion">
+                        <summary class="cpd-accordion-summary">7. Welcome announcement</summary>
+                        <div class="cpd-accordion-body">
+                            <div class="form-group">
+                                <label for="cpdAnnouncementTitle" class="form-label">Title</label>
+                                <input type="text" id="cpdAnnouncementTitle" class="form-input" value="Welcome to the course!">
+                            </div>
+                            <div class="form-group">
+                                <label for="cpdAnnouncementBody" class="form-label">Body</label>
+                                <textarea id="cpdAnnouncementBody" class="form-textarea cpd-announcement-body" rows="12"></textarea>
+                                <p class="form-hint">Auto-filled from your name, course, semester, office hours, and syllabus. Edit before deploying.</p>
+                                <button type="button" class="form-button form-button-secondary" id="cpdRefreshAnnouncement">
+                                    <i class="fas fa-rotate" aria-hidden="true"></i>
+                                    Refresh from form fields
+                                </button>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="cpd-review-bar" role="group" aria-label="Section review">
+                        <button type="button" class="form-button form-button-secondary" id="cpdReviewAll">
+                            <i class="fas fa-list-check" aria-hidden="true"></i>
+                            Review all sections
+                        </button>
+                        <button type="button" class="form-button form-button-secondary" id="cpdStepMode" hidden>
+                            <i class="fas fa-list-ol" aria-hidden="true"></i>
+                            Back to step-by-step
+                        </button>
+                        <p class="form-hint" id="cpdReviewHint" style="margin:0;">One section at a time. Use Review all before deploy to check everything.</p>
+                    </div>
+
+                    <div class="cpd-actions-row">
+                        <button type="submit" class="form-button" id="cpdDeployBtn" disabled>
+                            <i class="fas fa-rocket" aria-hidden="true"></i>
+                            Deploy to course
+                        </button>
+                    </div>
+                </form>
+
+                <div id="cpdMessage" class="message-container" style="display:none; margin-top:16px;" role="status"></div>
+                <pre id="cpdLog" class="cpd-log" hidden aria-live="polite"></pre>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/private-student-conversations.js"></script>
+    <script src="js/course-package-deployer.js"></script>
+</body>
+</html>

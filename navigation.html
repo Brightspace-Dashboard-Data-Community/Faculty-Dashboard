@@ -1,0 +1,169 @@
+<!-- Navigation Sidebar -->
+<nav class="nav-container" role="navigation" aria-label="Main navigation">
+    <!-- Navigation Header -->
+    <div class="nav-header">
+        <a href="index.html" class="nav-brand" aria-label="Faculty Dashboard Home">
+            <div class="nav-logo">
+                <i class="fas fa-chalkboard-teacher" aria-hidden="true"></i>
+            </div>
+            <span class="nav-brand-text">Faculty Dashboard</span>
+        </a>
+        <button class="nav-toggle" type="button" aria-label="Toggle navigation menu" aria-expanded="false">
+            <i class="fas fa-bars nav-toggle-icon" aria-hidden="true"></i>
+        </button>
+    </div>
+    
+    <!-- Navigation Menu -->
+    <div class="nav-menu">
+        <ul class="nav-menu-list">
+            <li class="nav-menu-item">
+                <a href="index.html" class="nav-menu-link">
+                    <i class="fas fa-home nav-menu-icon" aria-hidden="true"></i>
+                    <span class="nav-menu-text">Home</span>
+                </a>
+            </li>
+            <li class="nav-menu-item">
+                <a href="mycourses.html" class="nav-menu-link">
+                    <i class="fas fa-book nav-menu-icon" aria-hidden="true"></i>
+                    <span class="nav-menu-text">My Courses</span>
+                </a>
+            </li>
+            <li class="nav-menu-item">
+                <a href="students.html" class="nav-menu-link">
+                    <i class="fas fa-users nav-menu-icon" aria-hidden="true"></i>
+                    <span class="nav-menu-text">Students</span>
+                </a>
+            </li>
+            <li class="nav-menu-item has-submenu" id="analytics-menu-item">
+                <a href="#" class="nav-menu-link has-submenu" role="button" aria-expanded="false" aria-controls="analytics-submenu">
+                    <i class="fas fa-chart-line nav-menu-icon" aria-hidden="true"></i>
+                    <span class="nav-menu-text">Analytics</span>
+                </a>
+                <ul class="nav-submenu" id="analytics-submenu">
+                    <li class="nav-submenu-item">
+                        <a href="analytics.html" class="nav-submenu-link">
+                            <i class="fas fa-chart-line nav-submenu-icon" aria-hidden="true"></i>
+                            <span class="nav-submenu-text">Course Health</span>
+                        </a>
+                    </li>
+                    <li class="nav-submenu-item">
+                        <a href="engagement-interaction.html" class="nav-submenu-link">
+                            <i class="fas fa-comments nav-submenu-icon" aria-hidden="true"></i>
+                            <span class="nav-submenu-text">Engagement</span>
+                            <span class="nav-menu-badge" aria-label="Beta feature">Beta</span>
+                        </a>
+                    </li>
+                    <li class="nav-submenu-item">
+                        <a href="assignments.html" class="nav-submenu-link">
+                            <i class="fas fa-file-alt nav-submenu-icon" aria-hidden="true"></i>
+                            <span class="nav-submenu-text">Assignments</span>
+                        </a>
+                    </li>
+                    <li class="nav-submenu-item has-nested-submenu expanded" id="discussions-submenu-item">
+                        <a href="#" class="nav-submenu-link has-nested-submenu" role="button" aria-expanded="true" aria-controls="discussions-nested-submenu">
+                            <i class="fas fa-comments nav-submenu-icon" aria-hidden="true"></i>
+                            <span class="nav-submenu-text">Discussions</span>
+                        </a>
+                        <ul class="nav-nested-submenu" id="discussions-nested-submenu" aria-label="Discussions subsection">
+                            <li class="nav-nested-submenu-item">
+                                <a href="discussions.html" class="nav-nested-submenu-link">
+                                    <i class="fas fa-list nav-submenu-icon" aria-hidden="true"></i>
+                                    <span class="nav-submenu-text">Overview</span>
+                                </a>
+                            </li>
+                            <li class="nav-nested-submenu-item">
+                                <a href="one-on-one-discussions.html" class="nav-nested-submenu-link">
+                                    <i class="fas fa-user-friends nav-submenu-icon" aria-hidden="true"></i>
+                                    <span class="nav-submenu-text">1-on-1 Activity</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-submenu-item">
+                        <a href="quizzes.html" class="nav-submenu-link">
+                            <i class="fas fa-question-circle nav-submenu-icon" aria-hidden="true"></i>
+                            <span class="nav-submenu-text">Quizzes</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="nav-menu-item">
+                <a href="resources.html" class="nav-menu-link">
+                    <i class="fas fa-book-open nav-menu-icon" aria-hidden="true"></i>
+                    <span class="nav-menu-text">Resources</span>
+                </a>
+            </li>
+            <li class="nav-menu-item" id="nav-item-faculty-training">
+                <a href="faculty-training.html" class="nav-menu-link">
+                    <i class="fas fa-graduation-cap nav-menu-icon" aria-hidden="true"></i>
+                    <span class="nav-menu-text">Faculty Training</span>
+                </a>
+            </li>
+            <li class="nav-menu-item">
+                <a href="accessibility.html" class="nav-menu-link">
+                    <i class="fas fa-universal-access nav-menu-icon" aria-hidden="true"></i>
+                    <span class="nav-menu-text">Accessibility</span>
+                </a>
+            </li>
+            <li class="nav-menu-item">
+                <a href="forms.html" class="nav-menu-link">
+                    <i class="fas fa-file-alt nav-menu-icon" aria-hidden="true"></i>
+                    <span class="nav-menu-text">Forms</span>
+                </a>
+            </li>
+            <li class="nav-menu-item has-submenu" id="tools-menu-item">
+                <a href="tools.html" class="nav-menu-link has-submenu">
+                    <i class="fas fa-tools nav-menu-icon" aria-hidden="true"></i>
+                    <span class="nav-menu-text">Tools &amp; Reports</span>
+                </a>
+                <ul class="nav-submenu" aria-label="Tools and Reports subsection">
+                    <li class="nav-submenu-item">
+                        <a href="course-management-tools.html" class="nav-submenu-link">
+                            <i class="fas fa-chalkboard-teacher nav-submenu-icon" aria-hidden="true"></i>
+                            <span class="nav-submenu-text">Course Management</span>
+                        </a>
+                    </li>
+                    <li class="nav-submenu-item">
+                        <a href="student-management-tools.html" class="nav-submenu-link">
+                            <i class="fas fa-user-graduate nav-submenu-icon" aria-hidden="true"></i>
+                            <span class="nav-submenu-text">User Management</span>
+                        </a>
+                    </li>
+                    <li class="nav-submenu-item">
+                        <a href="analytics-reports-tools.html" class="nav-submenu-link">
+                            <i class="fas fa-chart-bar nav-submenu-icon" aria-hidden="true"></i>
+                            <span class="nav-submenu-text">Analytics &amp; Reports</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <!-- Announcements: hidden via .nav-menu-item--hidden (remove class to show again) -->
+            <li class="nav-menu-item nav-menu-item--hidden">
+                <a href="news-updates.html" class="nav-menu-link">
+                    <i class="fas fa-bullhorn nav-menu-icon" aria-hidden="true"></i>
+                    <span class="nav-menu-text">Announcements</span>
+                </a>
+            </li>
+            <li class="nav-menu-item">
+                <a href="updates.html" class="nav-menu-link">
+                    <i class="fas fa-sync-alt nav-menu-icon" aria-hidden="true"></i>
+                    <span class="nav-menu-text">Updates</span>
+                    <span class="nav-menu-badge">New</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- Navigation Footer (User Info) — click avatar/name for training privacy mask -->
+    <div class="nav-footer">
+        <button type="button" class="nav-user" id="nav-user-privacy-btn" aria-label="Open training privacy mask" title="Training privacy mask">
+            <div class="nav-user-avatar" aria-hidden="true">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="nav-user-info">
+                <div class="nav-user-name">Instructor</div>
+                <div class="nav-user-role">Faculty</div>
+            </div>
+        </button>
+    </div>
+</nav>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Accessibility checklist for D2L webpages and HTML content">
+    <title>D2L Webpages — Accessibility - D2L Faculty Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+    <main id="main-content" class="main-content" role="main">
+        <nav class="a11y-guide-breadcrumb widget-container" aria-label="Breadcrumb">
+            <a href="accessibility.html" class="a11y-guide-back"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Accessibility</a>
+        </nav>
+        <div class="page-header">
+            <h1 class="page-title">D2L Webpages &amp; HTML content</h1>
+            <p class="page-subtitle">Structure and test HTML pages, topics, and widgets in Brightspace so screen reader and keyboard users can use them effectively.</p>
+        </div>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="structure-heading">
+            <h2 id="structure-heading">Structure &amp; semantics</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Use a single logical <strong>Heading 1</strong> per page or major topic, then <strong>Heading 2</strong> and <strong>Heading 3</strong> in order—do not skip levels for visual styling.</li>
+                <li>Use real heading styles in the HTML editor instead of bold or large font alone.</li>
+                <li>Use bulleted or numbered lists for groups of related items; avoid fake lists made of line breaks.</li>
+                <li>Use built-in table tools for data tables; include header rows and keep layout simple.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="media-heading">
+            <h2 id="media-heading">Images, links, and media</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Add concise <strong>alt text</strong> for meaningful images; use empty alt (decorative) only when an image adds no information.</li>
+                <li>Make link text descriptive (“Syllabus PDF”) instead of generic (“click here”).</li>
+                <li>For video or audio, provide <strong>captions</strong>; add transcripts or descriptions when narration alone does not convey visual information.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="d2l-tools-heading">
+            <h2 id="d2l-tools-heading">Use D2L tools</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Run the <strong>Accessibility Checker</strong> in the HTML editor before publishing.</li>
+                <li>Review <strong>YuJa Panorama</strong> feedback on the page or uploaded files and remediate issues (or provide an equivalent accessible format) where suggested.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="refs-heading">
+            <h2 id="refs-heading">Further reading</h2>
+            <ul class="a11y-guide-resource-links">
+                <li><a href="https://community.d2l.com/brightspace/kb/articles/1791-use-the-accessibility-checker" target="_blank" rel="noopener noreferrer">D2L Community — Accessibility Checker</a></li>
+                <li><a href="accessibility-tutorials.html">YuJa Panorama faculty training</a></li>
+                <li><a href="https://webaim.org/techniques/hypertext/" target="_blank" rel="noopener noreferrer">WebAIM — Accessible hypertext</a></li>
+            </ul>
+        </section>
+    </main>
+    <script src="js/navigation.js"></script>
+</body>
+</html>

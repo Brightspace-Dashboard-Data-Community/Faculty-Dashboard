@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta name="description" content="D2L Faculty Dashboard - Intelligent Agent Builder Helper">
+    <title>Intelligent Agent Builder - D2L Faculty Dashboard</title>
+    <script>
+      (function () {
+        function parseMaybeJson(res, text) {
+          var raw = text == null ? "" : String(text).replace(/^\uFEFF/, "").trim();
+          if (!raw) return null;
+          try {
+            return JSON.parse(raw);
+          } catch (e) {
+            if (res && res.status >= 200 && res.status < 300) return null;
+            throw e;
+          }
+        }
+        if (window.Response && Response.prototype && !Response.prototype.__iaEmptyJsonPatch) {
+          Response.prototype.json = function () {
+            var res = this;
+            return this.text().then(function (text) {
+              return parseMaybeJson(res, text);
+            });
+          };
+          Response.prototype.__iaEmptyJsonPatch = true;
+        }
+      })();
+    </script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Universal Styles -->
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Navigation Sidebar (loaded dynamically) -->
+    <div id="nav-placeholder"></div>
+    
+    <!-- Main Content Area -->
+    <main id="main-content" class="main-content" role="main">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Intelligent Agent Builder</h1>
+            <p class="page-subtitle">Choose a template, pick your course, then create the agent in Brightspace</p>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="agent-builder-main-content">
+            <!-- Overview Section -->
+            <section class="agent-builder-section">
+                <div class="agent-builder-section-header">
+                    <h2 class="agent-builder-section-title">What are Intelligent Agents?</h2>
+                    <div class="agent-builder-section-separator"></div>
+                </div>
+                
+                <div class="agent-builder-description">
+                    <p>
+                        Intelligent Agents are automated email systems that send messages to students when specific criteria are met. 
+                        They help you stay connected with your students by automatically sending personalized emails based on their 
+                        activity, grades, or engagement in your course. Use the steps below: choose a template, then set it up in your course.
+                    </p>
+                    
+                    <div class="info-card">
+                        <div class="info-card-title">
+                            <i class="fas fa-lightbulb" aria-hidden="true"></i>
+                            Key Benefits
+                        </div>
+                        <div class="info-card-content">
+                            <ul style="margin: 12px 0; padding-left: 24px;">
+                                <li>Automate student communications based on course activity</li>
+                                <li>Send personalized emails using replace strings</li>
+                                <li>Improve student engagement and retention</li>
+                                <li>Save time by automating routine communications</li>
+                                <li>Track student activity and respond proactively</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Tabs Section -->
+            <section class="agent-builder-section">
+                <div class="agent-tabs" role="tablist">
+                    <button class="agent-tab active" data-tab="templates" role="tab" aria-selected="true">
+                        <i class="fas fa-file-alt" aria-hidden="true"></i> 1. Choose template
+                    </button>
+                    <button class="agent-tab" data-tab="deploy" role="tab" aria-selected="false">
+                        <i class="fas fa-rocket" aria-hidden="true"></i> 2. Set up in course
+                    </button>
+                    <button class="agent-tab" data-tab="help" role="tab" aria-selected="false">
+                        <i class="fas fa-circle-question" aria-hidden="true"></i> Help
+                    </button>
+                </div>
+                
+                <!-- Step-by-Step Guide (moved into Help on load) -->
+                <div class="agent-tab-content" id="guide-tab">
+                    <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 24px; color: var(--text-dark);">
+                        How to Create an Intelligent Agent
+                    </h3>
+                    
+                    <div class="step-guide">
+                        <div class="step-item">
+                            <div class="step-number">1</div>
+                            <div class="step-title">Access Intelligent Agents</div>
+                            <div class="step-content">
+                                <ol>
+                                    <li>Navigate to your course in D2L</li>
+                                    <li>Select <strong>Edit Course</strong> from the course navigation or from Course Tools dropdown menu</li>
+                                    <li>Select <strong>Intelligent Agents</strong> (under "Communication" in Edit Course if viewing by category)</li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item">
+                            <div class="step-number">2</div>
+                            <div class="step-title">Create a New Agent</div>
+                            <div class="step-content">
+                                <ol>
+                                    <li>On the Agent List page, click <strong>New Agent</strong></li>
+                                    <li>Enter an <strong>Agent Name</strong> (required) - e.g., "Welcome Message" or "Low Grade Alert"</li>
+                                    <li>Enter an optional <strong>Description</strong> to help you remember what this agent does</li>
+                                    <li>Check <strong>Agent is Enabled</strong> if you want it active immediately</li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item">
+                            <div class="step-number">3</div>
+                            <div class="step-title">Configure Scheduling</div>
+                            <div class="step-content">
+                                <p>Select how often the agent should check for criteria:</p>
+                                <ul>
+                                    <li><strong>One-Time Run</strong>- Only runs once</li>
+                                    <li><strong>Hourly</strong> - Checks once per hour</li>
+                                    <li><strong>Daily</strong> - Checks once per day at a specified time</li>
+                                    <li><strong>Weekly</strong> - Checks once per week on a specific day</li>
+                                    <li><strong>Monthly</strong> - Checks once per month</li>
+                                    <li><strong>Annually</strong> - Checks once per year</li>
+                                    <li><strong>No Schedule</strong> - Only runs when you click "Run Now" or for Testing Purposes</li>
+                                </ul>
+                                <p><strong>Note:</strong> Intelligent Agents are automatically disabled when a course becomes inactive.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item">
+                            <div class="step-number">4</div>
+                            <div class="step-title">Set Criteria</div>
+                            <div class="step-content">
+                                <p>Define what conditions trigger the agent:</p>
+                                <ul>
+                                    <li><strong>Role in Classlist:</strong> Choose "All users" or "Users with specific roles" (e.g., only Students)</li>
+                                    <li><strong>Login Activity:</strong> Trigger when users haven't logged in within a certain timeframe</li>
+                                    <li><strong>Course Activity:</strong> Trigger when users haven't accessed the course within a timeframe</li>
+                                    <li><strong>Release Conditions:</strong> Create conditions based on:
+                                        <ul>
+                                            <li>Grade received on an assignment</li>
+                                            <li>Content viewed or not viewed</li>
+                                            <li>Quiz completed or not completed</li>
+                                            <li>Discussion posts made</li>
+                                            <li>And many more options</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                                <p><strong>Tip:</strong> You can leave criteria empty if you just want to send a general email to all students.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item">
+                            <div class="step-number">5</div>
+                            <div class="step-title">Configure Actions</div>
+                            <div class="step-content">
+                                <ul>
+                                    <li>Choose when to take action:
+                                        <ul>
+                                            <li><strong>First time criteria are met</strong> - Send email once per student</li>
+                                            <li><strong>Every time criteria are met</strong> - Send email each time conditions are satisfied</li>
+                                        </ul>
+                                    </li>
+                                    <li>Check <strong>Send an email when the criteria are satisfied</strong></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item">
+                            <div class="step-number">6</div>
+                            <div class="step-title">Compose Email</div>
+                            <div class="step-content">
+                                <ul>
+                                    <li>Enter <strong>{InitiatingUser}</strong> as the "To" field to send the email to the student who meets the criteria</li>
+                                    <li>Enter an <strong>Email Subject</strong> (required)</li>
+                                    <li>Write your <strong>Message</strong> in the text area</li>
+                                    <li>Use <strong>Replace Strings</strong> to personalize messages (see Replace Strings tab)</li>
+                                    <li>Optionally attach files from your computer or course files</li>
+                                </ul>
+                                <p><strong>Example Subject:</strong> "Welcome to {OrgUnitName}!"</p>
+                                <p><strong>Example Message:</strong> "Dear {InitiatingUserFirstName}, welcome to {OrgUnitName}. We're excited to have you in this course!"</p>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item">
+                            <div class="step-number">7</div>
+                            <div class="step-title">Save and Test</div>
+                            <div class="step-content">
+                                <ol>
+                                    <li>Click <strong>Save and Close</strong></li>
+                                    <li>Use <strong>Practice Run</strong> to see who would receive the email (no emails sent)</li>
+                                    <li>If satisfied, use <strong>Run Now</strong> to execute the agent immediately</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Templates Tab -->
+                <div class="agent-tab-content active" id="templates-tab" role="tabpanel">
+                    <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 24px; color: var(--text-dark);">
+                        Intelligent Agent Templates
+                    </h3>
+                    <p style="color: var(--text-medium); margin-bottom: 24px;">
+                        Pick a template to load it into <strong>Set up in course</strong>. You will choose the course, confirm the trigger, edit the email if you want, then create the agent in Brightspace.
+                    </p>
+                    
+                    <div class="template-filters">
+                        <div class="template-search-wrap">
+                            <label for="template-search" class="sr-only">Search templates</label>
+                            <i class="fas fa-search template-search-icon" aria-hidden="true"></i>
+                            <input type="text" id="template-search" class="template-search-input" placeholder="Search by name or description..." aria-label="Search templates">
+                        </div>
+                        <div class="template-group-filter-wrap">
+                            <label for="template-group-filter" class="template-group-filter-label">Group:</label>
+                            <select id="template-group-filter" class="template-group-filter-select" aria-label="Filter by group">
+                                <option value="">All groups</option>
+                                <option value="getting-started">Getting Started</option>
+                                <option value="engagement">Engagement &amp; Inactivity</option>
+                                <option value="assignments">Assignments</option>
+                                <option value="quizzes">Quizzes &amp; Grades</option>
+                                <option value="discussions">Discussions &amp; Feedback</option>
+                                <option value="checklists">Checklists &amp; Content</option>
+                                <option value="progress">Course Progress &amp; Milestones</option>
+                                <option value="encouragement">Encouragement &amp; Recognition</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="template-list-container" class="template-list-container">
+                        <!-- Template groups and cards rendered by JavaScript -->
+                    </div>
+                    <p id="template-no-results" class="template-no-results" style="display: none;" role="status">
+                        No templates match your search. Try different keywords or clear the group filter.
+                    </p>
+                </div>
+                
+                <!-- Deploy Tab (merged from Intelligent Agent Deployer) -->
+                <div class="agent-tab-content" id="deploy-tab" role="tabpanel">
+                    <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--text-dark);">
+                        Set up in a course
+                    </h3>
+                    <p style="margin: 0 0 1rem; color: var(--text-medium); line-height: 1.55;">
+                        Choose the course, confirm the trigger and email, then create the agent. Reply-To and From addresses are course-wide Brightspace settings — see Help.
+                    </p>
+                    <p style="margin: 0 0 1.25rem;">
+                        <button type="button" class="builder-reset-btn" id="backToTemplatesBtn">
+                            <i class="fas fa-arrow-left" aria-hidden="true"></i> Choose a different template
+                        </button>
+                    </p>
+                    <div id="deploySourceBanner" class="info-card agent-deployer-hidden" style="margin-bottom: 1rem;" role="status">
+                        <div class="info-card-title"><i class="fas fa-check-circle" aria-hidden="true"></i> Loaded for setup</div>
+                        <div class="info-card-content"><p id="deploySourceBannerText"></p></div>
+                    </div>
+
+                <form id="agentDeployForm" class="builder-form" novalidate>
+                    <p class="form-hint agent-required-legend">Fields marked <span class="agent-required-mark" aria-hidden="true">*</span> are required before the agent can be created in the course.</p>
+                    <div class="agent-deployer-grid">
+                        <fieldset class="builder-section" id="courseTemplateSection">
+                            <legend class="builder-section-legend">Course and Template</legend>
+
+                            <div class="form-group">
+                                <label for="deployCourse" class="form-label">Course offering <span class="agent-required-mark" title="Required">*</span></label>
+                                <select id="deployCourse" class="form-select" required aria-required="true">
+                                    <option value="">Loading your courses...</option>
+                                </select>
+                                <p class="form-hint">Lists your previous, current, and upcoming faculty course offerings (<span data-fd-semester-code="previous"></span>, <span data-fd-semester-code="active"></span>, and <span data-fd-semester-code="future"></span>) using the same Brightspace enrollment rules as the dashboard tools.</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="deployTemplate" class="form-label">Deployment template <span class="agent-required-mark" title="Required">*</span></label>
+                                <select id="deployTemplate" class="form-select" required aria-required="true">
+                                    <option value="">Choose a template...</option>
+                                </select>
+                            </div>
+
+                            <div id="templateSummary" class="agent-deployer-summary agent-deployer-hidden" aria-live="polite"></div>
+
+                            <div class="form-group">
+                                <label class="form-label">Target audience</label>
+                                <div class="form-checkbox-group">
+                                    <input type="checkbox" id="limitToStudents" class="form-checkbox" checked>
+                                    <label for="limitToStudents" style="cursor: pointer;">Limit this agent to student roles detected in the selected course</label>
+                                </div>
+                                <p id="studentRoleSummary" class="form-hint">Select a course to load student roles.</p>
+                            </div>
+
+                            <div id="courseReferenceSummary" class="agent-deployer-ref-summary">
+                                <div class="agent-deployer-ref-item"><strong>Assignments:</strong> <span id="summaryAssignments">-</span></div>
+                                <div class="agent-deployer-ref-item"><strong>Quizzes:</strong> <span id="summaryQuizzes">-</span></div>
+                                <div class="agent-deployer-ref-item"><strong>Discussion topics:</strong> <span id="summaryTopics">-</span></div>
+                                <div class="agent-deployer-ref-item"><strong>Content topics:</strong> <span id="summaryContent">-</span></div>
+                                <div class="agent-deployer-ref-item"><strong>Checklists:</strong> <span id="summaryChecklists">-</span></div>
+                                <div class="agent-deployer-ref-item"><strong>Grade items:</strong> <span id="summaryGradeItems">-</span></div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="builder-section" id="agentPropertiesSection">
+                            <legend class="builder-section-legend">Agent Properties</legend>
+
+                            <div class="form-group">
+                                <label for="deployAgentName" class="form-label">Agent name <span class="agent-required-mark" title="Required">*</span></label>
+                                <input type="text" id="deployAgentName" class="form-input" placeholder="Agent name" required aria-required="true">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="deployAgentDescription" class="form-label">Description</label>
+                                <textarea id="deployAgentDescription" class="form-textarea" placeholder="What this agent does"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <div class="form-checkbox-group">
+                                    <input type="checkbox" id="deployAgentEnabled" class="form-checkbox" checked>
+                                    <label for="deployAgentEnabled" style="cursor: pointer;">Create agent as enabled</label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Action repetition</label>
+                                <div class="form-radio-group">
+                                    <div class="form-radio">
+                                        <input type="radio" id="deployActionFirst" name="deployActionTiming" value="first" checked>
+                                        <label for="deployActionFirst" class="form-radio-label">Only the first time criteria are met for a user</label>
+                                    </div>
+                                    <div class="form-radio">
+                                        <input type="radio" id="deployActionEvery" name="deployActionTiming" value="every">
+                                        <label for="deployActionEvery" class="form-radio-label">Every time criteria are met for a user</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+
+                    <fieldset class="builder-section" id="templateDetailsSection">
+                        <legend class="builder-section-legend">Course items this agent needs <span class="agent-required-mark" title="Required" style="display:none">*</span></legend>
+                        <p class="builder-section-desc">Choose a template to see which course items Brightspace needs for this agent.</p>
+                        <div id="dynamicTemplateFields"></div>
+                    </fieldset>
+
+                    <fieldset class="builder-section" id="scheduleSection">
+                        <legend class="builder-section-legend">Scheduling</legend>
+
+                        <div class="agent-deployer-grid">
+                            <div class="form-group">
+                                <label for="scheduleType" class="form-label">Schedule type</label>
+                                <select id="scheduleType" class="form-select">
+                                    <option value="manual">No schedule (manual only)</option>
+                                    <option value="hourly">Hourly</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="annually">Annually</option>
+                                    <option value="once">One-time run</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="scheduleStart" class="form-label">Start date and time</label>
+                                <input type="datetime-local" id="scheduleStart" class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="scheduleEnd" class="form-label">End date and time</label>
+                                <input type="datetime-local" id="scheduleEnd" class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="scheduleRepeatsEvery" class="form-label">Repeat every</label>
+                                <input type="number" id="scheduleRepeatsEvery" class="form-input" min="1" step="1" value="1">
+                            </div>
+
+                            <div class="form-group agent-deployer-weekly" id="weeklyDaysGroup">
+                                <label class="form-label">Weekly days <span class="agent-required-mark" title="Required">*</span></label>
+                                <div class="agent-deployer-check-grid">
+                                    <label class="agent-deployer-check"><input type="checkbox" value="Sunday" data-weekday> Sunday</label>
+                                    <label class="agent-deployer-check"><input type="checkbox" value="Monday" data-weekday checked> Monday</label>
+                                    <label class="agent-deployer-check"><input type="checkbox" value="Tuesday" data-weekday> Tuesday</label>
+                                    <label class="agent-deployer-check"><input type="checkbox" value="Wednesday" data-weekday> Wednesday</label>
+                                    <label class="agent-deployer-check"><input type="checkbox" value="Thursday" data-weekday> Thursday</label>
+                                    <label class="agent-deployer-check"><input type="checkbox" value="Friday" data-weekday> Friday</label>
+                                    <label class="agent-deployer-check"><input type="checkbox" value="Saturday" data-weekday> Saturday</label>
+                                </div>
+                            </div>
+
+                            <div class="form-group agent-deployer-monthly">
+                                <label for="scheduleMonthDay" class="form-label">Day of month</label>
+                                <input type="number" id="scheduleMonthDay" class="form-input" min="1" max="31" step="1" value="1">
+                            </div>
+
+                            <div class="form-group agent-deployer-annually">
+                                <label for="scheduleYearMonth" class="form-label">Month</label>
+                                <input type="number" id="scheduleYearMonth" class="form-input" min="1" max="12" step="1" value="1">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="builder-section">
+                        <legend class="builder-section-legend">Login and Course Activity Criteria</legend>
+
+                        <div class="agent-deployer-grid">
+                            <div class="form-group">
+                                <div class="form-checkbox-group">
+                                    <input type="checkbox" id="useLoginCondition" class="form-checkbox">
+                                    <label for="useLoginCondition" style="cursor: pointer;">Use login activity condition</label>
+                                </div>
+                                <div class="builder-sub-options" id="loginConditionOptions">
+                                    <div class="form-radio-group">
+                                        <div class="form-radio">
+                                            <input type="radio" id="loginConditionNot" name="loginConditionType" value="not" checked>
+                                            <label for="loginConditionNot" class="form-radio-label">Has not logged in during the last</label>
+                                        </div>
+                                        <div class="form-radio">
+                                            <input type="radio" id="loginConditionYes" name="loginConditionType" value="yes">
+                                            <label for="loginConditionYes" class="form-radio-label">Has logged in during the last</label>
+                                        </div>
+                                    </div>
+                                    <input type="number" id="loginConditionDays" class="form-input form-input-inline" min="1" max="365" value="7" style="width: 110px;"> day(s)
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="form-checkbox-group">
+                                    <input type="checkbox" id="useCourseCondition" class="form-checkbox">
+                                    <label for="useCourseCondition" style="cursor: pointer;">Use course activity condition</label>
+                                </div>
+                                <div class="builder-sub-options" id="courseConditionOptions">
+                                    <div class="form-radio-group">
+                                        <div class="form-radio">
+                                            <input type="radio" id="courseConditionNot" name="courseConditionType" value="not" checked>
+                                            <label for="courseConditionNot" class="form-radio-label">Has not accessed the course during the last</label>
+                                        </div>
+                                        <div class="form-radio">
+                                            <input type="radio" id="courseConditionYes" name="courseConditionType" value="yes">
+                                            <label for="courseConditionYes" class="form-radio-label">Has accessed the course during the last</label>
+                                        </div>
+                                    </div>
+                                    <input type="number" id="courseConditionDays" class="form-input form-input-inline" min="1" max="365" value="7" style="width: 110px;"> day(s)
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="builder-section" id="emailSection">
+                        <legend class="builder-section-legend">Email Action</legend>
+
+                        <div class="form-group">
+                            <label for="deployEmailTo" class="form-label">To</label>
+                            <input type="text" id="deployEmailTo" class="form-input" value="{InitiatingUser}">
+                            <p class="form-hint">Keep <code>{InitiatingUser}</code> to send the email to the learner who matches the criteria.</p>
+                        </div>
+
+                        <div class="agent-deployer-grid">
+                            <div class="form-group">
+                                <label for="deployEmailCc" class="form-label">Cc</label>
+                                <input type="text" id="deployEmailCc" class="form-input" placeholder="Optional">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="deployEmailBcc" class="form-label">Bcc</label>
+                                <input type="text" id="deployEmailBcc" class="form-input" placeholder="Optional">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deployEmailSubject" class="form-label">Subject <span class="agent-required-mark" title="Required">*</span></label>
+                            <input type="text" id="deployEmailSubject" class="form-input" placeholder="Email subject" required aria-required="true">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deployEmailMessage" class="form-label">Message <span class="agent-required-mark" title="Required">*</span></label>
+                            <textarea id="deployEmailMessage" class="form-textarea" placeholder="Email message" required aria-required="true"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-checkbox-group">
+                                <input type="checkbox" id="deployEmailIsHtml" class="form-checkbox">
+                                <label for="deployEmailIsHtml" style="cursor: pointer;">Treat message body as HTML</label>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="builder-section" id="deploySection">
+                        <legend class="builder-section-legend">Deployment</legend>
+
+                        <div class="form-group">
+                            <div class="form-checkbox-group">
+                                <input type="checkbox" id="runPracticeAfterCreate" class="form-checkbox">
+                                <label for="runPracticeAfterCreate" style="cursor: pointer;">Run a practice run immediately after creating the agent</label>
+                            </div>
+                        </div>
+
+                        <div id="deploymentPlan" class="agent-deployer-plan agent-readiness-blocked" role="status" aria-live="polite">
+                            Choose a course and a template, then complete any highlighted fields before creating the agent.
+                        </div>
+
+                        <div class="agent-deployer-actions">
+                            <button type="button" id="resetDeployForm" class="builder-reset-btn">
+                                <i class="fas fa-undo" aria-hidden="true"></i> Reset form
+                            </button>
+                            <button type="submit" id="deployAgentBtn" class="form-button form-button-not-ready" aria-disabled="true" aria-describedby="deploymentPlan">
+                                <i class="fas fa-rocket" aria-hidden="true"></i> Create Intelligent Agent
+                            </button>
+                        </div>
+                        <p id="deployButtonHint" class="form-hint">If Create is not ready, click it to jump to the next field that still needs attention.</p>
+                        <p class="form-hint">Builder update 2026-08-21e — reload this page if you still see a JSON.parse error.</p>
+
+                        <div id="deployMessage" class="message-container" style="display:none;" role="status"></div>
+                    </fieldset>
+                </form>
+                </div>
+
+                <div class="agent-tab-content" id="help-tab" role="tabpanel">
+                    <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--text-dark);">Help</h3>
+                    <p style="color: var(--text-medium); margin-bottom: 24px;">
+                        How to create agents in Brightspace, course-wide email settings, and replace strings for personalized messages.
+                    </p>
+                </div>
+
+                <!-- Settings & Email Tab -->
+                <div class="agent-tab-content" id="settings-tab" role="tabpanel">
+                    <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 24px; color: var(--text-dark);">
+                        Email Settings & Configuration
+                    </h3>
+                    
+                    <div class="info-card">
+                        <div class="info-card-title">
+                            <i class="fas fa-info-circle" aria-hidden="true"></i>
+                            Default Email Settings
+                        </div>
+                        <div class="info-card-content">
+                            <p>By default, Intelligent Agent emails come from <strong>"System - No Reply"</strong> with a reply-to address of <strong>"system_noreply@brightspace.com"</strong>.</p>
+                            <p><strong>Important:</strong> It's recommended to change this to an email address that is monitored by a person so students can reply to your messages.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-guide">
+                        <div class="step-item">
+                            <div class="step-number">1</div>
+                            <div class="step-title">Access Email Settings</div>
+                            <div class="step-content">
+                                <ol>
+                                    <li>Go to the Agent List page in your course</li>
+                                    <li>Click the <strong>Settings</strong> button (gear icon) at the top of the page</li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item">
+                            <div class="step-number">2</div>
+                            <div class="step-title">Configure Custom Email Settings</div>
+                            <div class="step-content">
+                                <ol>
+                                    <li>Check the box for <strong>"Set custom values for this course"</strong></li>
+                                    <li>Enter the <strong>Name</strong> that should appear as the sender (e.g., "Professor Smith" or "Dr. Johnson")</li>
+                                    <li>Enter the <strong>Reply-to Email Address</strong> where students should send replies (e.g., "professor.smith@example.edu")</li>
+                                    <li>Click <strong>Save</strong></li>
+                                </ol>
+                                <p><strong>Note:</strong> These settings apply to ALL Intelligent Agents in the course. You cannot set different email addresses for individual agents.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item">
+                            <div class="step-number">3</div>
+                            <div class="step-title">Edit an Existing Agent</div>
+                            <div class="step-content">
+                                <ol>
+                                    <li>On the Agent List page, click the <strong>name</strong> of the agent you want to edit</li>
+                                    <li>Make any changes to the agent configuration</li>
+                                    <li>Click <strong>Save</strong> to update the agent</li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item">
+                            <div class="step-number">4</div>
+                            <div class="step-title">Test Your Agent</div>
+                            <div class="step-content">
+                                <p><strong>Practice Run:</strong> See who would receive the email without actually sending it</p>
+                                <ol>
+                                    <li>Click the dropdown arrow next to the agent name</li>
+                                    <li>Select <strong>Practice Run</strong></li>
+                                    <li>Click <strong>Run</strong></li>
+                                    <li>Review the list of students who would be contacted</li>
+                                </ol>
+                                <p><strong>Run Now:</strong> Execute the agent immediately</p>
+                                <ol>
+                                    <li>Click the dropdown arrow next to the agent name</li>
+                                    <li>Select <strong>Run Now</strong></li>
+                                    <li>Click <strong>Run</strong> in the confirmation dialog</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Replace Strings Tab -->
+                <div class="agent-tab-content" id="replace-tab" role="tabpanel">
+                    <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 24px; color: var(--text-dark);">
+                        Replace Strings Reference
+                    </h3>
+                    <p style="color: var(--text-medium); margin-bottom: 24px;">
+                        Replace strings are special codes that automatically fill in personalized information when the email is sent. 
+                        Use them in both the email subject and message body.
+                    </p>
+                    
+                    <table class="replace-strings-table">
+                        <thead>
+                            <tr>
+                                <th>Replace String</th>
+                                <th>What It Generates</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code class="replace-strings-code">{InitiatingUser}</code></td>
+                                <td>The user who performs the action that meets the criteria (use in "To" field)</td>
+                            </tr>
+                            <tr>
+                                <td><code class="replace-strings-code">{OrgName}</code></td>
+                                <td>The name of your organization/institution</td>
+                            </tr>
+                            <tr>
+                                <td><code class="replace-strings-code">{OrgUnitCode}</code></td>
+                                <td>The course code (e.g., ENG-101-001)</td>
+                            </tr>
+                            <tr>
+                                <td><code class="replace-strings-code">{OrgUnitName}</code></td>
+                                <td>The full name of the course</td>
+                            </tr>
+                            <tr>
+                                <td><code class="replace-strings-code">{OrgUnitId}</code></td>
+                                <td>The unique ID number for the course</td>
+                            </tr>
+                            <tr>
+                                <td><code class="replace-strings-code">{InitiatingUserFirstName}</code></td>
+                                <td>The first name of the student receiving the email</td>
+                            </tr>
+                            <tr>
+                                <td><code class="replace-strings-code">{InitiatingUserLastName}</code></td>
+                                <td>The last name of the student receiving the email</td>
+                            </tr>
+                            <tr>
+                                <td><code class="replace-strings-code">{InitiatingUserUserName}</code></td>
+                                <td>The username of the student receiving the email</td>
+                            </tr>
+                            <tr>
+                                <td><code class="replace-strings-code">{InitiatingUserOrgDefinedId}</code></td>
+                                <td>The student ID number</td>
+                            </tr>
+                            <tr>
+                                <td><code class="replace-strings-code">{LoginPath}</code></td>
+                                <td>The web address/URL for logging into D2L</td>
+                            </tr>
+                            <tr>
+                                <td><code class="replace-strings-code">{LastCourseAccessDate}</code></td>
+                                <td>The date the student last accessed the course</td>
+                            </tr>
+                            <tr>
+                                <td><code class="replace-strings-code">{LastLoginDate}</code></td>
+                                <td>The date the student last logged into D2L</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="info-card" style="margin-top: 24px;">
+                        <div class="info-card-title">
+                            <i class="fas fa-lightbulb" aria-hidden="true"></i>
+                            Example Email Using Replace Strings
+                        </div>
+                        <div class="info-card-content">
+                            <p><strong>Subject:</strong> Welcome to {OrgUnitName}!</p>
+                            <p><strong>Message:</strong></p>
+                            <pre style="background: var(--bg-light); padding: 16px; border-radius: 8px; white-space: pre-wrap; font-family: inherit;">Dear {InitiatingUserFirstName},
+
+Welcome to {OrgUnitName}! I'm excited to have you in this course.
+
+Your username is {InitiatingUserUserName} and your student ID is {InitiatingUserOrgDefinedId}.
+
+Please log in to the course site at {LoginPath} to get started.
+
+Best regards,
+Professor Smith</pre>
+                            <p style="margin-top: 12px;"><strong>When sent to John Doe:</strong></p>
+                            <pre style="background: var(--bg-light); padding: 16px; border-radius: 8px; white-space: pre-wrap; font-family: inherit;">Dear John,
+
+Welcome to Introduction to Psychology! I'm excited to have you in this course.
+
+Your username is jdoe123 and your student ID is 12345678.
+
+Please log in to the course site at https://your-brightspace.example.edu to get started.
+
+Best regards,
+Professor Smith</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <!-- JavaScript -->
+    <script src="js/semester-config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/intelligent-agent-deployer.js?v=20260821e"></script>
+    <script>
+        // Tab switching (+ hash support for #deploy, #templates, #help)
+        var TAB_ALIASES = {
+            builder: 'deploy',
+            setup: 'deploy',
+            guide: 'help',
+            settings: 'help',
+            replace: 'help'
+        };
+
+        function nestHelpSections() {
+            var help = document.getElementById('help-tab');
+            if (!help || help.getAttribute('data-nested') === 'true') return;
+            var sections = [
+                { id: 'guide-tab', title: 'Create an agent in Brightspace' },
+                { id: 'settings-tab', title: 'Email settings (Reply-To)' },
+                { id: 'replace-tab', title: 'Replace strings' }
+            ];
+            for (var i = 0; i < sections.length; i++) {
+                var panel = document.getElementById(sections[i].id);
+                if (!panel) continue;
+                panel.classList.remove('agent-tab-content', 'active');
+                panel.removeAttribute('role');
+                var details = document.createElement('details');
+                details.className = 'agent-help-details';
+                details.id = sections[i].id.replace('-tab', '-help');
+                if (i === 0) details.open = true;
+                var summary = document.createElement('summary');
+                summary.textContent = sections[i].title;
+                details.appendChild(summary);
+                details.appendChild(panel);
+                help.appendChild(details);
+            }
+            help.setAttribute('data-nested', 'true');
+        }
+
+        function openHelpSection(sectionId) {
+            var details = document.getElementById(sectionId + '-help');
+            if (!details) return;
+            details.open = true;
+            try { details.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
+        }
+
+        function activateAgentTab(targetTab) {
+            var requested = String(targetTab || 'templates');
+            var mapped = TAB_ALIASES[requested] || requested;
+            const tabs = document.querySelectorAll('.agent-tab');
+            const tabContents = document.querySelectorAll('.agent-tab-content');
+            const btn = document.querySelector('.agent-tab[data-tab="' + mapped + '"]');
+            const panel = document.getElementById(mapped + '-tab');
+            if (!btn || !panel) return;
+            tabs.forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            tabContents.forEach(content => content.classList.remove('active'));
+            btn.classList.add('active');
+            btn.setAttribute('aria-selected', 'true');
+            panel.classList.add('active');
+            try {
+                if (history.replaceState) history.replaceState(null, '', '#' + mapped);
+                else location.hash = mapped;
+            } catch (e) {}
+            if (mapped === 'help' && requested !== 'help') {
+                openHelpSection(requested);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            nestHelpSections();
+
+            const tabs = document.querySelectorAll('.agent-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    activateAgentTab(this.getAttribute('data-tab'));
+                });
+            });
+
+            var backBtn = document.getElementById('backToTemplatesBtn');
+            if (backBtn) {
+                backBtn.addEventListener('click', function() {
+                    activateAgentTab('templates');
+                });
+            }
+
+            var hashTab = (location.hash || '').replace(/^#/, '');
+            if (hashTab) {
+                activateAgentTab(hashTab);
+            }
+
+            var templateContainerClick = document.getElementById('template-list-container');
+            if (templateContainerClick) {
+                templateContainerClick.addEventListener('click', function(e) {
+                    var btn = e.target.closest('[data-template-action]');
+                    if (!btn) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var card = btn.closest('[data-template-id]');
+                    var id = card && card.getAttribute('data-template-id');
+                    var action = btn.getAttribute('data-template-action');
+                    if (!id) return;
+                    if (action === 'deploy') deployTemplateToCourse(id);
+                    else if (action === 'help') {
+                        activateAgentTab('guide');
+                    }
+                });
+            }
+
+            renderTemplatesTab();
+            var searchEl = document.getElementById('template-search');
+            var groupEl = document.getElementById('template-group-filter');
+            if (searchEl) searchEl.addEventListener('input', renderTemplatesTab);
+            if (searchEl) searchEl.addEventListener('keyup', renderTemplatesTab);
+            if (groupEl) groupEl.addEventListener('change', renderTemplatesTab);
+            var templateContainer = document.getElementById('template-list-container');
+            if (templateContainer) templateContainer.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.target.closest('.template-card')) {
+                    e.preventDefault();
+                    var id = e.target.closest('.template-card').getAttribute('data-template-id');
+                    if (id) {
+                        if (isDeployableTemplate(id)) deployTemplateToCourse(id);
+                        else activateAgentTab('guide');
+                    }
+                }
+            });
+        });
+        
+        // Template loading
+        const templates = {
+            welcome: {
+                name: 'Welcome Message',
+                description: 'Send a personalized welcome email to students when they first access the course.',
+                subject: 'Welcome to {OrgUnitName}!',
+                message: `Dear {InitiatingUserFirstName},
+
+Welcome to {OrgUnitName}! I'm excited to have you in this course this semester.
+
+This course will cover [brief course description]. I encourage you to explore the course content and familiarize yourself with the course structure.
+
+If you have any questions, please don't hesitate to reach out to me.
+
+Best regards,
+[Your Name]`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'low-grade': {
+                name: 'Low Grade Alert',
+                description: 'Alert students when their grade falls below a certain threshold.',
+                subject: 'Grade Alert for {OrgUnitName}',
+                message: `Dear {InitiatingUserFirstName},
+
+I wanted to reach out regarding your recent grade in {OrgUnitName}. Your current performance is below the expected level.
+
+I encourage you to:
+- Review the assignment feedback
+- Attend office hours if you have questions
+- Reach out to me if you need additional support
+
+Let's work together to improve your performance in this course.
+
+Best regards,
+[Your Name]`,
+                frequency: 'daily',
+                actionTiming: 'every'
+            },
+            inactivity: {
+                name: 'Inactivity Reminder',
+                description: 'Remind students who haven\'t logged into the course recently.',
+                subject: 'We Miss You in {OrgUnitName}',
+                message: `Dear {InitiatingUserFirstName},
+
+I noticed you haven't logged into {OrgUnitName} recently. Your last access was on {LastCourseAccessDate}.
+
+Regular participation is essential for success in this course. Please log in as soon as possible to catch up on any missed content and assignments.
+
+If you're experiencing any issues accessing the course, please let me know.
+
+Best regards,
+[Your Name]`,
+                frequency: 'weekly',
+                actionTiming: 'first'
+            },
+            content: {
+                name: 'Content View Reminder',
+                description: 'Remind students to view important course content.',
+                subject: 'Important Content in {OrgUnitName}',
+                message: `Dear {InitiatingUserFirstName},
+
+This is a reminder to review the important course content in {OrgUnitName}. This material is essential for upcoming assignments and assessments.
+
+Please take time to review:
+- [Specific content item]
+- [Specific content item]
+
+If you have questions about the content, please reach out.
+
+Best regards,
+[Your Name]`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            assignment: {
+                name: 'Assignment Due Reminder',
+                description: 'Send reminders about upcoming assignment due dates.',
+                subject: 'Upcoming Assignment in {OrgUnitName}',
+                message: `Dear {InitiatingUserFirstName},
+
+This is a friendly reminder that you have an upcoming assignment due in {OrgUnitName}.
+
+Assignment: [Assignment Name]
+Due Date: [Due Date]
+
+Please make sure to submit your work on time. If you have any questions about the assignment, don't hesitate to ask.
+
+Best regards,
+[Your Name]`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            encouragement: {
+                name: 'Encouragement Message',
+                description: 'Send positive reinforcement to students performing well.',
+                subject: 'Great Work in {OrgUnitName}!',
+                message: `Dear {InitiatingUserFirstName},
+
+I wanted to take a moment to recognize your excellent work in {OrgUnitName}! Your dedication and effort are truly appreciated.
+
+Keep up the great work, and continue to engage actively in the course. Your participation makes a positive difference.
+
+Best regards,
+[Your Name]`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'no-access': {
+                name: 'Hasn\'t accessed course in XX days',
+                description: 'Remind students who haven\'t accessed the course during a specified number of days.',
+                subject: 'We\'ve missed you – you haven\'t logged in for a while',
+                message: `Hello {InitiatingUserFirstName},
+
+It seems you haven't logged into your course, {OrgUnitName}, on D2L Brightspace since {LastCourseAccessDate}.
+
+It is important to check in to the course frequently, so you don't fall behind or miss important information. With one quick click, you can access your course right from here: {LoginPath}. Why not go take a look now and see what's new?`,
+                frequency: 'manual',
+                actionTiming: 'every'
+            },
+            'incomplete-checklist': {
+                name: 'Incomplete tasks on a checklist',
+                description: 'Notify students about incomplete tasks on a course checklist.',
+                subject: 'Incomplete tasks requiring your attention',
+                message: `Hello {InitiatingUserFirstName},
+
+In effort to help keep you on track, we've noticed there are some items on your course checklist that you haven't yet completed. For your success, take a few minutes to look through the list and see what tasks you still need to complete before the end of your course.
+
+If you have questions about any of the tasks, be sure to reach out to your instructor/manager/training coordinator.`,
+                frequency: 'weekly',
+                actionTiming: 'every'
+            },
+            'completed-checklist': {
+                name: 'Completed all tasks on a checklist',
+                description: 'Celebrate students who have completed all tasks on a checklist.',
+                subject: 'You crushed that checklist!',
+                message: `Hello {InitiatingUserFirstName},
+
+Time management and getting all your tasks done are no challenge for you! You've successfully finished all the items on your checklist. Keep up the hard work!`,
+                frequency: 'weekly',
+                actionTiming: 'first'
+            },
+            'high-quiz-score': {
+                name: 'Earned 80% or Higher on Quiz',
+                description: 'Recognize students who scored 80% or higher on a quiz.',
+                subject: 'Outstanding Quiz Result',
+                message: `Hello {InitiatingUserFirstName},
+
+Everyone should be recognized for their outstanding efforts, and you just knocked that quiz out of the park! Keep up the great work.`,
+                frequency: 'manual',
+                actionTiming: 'every'
+            },
+            'failed-quiz': {
+                name: 'Failed a Quiz',
+                description: 'Support students who did not meet the passing grade on a quiz.',
+                subject: 'Unsuccessful Quiz Attempt',
+                message: `Hello {InitiatingUserFirstName},
+
+You gave that quiz your best effort, but unfortunately you did not meet the passing grade. The upside is you can attempt the quiz again, but we recommend reviewing the course content first to help you be more successful when you try again.
+
+If you have questions about the material, reach out to your instructor/manager/training coordinator.`,
+                frequency: 'manual',
+                actionTiming: 'first'
+            },
+            'late-assignment': {
+                name: 'Late Assignment',
+                description: 'Notify students who missed an assignment deadline.',
+                subject: 'Oops, you missed a deadline',
+                message: `Hello {InitiatingUserFirstName},
+
+It seems you've missed the deadline on an assignment. It is recommended that you finish and submit that assignment as soon as possible to avoid falling further behind in your course work.
+
+If you have questions about the assignment, reach out to your instructor/manager/training coordinator.`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'no-discussion-posts': {
+                name: 'No posts authored in discussion topic',
+                description: 'Encourage students who haven\'t posted in a discussion topic to participate.',
+                subject: 'It\'s time to share your insights.',
+                message: `Hello {InitiatingUserFirstName},
+
+As part of your course, there is a discussion currently underway that you have not yet posted in. Your fellow learners/classmates/coworkers want to know what you have to say on the topic, so be sure to take some time to pop into the course {LoginPath}, see what's already been said, and contribute to the discussion.`,
+                frequency: 'weekly',
+                actionTiming: 'first'
+            },
+            'received-feedback': {
+                name: 'Received feedback on an assignment',
+                description: 'Alert students when they receive feedback on a submitted assignment.',
+                subject: 'You\'ve received feedback',
+                message: `Hello {InitiatingUserFirstName},
+
+Your instructor/manager/training coordinator has graded your assignment and provided you with feedback. Login to your Brightspace course now {LoginPath} and check your notifications in the navigation bar at the top of the page to see how you did.`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'course-progress': {
+                name: 'Indicate halfway or almost finished with the course once a learner has reached a specific topic page',
+                description: 'Celebrate when students reach a specific topic page indicating course progress (halfway or almost finished).',
+                subject: 'You\'re almost to the finish line!',
+                message: `Hello {InitiatingUserFirstName},
+
+Well done, you're 75% of the way through your course. Keep working hard through this final stretch. The satisfaction of completion is within your reach!`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'sudden-drop': {
+                name: 'Sudden Decrease in Course Activity',
+                description: 'Check in with students who accessed the course in the last 14 days but have no dropbox submissions or discussion posts.',
+                subject: 'Checking in — we noticed reduced activity',
+                message: `Hello {InitiatingUserFirstName},
+
+We noticed you've been less active recently in {OrgUnitName}. If something is getting in the way of your coursework, now is a great time to reconnect.
+
+Log back into your course here: {LoginPath}
+
+If you're experiencing challenges, please contact your instructor. They're here to help.`,
+                frequency: 'weekly',
+                actionTiming: 'first'
+            },
+            'multiple-missing': {
+                name: 'Multiple Missing Assignments',
+                description: 'Notify students who have not submitted to multiple dropbox folders.',
+                subject: 'Several assignments still need submission',
+                message: `Hello {InitiatingUserFirstName},
+
+It looks like there are several assignments still awaiting submission in {OrgUnitName}. Completing these will help strengthen your overall progress.
+
+Please log in here to review outstanding work: {LoginPath}
+
+Reach out to your instructor if you need clarification or assistance.`,
+                frequency: 'weekly',
+                actionTiming: 'every'
+            },
+            'midpoint-progress': {
+                name: 'Midpoint Course Progress',
+                description: 'Recognize students when they reach the midpoint content topic.',
+                subject: 'You\'re halfway there!',
+                message: `Hello {InitiatingUserFirstName},
+
+Great job—you've reached the midpoint of {OrgUnitName}. This is a perfect time to review your progress and plan for the remainder of the course.
+
+Keep up the momentum! Access your course here: {LoginPath}`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'high-engagement': {
+                name: 'High Engagement Recognition',
+                description: 'Recognize students who accessed the course within the last 3 days (optional motivational agent).',
+                subject: 'Fantastic engagement — keep it up!',
+                message: `Hello {InitiatingUserFirstName},
+
+We just wanted to recognize your consistent engagement in {OrgUnitName}. Regular participation makes a big difference—nice work staying on top of your learning!`,
+                frequency: 'weekly',
+                actionTiming: 'every'
+            },
+            'never-accessed': {
+                name: 'Never Accessed Course',
+                description: 'Early alert for students who have not accessed the course in the last 120 days (Brightspace has no true never-accessed API condition).',
+                subject: 'Important — you haven\'t accessed your course yet',
+                message: `Hello {InitiatingUserFirstName},
+
+Our records show you haven't accessed {OrgUnitName} yet. Getting started early is key to success.
+
+Please log in immediately using this link: {LoginPath}
+
+If you have technical issues, contact support or your instructor right away.`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'no-submissions': {
+                name: 'Accessed Course but No Submissions',
+                description: 'Targets passive learners — browsing but not participating. Accessed within last 7 days, no dropbox or discussion activity.',
+                subject: 'You\'ve been visiting — now let\'s get started',
+                message: `Hello {InitiatingUserFirstName},
+
+We see you've been logging into {OrgUnitName}, which is a great first step. The next step is participating in course activities.
+
+Take a moment to review your assignments and discussions here: {LoginPath}
+
+If you're unsure where to begin, your instructor is happy to help.`,
+                frequency: 'weekly',
+                actionTiming: 'first'
+            },
+            'feedback-no-followup': {
+                name: 'Feedback Viewed, No Follow-Up Submission',
+                description: 'Encourages acting on feedback. Student received feedback on assignment but has not resubmitted to same folder.',
+                subject: 'Ready to apply your feedback?',
+                message: `Hello {InitiatingUserFirstName},
+
+You've received feedback on your recent assignment. Applying that feedback can significantly improve your results.
+
+We encourage you to review the comments and resubmit if allowed: {LoginPath}
+
+Let your instructor know if you'd like clarification.`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'multiple-low-quiz': {
+                name: 'Multiple Low Quiz Scores',
+                description: 'Pattern-based encouragement for students who scored below threshold on two quizzes.',
+                subject: 'Let\'s strengthen your quiz results',
+                message: `Hello {InitiatingUserFirstName},
+
+We've noticed a pattern of lower quiz scores in {OrgUnitName}. This is a good time to pause, review materials, and reach out for help.
+
+Try revisiting the related content here: {LoginPath}
+
+Your instructor is available to support you.`,
+                frequency: 'weekly',
+                actionTiming: 'first'
+            },
+            'due-soon': {
+                name: 'Assignment Due Soon',
+                description: 'Pre-deadline nudge — reminds students before the due date to prevent late work.',
+                subject: 'Reminder: assignment due soon',
+                message: `Hello {InitiatingUserFirstName},
+
+This is a friendly reminder that an assignment in {OrgUnitName} is coming due soon.
+
+Submitting on time helps keep you on track. You can access your assignment here: {LoginPath}`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'returned-after-absence': {
+                name: 'Returned After Inactivity',
+                description: 'Positive reinforcement when students re-engage after not accessing for 7+ days.',
+                subject: 'Welcome back — glad to see you',
+                message: `Hello {InitiatingUserFirstName},
+
+Welcome back to {OrgUnitName}! We're glad to see you re-engaging with the course.
+
+Take a moment to review anything you may have missed and continue forward: {LoginPath}
+
+You've got this.`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'final-week': {
+                name: 'Final Week Completion Reminder',
+                description: 'Final stretch motivation — student viewed final module but has not submitted final assignment.',
+                subject: 'Final stretch — you\'re almost there',
+                message: `Hello {InitiatingUserFirstName},
+
+You're in the final stretch of {OrgUnitName}. Completing your remaining work now will help ensure a successful finish.
+
+Review what's left here: {LoginPath}
+
+Finish strong!`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'consistent-engagement': {
+                name: 'Consistent Weekly Engagement',
+                description: 'Rewards habit building — accessed in past 7 days with a dropbox submission and discussion post.',
+                subject: 'Nice work staying engaged!',
+                message: `Hello {InitiatingUserFirstName},
+
+Great job staying actively engaged in {OrgUnitName} this week. Logging in, participating, and submitting work consistently makes a big difference in learning success.
+
+Keep up the great momentum!`,
+                frequency: 'weekly',
+                actionTiming: 'every'
+            },
+            'on-time-submission': {
+                name: 'On-Time Assignment Submission',
+                description: 'Reinforces time management — thank students for submitting to the selected dropbox on time.',
+                subject: 'Thanks for submitting on time!',
+                message: `Hello {InitiatingUserFirstName},
+
+Thank you for submitting your assignment on time in {OrgUnitName}. Staying on schedule helps keep your learning on track.
+
+Nice work — keep it going!`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'improvement-after-feedback': {
+                name: 'Improvement After Feedback',
+                description: 'Celebrates growth — assignment received feedback and student submitted to same folder.',
+                subject: 'Great job applying feedback!',
+                message: `Hello {InitiatingUserFirstName},
+
+We noticed you reviewed your feedback and submitted an updated assignment — that's exactly how learning improves.
+
+Excellent work applying what you learned!`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'strong-start': {
+                name: 'Strong Course Start',
+                description: 'First-week encouragement — accessed course with a dropbox submission and discussion post.',
+                subject: 'Fantastic start!',
+                message: `Hello {InitiatingUserFirstName},
+
+You're off to a great start in {OrgUnitName}. Getting involved early sets you up for success throughout the course.
+
+Keep up the strong work!`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'welcome-back-progress': {
+                name: 'Welcome Back Progress',
+                description: 'Positive reinforcement for returning students — accessed in last 2 days after 7+ days away, with submission or discussion.',
+                subject: 'Welcome back — great to see you progressing',
+                message: `Hello {InitiatingUserFirstName},
+
+Welcome back to {OrgUnitName}! We're glad to see you re-engaging and making progress.
+
+Every step forward matters — keep going!`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            },
+            'completion-congrats': {
+                name: 'Course Completion Congratulations',
+                description: 'Closure matters — celebrate when student visits the final topic page.',
+                subject: 'Congratulations on completing your course!',
+                message: `Hello {InitiatingUserFirstName},
+
+Congratulations on completing {OrgUnitName}! Finishing a course takes dedication, persistence, and effort — well done.
+
+Be proud of what you accomplished!`,
+                frequency: 'daily',
+                actionTiming: 'first'
+            }
+        };
+        
+        // Template display metadata (group, icon, config lines for card)
+        const templateMeta = {
+            'welcome': { group: 'getting-started', icon: 'fas fa-hand-sparkles', config: ['Course Activity (first access)', 'Daily', 'First time only'] },
+            'low-grade': { group: 'quizzes', icon: 'fas fa-exclamation-triangle', config: ['Receive Grade condition', 'Daily', 'Every time criteria met'] },
+            'inactivity': { group: 'engagement', icon: 'fas fa-user-clock', config: ['Login Activity (no login)', 'Weekly', 'First time only'] },
+            'content': { group: 'checklists', icon: 'fas fa-book-open', config: ['Content not viewed', 'Daily', 'First time only'] },
+            'assignment': { group: 'assignments', icon: 'fas fa-calendar-check', config: ['Assignment due date approaching', 'Daily', 'First time only'] },
+            'encouragement': { group: 'encouragement', icon: 'fas fa-heart', config: ['Receive Grade (above threshold)', 'Daily', 'First time only'] },
+            'no-access': { group: 'engagement', icon: 'fas fa-door-open', config: ['Course Activity (not accessed)', 'Manual or scheduled', 'Every time criteria met'] },
+            'incomplete-checklist': { group: 'checklists', icon: 'fas fa-tasks', config: ['Incomplete checklist', 'Weekly or monthly', 'Every time criteria met'] },
+            'completed-checklist': { group: 'checklists', icon: 'fas fa-check-circle', config: ['Checklist completion', 'Weekly or monthly', 'First time only'] },
+            'high-quiz-score': { group: 'quizzes', icon: 'fas fa-star', config: ['Score on quiz >= 80%', 'No schedule', 'Every time criteria met'] },
+            'failed-quiz': { group: 'quizzes', icon: 'fas fa-exclamation-circle', config: ['Score on quiz < passing %', 'No schedule', 'First time only'] },
+            'late-assignment': { group: 'assignments', icon: 'fas fa-clock', config: ['No submission to dropbox', 'Daily (after due date)', 'First time only'] },
+            'no-discussion-posts': { group: 'discussions', icon: 'fas fa-comments', config: ['No posts in discussion topic', 'Weekly', 'First time only'] },
+            'received-feedback': { group: 'discussions', icon: 'fas fa-comment-dots', config: ['Receives feedback for assignment', 'Daily or weekly', 'First time only'] },
+            'course-progress': { group: 'progress', icon: 'fas fa-flag-checkered', config: ['Content topic visited', 'Daily', 'First time only'] },
+            'sudden-drop': { group: 'engagement', icon: 'fas fa-chart-line', config: ['Accessed in last 14 days + no dropbox/discussion', 'Weekly', 'First time only'] },
+            'multiple-missing': { group: 'assignments', icon: 'fas fa-folder-open', config: ['No submission to multiple dropbox folders', 'Weekly', 'Every evaluation'] },
+            'midpoint-progress': { group: 'progress', icon: 'fas fa-compass', config: ['Content topic visited (midpoint)', 'Daily until triggered', 'First time only'] },
+            'high-engagement': { group: 'engagement', icon: 'fas fa-trophy', config: ['Accessed course within last 3 days', 'Weekly', 'Every evaluation'] },
+            'never-accessed': { group: 'getting-started', icon: 'fas fa-exclamation-triangle', config: ['Has not accessed in last 120 days', 'Daily (first week)', 'First time only'] },
+            'no-submissions': { group: 'engagement', icon: 'fas fa-user-check', config: ['Accessed in last 7 days + no dropbox/discussion', 'Weekly', 'First time only'] },
+            'feedback-no-followup': { group: 'discussions', icon: 'fas fa-comment-medical', config: ['Receives feedback (resubmit cannot be detected)', 'Daily', 'First time only'] },
+            'multiple-low-quiz': { group: 'quizzes', icon: 'fas fa-chart-bar', config: ['Score on Quiz < ___% on two quizzes', 'Weekly', 'First time only'] },
+            'due-soon': { group: 'assignments', icon: 'fas fa-bell', config: ['No submission to selected dropbox', 'Daily (start 2 days before due)', 'First time only'] },
+            'returned-after-absence': { group: 'engagement', icon: 'fas fa-hand-wave', config: ['Accessed in last 1 day, not in previous 7', 'Daily', 'First time only'], apiSupported: false },
+            'final-week': { group: 'progress', icon: 'fas fa-medal', config: ['Final module topic visited + no final assignment', 'Daily', 'First time only'] },
+            'consistent-engagement': { group: 'encouragement', icon: 'fas fa-calendar-week', config: ['Accessed in 7 days + dropbox + discussion', 'Weekly', 'Every evaluation'] },
+            'on-time-submission': { group: 'encouragement', icon: 'fas fa-check-double', config: ['Submission to dropbox (selected folder)', 'Daily', 'First time only'] },
+            'improvement-after-feedback': { group: 'encouragement', icon: 'fas fa-arrow-trend-up', config: ['Receives feedback + new submission to same folder', 'Daily', 'First time only'] },
+            'strong-start': { group: 'getting-started', icon: 'fas fa-rocket', config: ['Accessed + dropbox + discussion (first week)', 'Daily (first week)', 'First time only'] },
+            'welcome-back-progress': { group: 'encouragement', icon: 'fas fa-rotate-left', config: ['Accessed last 2 days, not previous 7 + dropbox or discussion', 'Daily', 'First time only'], apiSupported: false },
+            'completion-congrats': { group: 'progress', icon: 'fas fa-graduation-cap', config: ['Content topic visited (final topic)', 'Daily', 'First time only'] }
+        };
+        
+        const templateGroupsOrder = [
+            { id: 'getting-started', label: 'Getting Started', ids: ['welcome', 'never-accessed', 'strong-start'] },
+            { id: 'engagement', label: 'Engagement & Inactivity', ids: ['inactivity', 'no-access', 'sudden-drop', 'no-submissions', 'returned-after-absence', 'high-engagement'] },
+            { id: 'assignments', label: 'Assignments', ids: ['assignment', 'late-assignment', 'multiple-missing', 'due-soon', 'on-time-submission'] },
+            { id: 'quizzes', label: 'Quizzes & Grades', ids: ['low-grade', 'high-quiz-score', 'failed-quiz', 'multiple-low-quiz'] },
+            { id: 'discussions', label: 'Discussions & Feedback', ids: ['no-discussion-posts', 'received-feedback', 'feedback-no-followup', 'improvement-after-feedback'] },
+            { id: 'checklists', label: 'Checklists & Content', ids: ['incomplete-checklist', 'completed-checklist', 'content'] },
+            { id: 'progress', label: 'Course Progress & Milestones', ids: ['course-progress', 'midpoint-progress', 'final-week', 'completion-congrats'] },
+            { id: 'encouragement', label: 'Encouragement & Recognition', ids: ['encouragement', 'consistent-engagement', 'on-time-submission', 'improvement-after-feedback', 'welcome-back-progress'] }
+        ];
+        
+        function matchesSearch(templateId, query) {
+            if (!query || !query.trim()) return true;
+            const t = templates[templateId];
+            const m = templateMeta[templateId];
+            if (!t || !m) return false;
+            const text = (t.name + ' ' + t.description + ' ' + (m.config || []).join(' ')).toLowerCase();
+            return text.indexOf(query.trim().toLowerCase()) !== -1;
+        }
+        
+        function renderTemplatesTab() {
+            const container = document.getElementById('template-list-container');
+            const noResults = document.getElementById('template-no-results');
+            const searchQuery = (document.getElementById('template-search') && document.getElementById('template-search').value) ? document.getElementById('template-search').value : '';
+            const groupFilter = (document.getElementById('template-group-filter') && document.getElementById('template-group-filter').value) ? document.getElementById('template-group-filter').value : '';
+            if (!container) return;
+            let totalVisible = 0;
+            let html = '';
+            for (let g = 0; g < templateGroupsOrder.length; g++) {
+                const grp = templateGroupsOrder[g];
+                if (groupFilter && grp.id !== groupFilter) continue;
+                const matchingIds = grp.ids.filter(function(id) { return matchesSearch(id, searchQuery); });
+                if (matchingIds.length === 0) continue;
+                totalVisible += matchingIds.length;
+                html += '<section class="template-group" data-group="' + grp.id + '" aria-label="' + grp.label + '">';
+                html += '<h4 class="template-group-title">' + escapeHtml(grp.label) + '</h4>';
+                html += '<div class="template-grid">';
+                for (let i = 0; i < matchingIds.length; i++) {
+                    const id = matchingIds[i];
+                    const t = templates[id];
+                    const m = templateMeta[id];
+                    if (!t || !m) continue;
+                    const configList = (m.config || []).map(function(line) { return '<li>' + escapeHtml(line) + '</li>'; }).join('');
+                    var canDeploy = m.apiSupported !== false && isDeployableTemplate(id);
+                    html += '<div class="template-card" data-template-id="' + id + '" data-group="' + m.group + '">';
+                    html += '<div class="template-card-header"><div class="template-icon"><i class="' + m.icon + '" aria-hidden="true"></i></div><h4 class="template-title">' + escapeHtml(t.name) + '</h4></div>';
+                    html += '<p class="template-description">' + escapeHtml(t.description) + '</p>';
+                    html += '<div class="template-details"><div class="template-details-title">Configuration:</div><ul class="template-details-list">' + configList + '</ul></div>';
+                    html += '<div class="template-card-actions">';
+                    if (canDeploy) {
+                      html += '<button type="button" class="form-button template-action-btn" data-template-action="deploy"><i class="fas fa-rocket" aria-hidden="true"></i> Use this template</button>';
+                    } else {
+                      html += '<button type="button" class="builder-reset-btn template-action-btn" data-template-action="help"><i class="fas fa-book" aria-hidden="true"></i> Create in Brightspace</button>';
+                      html += '<p class="template-deploy-note">The Brightspace API cannot express this trigger (it needs two overlapping access windows). Create it in the course Intelligent Agents tool instead.</p>';
+                    }
+                    html += '</div></div>';
+                }
+                html += '</div></section>';
+            }
+            container.innerHTML = html || '';
+            if (noResults) noResults.style.display = totalVisible === 0 ? 'block' : 'none';
+        }
+
+        function isDeployableTemplate(templateId) {
+            if (templateMeta[templateId] && templateMeta[templateId].apiSupported === false) return false;
+            var api = window.FacultyDashboardIADeploy;
+            if (api && typeof api.getDeployableTemplateIds === 'function') {
+                return api.getDeployableTemplateIds().indexOf(templateId) >= 0;
+            }
+            var sel = document.getElementById('deployTemplate');
+            if (!sel) return false;
+            for (var i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value === templateId) return true;
+            }
+            return false;
+        }
+
+        function showDeploySourceBanner(message) {
+            var banner = document.getElementById('deploySourceBanner');
+            var textEl = document.getElementById('deploySourceBannerText');
+            if (!banner || !textEl) return;
+            textEl.textContent = message || '';
+            if (message) banner.classList.remove('agent-deployer-hidden');
+            else banner.classList.add('agent-deployer-hidden');
+        }
+
+        function deployTemplateToCourse(templateId) {
+            if (!isDeployableTemplate(templateId)) {
+                activateAgentTab('guide');
+                return;
+            }
+            activateAgentTab('deploy');
+            var api = window.FacultyDashboardIADeploy;
+            var ok = false;
+            if (api && typeof api.selectTemplateById === 'function') {
+                ok = api.selectTemplateById(templateId);
+            }
+            if (!ok) {
+                var sel = document.getElementById('deployTemplate');
+                if (sel) {
+                    sel.value = templateId;
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+            showDeploySourceBanner('"' + ((templates[templateId] && templates[templateId].name) || templateId) + '" is loaded. Choose a course, then complete any highlighted course items before creating the agent.');
+            var course = document.getElementById('deployCourse');
+            if (course) try { course.focus(); } catch (e) {}
+        }
+
+        function loadTemplate(templateId) {
+            deployTemplateToCourse(templateId);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+{
+  "pageTitle": "Semester Reminders for Faculty",
+  "semester": {
+    "label": "Fall 2026",
+    "shortLabel": "Fall 26",
+    "code": "26/FA",
+    "coursesAvailableDate": "May 20, 2026"
+  },
+  "updatedLabel": "Fall 2026 reminder",
+  "elearningEmail": "elearning@example.edu",
+  "elearningLinkLabel": "eLearning Office",
+  "intro": {
+    "greeting": "Hello Faculty,",
+    "paragraphs": [
+      "As we prepare for {{semester.label}}, here are important reminders about your courses, content, and campus resources. Use the sections below to review details, copy language for email, or share links with colleagues.",
+      "{{semester.shortLabel}} courses will be available to all faculty on {{semester.coursesAvailableDate}}.",
+      "If you have questions about Brightspace or course setup, contact the eLearning Office at elearning@example.edu."
+    ]
+  },
+  "signature": {
+    "name": "Faculty Dashboard maintainer",
+    "title": "LMS & Multimedia Design Technologist (eLearning Office — J102)",
+    "org": "Your Institution",
+    "phone": "[campus phone]",
+    "address": "[campus address]"
+  },
+  "sections": [
+    {
+      "id": "accessibility-changes",
+      "title": "Accessibility Changes",
+      "updated": true,
+      "icon": "fa-universal-access",
+      "paragraphs": [
+        "eLearning had originally planned to transition from our current accessibility checking software, Ally, to D2L Accessibility+, but due to unforeseen circumstances, that software development has been delayed. Instead, eLearning will be transitioning to YuJa Panorama as the accessibility replacement for Ally.",
+        "YuJa Panorama is an LMS accessibility platform that integrates directly with Brightspace to help improve the accessibility of digital media and course content. For faculty, Panorama provides color-coded accessibility scores on files as they are uploaded, giving you immediate insight into where your materials stand. When issues are found, Panorama offers step-by-step guidance and inline remediation so you can fix accessibility barriers in PDFs, Word documents, PowerPoint presentations, images, and LMS content areas without leaving the course. The platform can also automatically generate alternative formats—such as audio, ePub, Braille, and HTML—to support diverse student learning needs, and includes specialized tools for math and science content accessibility.",
+        "More information about the transition timeline, training resources, and getting started with Panorama will be shared soon. We are also planning sessions at Fall Learning Days to introduce the platform and walk through key features for faculty.",
+        "Accessibility remains a critical priority for Your Institution. Federal Title II requirements take effect next year, and institutions must ensure digital course content meets accessibility standards. Tools like YuJa Panorama are designed to help faculty identify barriers in course materials, understand accessibility status at a glance, and remediate issues before they affect students—supporting our shared responsibility to provide equitable access for all learners.",
+        "Learn more about YuJa Panorama: https://www.yuja.com/panorama/"
+      ]
+    },
+    {
+      "id": "readspeaker",
+      "title": "ReadSpeaker",
+      "updated": true,
+      "icon": "fa-headphones",
+      "paragraphs": [
+        "In May 2026, Your Institution added ReadSpeaker text-to-speech tools to Brightspace. ReadSpeaker is partnered with D2L to provide lifelike online text-to-speech solutions embedded directly within the LMS—no downloads or additional software required.",
+        "ReadSpeaker webReader allows students to listen to HTML course content with a single click. As text is read aloud, words and sentences are highlighted in sync so learners can follow along. Students can customize reading speed and highlighting colors, use Text Mode for an easier reading layout, apply a Page Mask for focus, translate content, look up words, and even download an MP3 for offline listening. In quizzes, a Listen button appears on each question so students can hear assessment content without highlighting text first.",
+        "ReadSpeaker docReader provides audio playback of uploaded documents in Content, Quizzes, Discussions, and Assignments. Students can open supported files—such as PDFs, Word documents, PowerPoint presentations, and Excel spreadsheets—with docReader to listen to the content read aloud, use reading support tools like a Page Mask and Reading Ruler, highlight notes, and download them for studying.",
+        "These tools support Universal Design for Learning (UDL) by giving students multiple ways to access and engage with course materials. ReadSpeaker benefits all learners—not only students with documented accommodations—and helps the college meet accessibility requirements as we prepare for upcoming Title II standards.",
+        "About ReadSpeaker: https://community.d2l.com/brightspace/kb/articles/26721-about-readspeaker",
+        "ReadSpeaker docReader: https://community.d2l.com/brightspace/kb/articles/23766-readspeaker-docreader",
+        "ReadSpeaker for Brightspace: https://www.readspeaker.com/sectors/education/brightspace/"
+      ]
+    },
+    {
+      "id": "student-success-module",
+      "title": "Student Success Module",
+      "updated": true,
+      "icon": "fa-hand-holding-heart",
+      "paragraphs": [
+        "A Student Success Module has been loaded into all courses under Content as a hidden module. If you would like to use it, please make sure to unhide the module for student use.",
+        "The purpose of the Student Success Module is to act as a guide for students to use as a resource to connect with support services offered on campus, learn information regarding the institution's financial aid and registration policies, and provide education regarding technology and study skills."
+      ]
+    },
+    {
+      "id": "standard-content-experience",
+      "title": "Standard Content Experience",
+      "updated": false,
+      "icon": "fa-folder-tree",
+      "paragraphs": [
+        "If your course still uses the Standard Content Experience, topics and modules appear in the classic Content area layout."
+      ],
+      "images": [
+        {
+          "src": "images/screenshot-omitted.svg",
+          "alt": "Student Success Module shown in the Standard Content Experience",
+          "caption": "Standard Content Experience — Student Success Module appears as a hidden module under Content."
+        }
+      ]
+    },
+    {
+      "id": "new-content-experience",
+      "title": "New Content Experience",
+      "updated": true,
+      "icon": "fa-book-open",
+      "paragraphs": [
+        "Many courses use the New Content Experience (Lessons), which provides an enhanced table of contents and a more unified flow when students open activities."
+      ],
+      "images": [
+        {
+          "src": "images/screenshot-omitted.svg",
+          "alt": "Student Success Module shown in the New Content Experience",
+          "caption": "New Content Experience — Student Success Module appears as a hidden module under Content."
+        }
+      ]
+    },
+    {
+      "id": "faculty-profile-widget",
+      "title": "Faculty Profile Widget",
+      "updated": false,
+      "icon": "fa-id-card",
+      "paragraphs": [
+        "Make sure you update your Faculty Profile Widget. This is very important for students to know who their instructor is.",
+        "If you are unable to access the Configure this widget option, please contact the eLearning Office."
+      ],
+      "images": [
+        {
+          "src": "images/screenshot-omitted.svg",
+          "alt": "Faculty Profile Widget on the course homepage with Configure this widget option",
+          "caption": "Update your Faculty Profile Widget from the course homepage."
+        }
+      ]
+    },
+    {
+      "id": "check-course-links",
+      "title": "Check course links",
+      "updated": false,
+      "icon": "fa-link",
+      "paragraphs": [
+        "Using Student View or your ZZStudent account, check all links in the course including any links in News and Content."
+      ]
+    },
+    {
+      "id": "course-merge-form",
+      "title": "Course merge request form",
+      "updated": true,
+      "icon": "fa-object-group",
+      "paragraphs": [
+        "A new Fall 2026 course merge request form is available. Use it when you need to combine multiple course shells into one primary course (for example, multiple sections or modalities you teach from a single shell).",
+        "Fall 2026 Course Merge Form: ZohoCourseMergewithAPIs/zohoform/26FA-Course-Merge.html",
+        "What changed from the previous form: the interface is streamlined—select a semester, choose one Primary course and up to four Merge courses from your Brightspace enrollments, then click Continue to Form to open the Zoho request (the form no longer auto-loads on every selection). Fall, Winter, and Spring 2026 terms (26/FA, 26/WI, 26/SP) appear in the semester filter. Row highlighting shows your Primary (blue) and Merge (green) choices, and the primary course cannot also be selected as a merge course. If you have issues, submit a Help Desk ticket to contact the eLearning Office."
+      ]
+    },
+    {
+      "id": "syllabus-updates",
+      "title": "Faculty syllabus updates",
+      "updated": true,
+      "icon": "fa-file-lines",
+      "paragraphs": [
+        "We have created a new page for faculty regarding syllabus changes. Review the page for additional information and easy-to-copy policy language and templates.",
+        "Simple Syllabus updates: syllabus-updates/index.html"
+      ]
+    },
+    {
+      "id": "faculty-dashboard",
+      "title": "Faculty Dashboard",
+      "updated": false,
+      "icon": "fa-gauge-high",
+      "paragraphs": [
+        "The Faculty Dashboard is available to all faculty. You can access the dashboard from D2L's navigation bar.",
+        "This dashboard provides insight into all your courses in one place. Review grades and other analytic detail to assist with being proactive with student success.",
+        "Faculty Dashboard: index.html"
+      ],
+      "images": [
+        {
+          "src": "images/screenshot-omitted.svg",
+          "alt": "Faculty Dashboard link in the D2L navigation bar",
+          "caption": "Open Faculty Dashboard from the D2L navigation bar."
+        }
+      ]
+    },
+    {
+      "id": "accessibility",
+      "title": "Accessibility",
+      "updated": false,
+      "icon": "fa-universal-access",
+      "paragraphs": [
+        "Accessibility is a priority. Please refer to the Accessibility Resources page for more information.",
+        "https://intranet.example.edu/online-learning/accessibility.html"
+      ]
+    },
+    {
+      "id": "d2l-tech-tips",
+      "title": "D2L Tech Tips",
+      "updated": false,
+      "icon": "fa-lightbulb",
+      "paragraphs": [
+        "Check out D2L Tech Tips for quick guides and helpful Brightspace shortcuts.",
+        "faculty-training.html"
+      ],
+      "images": [
+        {
+          "src": "images/screenshot-omitted.svg",
+          "alt": "D2L Tech Tips in the course navigation or resources area",
+          "caption": "D2L Tech Tips — browse tips and guides for Brightspace."
+        }
+      ]
+    },
+    {
+      "id": "student-resources",
+      "title": "Student Resources & Support Links",
+      "updated": false,
+      "icon": "fa-life-ring",
+      "paragraphs": [
+        "Mention and link students to the Student Resources & Support Links page for access to all of Your Institution's resources, support, and services in one location.",
+        "/content/student-services/index.html"
+      ],
+      "images": [
+        {
+          "src": "images/screenshot-omitted.svg",
+          "alt": "Student Resources and Support Links page",
+          "caption": "Student Resources & Support Links — share this page with students for campus resources and services."
+        }
+      ]
+    },
+    {
+      "id": "d2l-course-features",
+      "title": "D2L Course Features and Resources",
+      "updated": false,
+      "icon": "fa-layer-group",
+      "paragraphs": [
+        "Available to all faculty under Discover — check out the D2L Course Features and Resources course.",
+        "This shell is designed for all faculty that may be new to the D2L platform or are curious to learn more about features that can be added to their course. This course will walk through each component of D2L and all third-party programs that the college has to offer for a successful teaching experience. Some features include Gradebook, Activities, Creator+, YuJa, Simple Syllabus, and more. This shell will be an ongoing project. As technological updates are made, information about those updates will be added to this course.",
+        "/d2l/le/discovery/view/course/0"
+      ],
+      "images": [
+        {
+          "src": "images/screenshot-omitted.svg",
+          "alt": "D2L Course Features and Resources course in Discover",
+          "caption": "Find D2L Course Features and Resources under Discover in the navigation bar."
+        }
+      ]
+    }
+  ]
+}

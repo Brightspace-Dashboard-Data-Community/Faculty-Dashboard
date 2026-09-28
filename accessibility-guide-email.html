@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Accessibility checklist for email">
+    <title>Email — Accessibility - D2L Faculty Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+    <main id="main-content" class="main-content" role="main">
+        <nav class="a11y-guide-breadcrumb widget-container" aria-label="Breadcrumb">
+            <a href="accessibility.html" class="a11y-guide-back"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Accessibility</a>
+        </nav>
+        <div class="page-header">
+            <h1 class="page-title">Email</h1>
+            <p class="page-subtitle">Course announcements often start as email; plain structure and meaningful links help every recipient.</p>
+        </div>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="email-structure-heading">
+            <h2 id="email-structure-heading">Structure &amp; clarity</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Use a clear <strong>subject line</strong> that states the purpose and deadline if applicable.</li>
+                <li>Put the most important information first; use short paragraphs and real bullet lists.</li>
+                <li>Use <strong>heading styles</strong> in Outlook HTML messages when available, or clear bold lead-ins for sections.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="email-links-heading">
+            <h2 id="email-links-heading">Links &amp; attachments</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Use descriptive link text instead of pasting long raw URLs as the only label.</li>
+                <li>If you attach PDFs or Office files, ensure they meet the same accessibility standards as files in D2L.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="email-visual-heading">
+            <h2 id="email-visual-heading">Images &amp; signatures</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Add <strong>alt text</strong> to informative images in the signature or body.</li>
+                <li>Do not rely on image-only banners for critical dates or instructions—repeat key text in the message body.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="email-refs-heading">
+            <h2 id="email-refs-heading">Further reading</h2>
+            <ul class="a11y-guide-resource-links">
+                <li><a href="https://support.microsoft.com/en-us/office/make-your-outlook-email-accessible-to-people-with-disabilities-71ce71fb-4747-4b45-bcff-6a6b33c7c38e" target="_blank" rel="noopener noreferrer">Microsoft — Accessible Outlook email</a></li>
+            </ul>
+        </section>
+    </main>
+    <script src="js/navigation.js"></script>
+</body>
+</html>

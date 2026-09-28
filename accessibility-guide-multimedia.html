@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Accessibility checklist for audio, video, and captions">
+    <title>Multimedia — Accessibility - D2L Faculty Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-placeholder"></div>
+    <main id="main-content" class="main-content" role="main">
+        <nav class="a11y-guide-breadcrumb widget-container" aria-label="Breadcrumb">
+            <a href="accessibility.html" class="a11y-guide-back"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Accessibility</a>
+        </nav>
+        <div class="page-header">
+            <h1 class="page-title">Multimedia (audio, video, captioning)</h1>
+            <p class="page-subtitle">Learners need equivalent access to spoken content, sound effects, and important visuals.</p>
+        </div>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="mm-video-heading">
+            <h2 id="mm-video-heading">Video</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Provide accurate <strong>closed captions</strong> synchronized with speech and meaningful sounds.</li>
+                <li>Offer a <strong>transcript</strong> when it helps students search, translate, or review offline.</li>
+                <li>When critical information appears only on screen (demos, equations, speaker names on screen), add <strong>audio description</strong> in narration or a separate track.</li>
+                <li>Avoid rapid flashing that could trigger photosensitivity; use player controls that are keyboard accessible.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="mm-audio-heading">
+            <h2 id="mm-audio-heading">Audio-only</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Supply a text <strong>transcript</strong> for podcasts and voice-only lectures.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="mm-d2l-heading">
+            <h2 id="mm-d2l-heading">Hosting in D2L</h2>
+            <ul class="a11y-guide-checklist">
+                <li>Use platforms your institution supports (Kaltura, YouTube with captions, etc.) and embed with captions turned on by default when possible.</li>
+                <li>Check that the embedded player is operable with a keyboard and that volume and pause controls are available.</li>
+            </ul>
+        </section>
+
+        <section class="widget-container a11y-guide-section" aria-labelledby="mm-refs-heading">
+            <h2 id="mm-refs-heading">Further reading</h2>
+            <ul class="a11y-guide-resource-links">
+                <li><a href="https://www.w3.org/WAI/media/av/" target="_blank" rel="noopener noreferrer">W3C WAI — Making Audio and Video Media Accessible</a></li>
+                <li><a href="https://webaim.org/techniques/captions/" target="_blank" rel="noopener noreferrer">WebAIM — Captions</a></li>
+            </ul>
+        </section>
+    </main>
+    <script src="js/navigation.js"></script>
+</body>
+</html>

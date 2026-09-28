@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="D2L Faculty Dashboard - Forms">
+    <title>Forms - D2L Faculty Dashboard</title>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Universal Styles -->
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Navigation Sidebar (loaded dynamically) -->
+    <div id="nav-placeholder"></div>
+    
+    <!-- Main Content Area -->
+    <main id="main-content" class="main-content" role="main">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-file-alt" aria-hidden="true"></i>
+                Faculty Forms
+            </h1>
+            <p class="page-subtitle">Quick access to common employee forms used in teaching and course administration. The authoritative, searchable list lives on <a href="https://intranet.example.edu/forms.html" target="_blank" rel="noopener noreferrer">the employee intranet — Employee Forms</a>.</p>
+        </div>
+        
+        <!-- Forms index CTA -->
+        <div class="widget-container">
+            <div class="section-header">
+                <div class="section-header-content">
+                    <i class="fas fa-link section-header-icon" aria-hidden="true"></i>
+                    <h2 class="section-header-title">Full forms directory</h2>
+                </div>
+                <div class="section-header-separator"></div>
+            </div>
+            <p class="page-subtitle" style="margin-top: 0;">Need a form that is not listed below? Open the <a href="https://intranet.example.edu/forms.html" target="_blank" rel="noopener noreferrer">Employee Forms</a> index on the employee intranet, or visit <a href="https://intranet.example.edu/registration/index.html" target="_blank" rel="noopener noreferrer">Registrar resources for faculty</a> for dates, drops, and related policies.</p>
+        </div>
+        
+        <div class="widget-container forms-search-widget">
+            <label for="forms-search-input" class="forms-search-label">Search forms &amp; tools</label>
+            <div class="forms-search-wrapper">
+                <i class="fas fa-search forms-search-icon" aria-hidden="true"></i>
+                <input type="search" id="forms-search-input" class="forms-search-input" placeholder="Search by name or topic…" autocomplete="off" enterkeyhint="search" />
+                <button type="button" class="forms-search-clear" id="forms-search-clear" hidden aria-label="Clear search">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <p id="forms-search-empty" class="forms-search-empty" role="status" aria-live="polite" hidden>No matches. Try different keywords or clear the search.</p>
+        </div>
+        
+        <!-- Your Institution forms (from the employee intranet) -->
+        <div id="forms-searchable-region" class="widget-container forms-directory">
+            <div class="forms-accordion-toolbar">
+                <button type="button" class="forms-accordion-toggle" id="forms-expand-all">Expand all</button>
+                <span class="forms-accordion-toolbar-sep" aria-hidden="true">·</span>
+                <button type="button" class="forms-accordion-toggle" id="forms-collapse-all">Collapse all</button>
+            </div>
+
+            <details class="forms-section" open>
+                <summary class="forms-section-summary">
+                    <h2 class="forms-section-title">
+                        <i class="fas fa-code-branch" aria-hidden="true"></i>
+                        <span>Course merge requests</span>
+                    </h2>
+                    <i class="fas fa-chevron-down forms-section-chevron" aria-hidden="true"></i>
+                </summary>
+                <ul class="forms-list">
+                    <li class="forms-list-item"><a href="ZohoCourseMergewithAPIs/zohoform/27WI-Course-Merge.html" target="_blank" rel="noopener noreferrer">Winter 2027 course merge request</a></li>
+                    <li class="forms-list-item"><a href="ZohoCourseMergewithAPIs/zohoform/26FA-Course-Merge.html" target="_blank" rel="noopener noreferrer">Fall 2026 course merge request</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/online-learning/index.html" target="_blank" rel="noopener noreferrer">Online Learning — course merge policies and updates</a></li>
+                </ul>
+            </details>
+            
+            <details class="forms-section" open>
+                <summary class="forms-section-summary">
+                    <h2 class="forms-section-title">
+                        <i class="fas fa-comments" aria-hidden="true"></i>
+                        <span>eLearning &amp; D2L</span>
+                    </h2>
+                    <i class="fas fa-chevron-down forms-section-chevron" aria-hidden="true"></i>
+                </summary>
+                <ul class="forms-list">
+                    <li class="forms-list-item"><a href="https://helpdesk.example.edu/portal/en/newticket" target="_blank" rel="noopener noreferrer">Submit eLearning help desk ticket</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/online-learning/index.html" target="_blank" rel="noopener noreferrer">Online Learning (the employee intranet)</a></li>
+                    <li class="forms-list-item"><a href="/" target="_blank" rel="noopener noreferrer">D2L Brightspace (eLearning)</a></li>
+                    <li class="forms-list-item"><a href="https://community.d2l.com/brightspace/categories/release-notes-en" target="_blank" rel="noopener noreferrer">D2L Brightspace — release notes &amp; product updates</a></li>
+                    <li class="forms-list-item"><a href="https://community.d2l.com/brightspace/categories/instructors-english" target="_blank" rel="noopener noreferrer">D2L Community — instructors</a></li>
+                </ul>
+            </details>
+            
+            <details class="forms-section" open>
+                <summary class="forms-section-summary">
+                    <h2 class="forms-section-title">
+                        <i class="fas fa-graduation-cap" aria-hidden="true"></i>
+                        <span>Registration</span>
+                    </h2>
+                    <i class="fas fa-chevron-down forms-section-chevron" aria-hidden="true"></i>
+                </summary>
+                <ul class="forms-list">
+                    <li class="forms-list-item"><a href="https://forms.example.edu/gradechange" target="_blank" rel="noopener noreferrer">Grade change</a></li>
+                    <li class="forms-list-item"><a href="https://forms.example.edu/incompletegrade" target="_blank" rel="noopener noreferrer">Incomplete grades</a></li>
+                    <li class="forms-list-item"><a href="https://forms.example.edu/independentstudyform" target="_blank" rel="noopener noreferrer">Independent study and individual instruction</a></li>
+                    <li class="forms-list-item"><a href="https://forms.example.edu/instructordropform" target="_blank" rel="noopener noreferrer">Instructor-initiated never attended form</a></li>
+                    <li class="forms-list-item"><a href="https://forms.example.edu/subwaiverrequest" target="_blank" rel="noopener noreferrer">Substitutions and waivers</a></li>
+                </ul>
+            </details>
+            
+            <details class="forms-section" open>
+                <summary class="forms-section-summary">
+                    <h2 class="forms-section-title">
+                        <i class="fas fa-trophy" aria-hidden="true"></i>
+                        <span>Honors</span>
+                    </h2>
+                    <i class="fas fa-chevron-down forms-section-chevron" aria-hidden="true"></i>
+                </summary>
+                <ul class="forms-list">
+                    <li class="forms-list-item"><a href="https://forms.example.edu/honorsoptionverification" target="_blank" rel="noopener noreferrer">Honors Option instructor verification</a></li>
+                    <li class="forms-list-item"><a href="https://forms.example.edu/honorsoptionproposal" target="_blank" rel="noopener noreferrer">Honors Option project proposal</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/honors/_documents/honors-new-course-proposal.pdf" target="_blank" rel="noopener noreferrer">New Honors course proposal (PDF)</a></li>
+                </ul>
+            </details>
+            
+            <details class="forms-section" open>
+                <summary class="forms-section-summary">
+                    <h2 class="forms-section-title">
+                        <i class="fas fa-chalkboard-teacher" aria-hidden="true"></i>
+                        <span>Faculty Center for Teaching Excellence (FCTE)</span>
+                    </h2>
+                    <i class="fas fa-chevron-down forms-section-chevron" aria-hidden="true"></i>
+                </summary>
+                <ul class="forms-list">
+                    <li class="forms-list-item"><a href="https://forms.example.edu/adjunctfacultygrant" target="_blank" rel="noopener noreferrer">Adjunct faculty grant form</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/finance/_documents/tuition-waiver-faculty.pdf" target="_blank" rel="noopener noreferrer">Full-time faculty tuition waiver (PDF)</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/fcte/index.html" target="_blank" rel="noopener noreferrer">FCTE (the employee intranet)</a></li>
+                </ul>
+            </details>
+            
+            <details class="forms-section" open>
+                <summary class="forms-section-summary">
+                    <h2 class="forms-section-title">
+                        <i class="fas fa-server" aria-hidden="true"></i>
+                        <span>Office of Information Technology (OIT)</span>
+                    </h2>
+                    <i class="fas fa-chevron-down forms-section-chevron" aria-hidden="true"></i>
+                </summary>
+                <ul class="forms-list">
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/oit/audio-visual.html" target="_blank" rel="noopener noreferrer">Audio/visual services</a></li>
+                    <li class="forms-list-item"><a href="https://apps.example.edu/masterschedule" target="_blank" rel="noopener noreferrer">Master schedule form</a></li>
+                    <li class="forms-list-item"><a href="https://apps.example.edu/redirect/OITAccessRequest" target="_blank" rel="noopener noreferrer">OIT access request</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/oit/index.html" target="_blank" rel="noopener noreferrer">OIT (the employee intranet)</a></li>
+                </ul>
+            </details>
+            
+            <details class="forms-section" open>
+                <summary class="forms-section-summary">
+                    <h2 class="forms-section-title">
+                        <i class="fas fa-door-open" aria-hidden="true"></i>
+                        <span>Room scheduling</span>
+                    </h2>
+                    <i class="fas fa-chevron-down forms-section-chevron" aria-hidden="true"></i>
+                </summary>
+                <ul class="forms-list">
+                    <li class="forms-list-item"><a href="https://forms.example.edu/roomchange" target="_blank" rel="noopener noreferrer">Room change request</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/room-scheduling/index.html" target="_blank" rel="noopener noreferrer">Room scheduling (the employee intranet)</a></li>
+                </ul>
+            </details>
+            
+            <details class="forms-section" open>
+                <summary class="forms-section-summary">
+                    <h2 class="forms-section-title">
+                        <i class="fas fa-clipboard-check" aria-hidden="true"></i>
+                        <span>Testing services</span>
+                    </h2>
+                    <i class="fas fa-chevron-down forms-section-chevron" aria-hidden="true"></i>
+                </summary>
+                <ul class="forms-list">
+                    <li class="forms-list-item"><a href="https://tutoring.example.edu/trac/entryinc.php?tbl=main&amp;form=dashboard&amp;recNum=1&amp;shoutbox=WW91IGhhdmUgYmVlbiBsb2dnZWQgYmFjayBpbg" target="_blank" rel="noopener noreferrer">Individual academic testing request</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/iss/index.html" target="_blank" rel="noopener noreferrer">Instructional Support Services (the employee intranet)</a></li>
+                </ul>
+            </details>
+            
+            <details class="forms-section" open>
+                <summary class="forms-section-summary">
+                    <h2 class="forms-section-title">
+                        <i class="fas fa-balance-scale" aria-hidden="true"></i>
+                        <span>Title IX</span>
+                    </h2>
+                    <i class="fas fa-chevron-down forms-section-chevron" aria-hidden="true"></i>
+                </summary>
+                <ul class="forms-list">
+                    <li class="forms-list-item"><a href="https://incident-reporting.example.edu/reportingform.php?YourInstitution&amp;layout_id=74" target="_blank" rel="noopener noreferrer">Declaration of impartiality</a></li>
+                    <li class="forms-list-item"><a href="https://incident-reporting.example.edu/reportingform.php?YourInstitution&amp;layout_id=6" target="_blank" rel="noopener noreferrer">Make a report</a></li>
+                    <li class="forms-list-item"><a href="https://incident-reporting.example.edu/reportingform.php?YourInstitution&amp;layout_id=54" target="_blank" rel="noopener noreferrer">Pregnancy/parenting referral</a></li>
+                    <li class="forms-list-item"><a href="https://incident-reporting.example.edu/reportingform.php?YourInstitution&amp;layout_id=58" target="_blank" rel="noopener noreferrer">Pregnancy/parenting accommodation plan</a></li>
+                </ul>
+            </details>
+            
+            <details class="forms-section" open>
+                <summary class="forms-section-summary">
+                    <h2 class="forms-section-title">
+                        <i class="fas fa-book-reader" aria-hidden="true"></i>
+                        <span>Instruction and Learning Services</span>
+                    </h2>
+                    <i class="fas fa-chevron-down forms-section-chevron" aria-hidden="true"></i>
+                </summary>
+                <ul class="forms-list">
+                    <li class="forms-list-item"><a href="https://apps.example.edu/redirect/facultyprofileform" target="_blank" rel="noopener noreferrer">Faculty additional coursework</a></li>
+                    <li class="forms-list-item"><a href="https://forms.example.edu/facultyoverload" target="_blank" rel="noopener noreferrer">Faculty overload proposal</a></li>
+                    <li class="forms-list-item"><a href="https://apps.example.edu/redirect/independentstudyform" target="_blank" rel="noopener noreferrer">Independent study and individual instruction application</a></li>
+                    <li class="forms-list-item"><a href="https://forms.example.edu/imetform" target="_blank" rel="noopener noreferrer">Instructional Material Equipment Technology (IMET)</a></li>
+                    <li class="forms-list-item"><a href="https://forms.example.edu/loaddistrubutionform" target="_blank" rel="noopener noreferrer">Load distribution form</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/ils/_documents/sabbatical-leave-financial-reimbursement.pdf" target="_blank" rel="noopener noreferrer">Sabbatical leave financial reimbursement disclosure (PDF)</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/ils/_documents/sabbatical-leave-proposed-plan.pdf" target="_blank" rel="noopener noreferrer">Sabbatical leave proposed plan and evidence of prior commitment (PDF)</a></li>
+                    <li class="forms-list-item"><a href="https://forms.example.edu/staffteachingapproval" target="_blank" rel="noopener noreferrer">Staff teaching approval</a></li>
+                </ul>
+            </details>
+            
+            <details class="forms-section" open>
+                <summary class="forms-section-summary">
+                    <h2 class="forms-section-title">
+                        <i class="fas fa-toolbox" aria-hidden="true"></i>
+                        <span>Tools</span>
+                    </h2>
+                    <i class="fas fa-chevron-down forms-section-chevron" aria-hidden="true"></i>
+                </summary>
+                <ul class="forms-list">
+                    <li class="forms-list-item"><a href="https://scheduling.example.edu/" target="_blank" rel="noopener noreferrer">25Live</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/room-scheduling/index.html" target="_blank" rel="noopener noreferrer">Centers &amp; room scheduling</a></li>
+                    <li class="forms-list-item"><a href="https://selfservice.example.edu/" target="_blank" rel="noopener noreferrer">Colleague UI (Self-Service)</a></li>
+                    <li class="forms-list-item"><a href="/" target="_blank" rel="noopener noreferrer">D2L Brightspace (eLearning)</a></li>
+                    <li class="forms-list-item"><a href="https://outlook.office.com/mail/" target="_blank" rel="noopener noreferrer">Email (Microsoft 365)</a></li>
+                    <li class="forms-list-item"><a href="https://workflow.example.edu/" target="_blank" rel="noopener noreferrer">Etrieve Central</a></li>
+                    <li class="forms-list-item"><a href="https://portal.example.edu/" target="_blank" rel="noopener noreferrer">Employee portal</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/oit/password-management.html" target="_blank" rel="noopener noreferrer">Password management</a></li>
+                    <li class="forms-list-item"><a href="https://jobs.example.edu/" target="_blank" rel="noopener noreferrer">PeopleAdmin</a></li>
+                    <li class="forms-list-item"><a href="https://selfservice.example.edu/" target="_blank" rel="noopener noreferrer">Self-Service (Colleague)</a></li>
+                    <li class="forms-list-item"><a href="https://selfservice.example.edu/Student/Student/Faculty" target="_blank" rel="noopener noreferrer">Self-Service – Faculty</a></li>
+                    <li class="forms-list-item"><a href="https://intranet.example.edu/oit/software.html" target="_blank" rel="noopener noreferrer">SoftChalk &amp; supported software (OIT)</a></li>
+                    <li class="forms-list-item"><a href="https://zoom.example.edu/" target="_blank" rel="noopener noreferrer">Zoom</a></li>
+                </ul>
+            </details>
+        </div>
+    </main>
+    
+    <!-- JavaScript -->
+    <script src="js/navigation.js"></script>
+    <script src="js/forms-search.js"></script>
+</body>
+</html>
