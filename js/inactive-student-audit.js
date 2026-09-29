@@ -12,7 +12,8 @@
     courseLabel: "",
     courseCode: "",
     rows: [],
-    filtered: []
+    filtered: [],
+    contentBusy: false
   };
 
   function $(id) {
@@ -126,6 +127,24 @@
     return c;
   }
 
+  function contentVisitLabel(row) {
+    if (row.contentError) return "Unavailable";
+    if (!row.contentLoaded) return "—";
+    if (!row.contentVisit) return "Not opened";
+    return fmtDate(row.contentVisit);
+  }
+
+  function latestContentVisit(pack) {
+    var rows = pack && pack.rows ? pack.rows : [];
+    if (!rows.length) return { loaded: false, date: null };
+    var best = null;
+    for (var i = 0; i < rows.length; i++) {
+      if (!rows[i] || rows[i].isModule || !rows[i].date) continue;
+      if (!best || new Date(rows[i].date) > new Date(best)) best = rows[i].date;
+    }
+    return { loaded: true, date: best };
+  }
+
   function renderResults() {
     var panel = $("isaResultsPanel");
     var host = $("isaResultsContent");
@@ -137,6 +156,8 @@
     panel.hidden = false;
     $("isaExportBtn").disabled = inactiveCount === 0;
     $("isaCopyEmailsBtn").disabled = inactiveCount === 0;
+    var contentBtn = $("isaContentBtn");
+    if (contentBtn) contentBtn.disabled = state.contentBusy || !state.rows.length;
 
     var kpiHtml =
       '<div class="ldaa-kpi-grid" role="group" aria-label="Class access summary">' +
@@ -207,6 +228,9 @@
         escapeHtml(fmtDate(r.lastAccess)) +
         "</td>" +
         "<td>" +
+        escapeHtml(contentVisitLabel(r)) +
+        "</td>" +
+        "<td>" +
         escapeHtml(daysLabel) +
         "</td>" +
         '<td><span class="isa-badge ' +
@@ -226,6 +250,7 @@
       "<th scope=\"col\">Student</th>" +
       "<th scope=\"col\">Email</th>" +
       "<th scope=\"col\">Last access</th>" +
+      "<th scope=\"col\">Last content visit</th>" +
       "<th scope=\"col\">Days inactive</th>" +
       "<th scope=\"col\">Status</th>" +
       "</tr></thead><tbody>" +
@@ -268,6 +293,39 @@
     }
   }
 
+  async function loadContentVisits() {
+    if (!state.courseId || !state.rows.length || state.contentBusy) return;
+    if (!window.LdaaReport || !window.LdaaReport.contentStatistics) {
+      setStatus("Content statistics reader is not available on this page.");
+      return;
+    }
+    state.contentBusy = true;
+    var contentBtn = $("isaContentBtn");
+    if (contentBtn) contentBtn.disabled = true;
+    try {
+      for (var i = 0; i < state.rows.length; i++) {
+        setStatus("Content statistics " + (i + 1) + " of " + state.rows.length + "…");
+        var row = state.rows[i];
+        try {
+          var pack = await window.LdaaReport.contentStatistics(state.courseId, row.userId);
+          var visit = latestContentVisit(pack);
+          row.contentLoaded = visit.loaded;
+          row.contentVisit = visit.date;
+          row.contentError = !visit.loaded;
+        } catch (err) {
+          row.contentLoaded = false;
+          row.contentVisit = null;
+          row.contentError = true;
+        }
+        renderResults();
+      }
+      setStatus("Content visits loaded. Inactivity is still based on course login.");
+    } finally {
+      state.contentBusy = false;
+      if ($("isaContentBtn")) $("isaContentBtn").disabled = !state.rows.length;
+    }
+  }
+
   function csvEscape(val) {
     var s = String(val == null ? "" : val);
     if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
@@ -281,6 +339,7 @@
       "OrgDefinedId",
       "Email",
       "Last Access",
+      "Last Content Visit",
       "Days Inactive",
       "Status",
       "Course Name",
@@ -296,6 +355,7 @@
           csvEscape(r.orgId),
           csvEscape(r.email),
           csvEscape(r.lastAccess ? fmtDate(r.lastAccess) : "Never"),
+          csvEscape(contentVisitLabel(r)),
           csvEscape(r.daysInactive === null ? "" : r.daysInactive),
           csvEscape(r.bucket.label),
           csvEscape(state.courseLabel),
@@ -358,6 +418,8 @@
       $("isaResultsPanel").hidden = true;
       state.rows = [];
       state.filtered = [];
+      state.contentBusy = false;
+      if ($("isaContentBtn")) $("isaContentBtn").disabled = true;
       setStatus(courseSelect.value ? "Ready — choose a window and run the audit." : "");
     });
 
@@ -366,6 +428,7 @@
     });
 
     $("isaRunBtn").addEventListener("click", runAudit);
+    if ($("isaContentBtn")) $("isaContentBtn").addEventListener("click", loadContentVisits);
     $("isaExportBtn").addEventListener("click", exportCsv);
     $("isaCopyEmailsBtn").addEventListener("click", copyEmails);
 

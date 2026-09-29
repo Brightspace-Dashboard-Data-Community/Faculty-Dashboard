@@ -180,6 +180,82 @@
         return null;
       });
     },
+    contentUserProgress: async function (oid, uid) {
+      function rowsFrom(page) {
+        if (!page) return [];
+        if (Array.isArray(page)) return page;
+        if (Array.isArray(page.Objects)) return page.Objects;
+        if (Array.isArray(page.Items)) return page.Items;
+        if (page.ObjectId != null || page.LastVisited || page.NumVisits != null || page.Visited != null) {
+          return [page];
+        }
+        return [];
+      }
+      function nextPageUrl(page, currentUrl) {
+        var next = page && page.Next ? String(page.Next) : "";
+        if (!next && page && page.PagingInfo && page.PagingInfo.HasMoreItems && page.PagingInfo.Bookmark) {
+          next = String(page.PagingInfo.Bookmark);
+        }
+        if (!next) return "";
+        if (next.indexOf("/d2l/api/") >= 0) {
+          var parts = next.split("/d2l/api/");
+          return parts.length > 1 ? "/d2l/api/" + parts[1] : "";
+        }
+        if (next.indexOf("/") === 0) return next;
+        var join = currentUrl.indexOf("?") >= 0 ? "&" : "?";
+        return currentUrl.split("&bookmark=")[0].split("?bookmark=")[0] + join + "bookmark=" + encodeURIComponent(next);
+      }
+      // userId is a query parameter. A path segment here is a topic id, so
+      // /userprogress/{userId}/ does not return that student's topic dates.
+      var first =
+        "/d2l/api/le/" +
+        LE +
+        "/" +
+        oid +
+        "/content/userprogress/?userId=" +
+        encodeURIComponent(uid) +
+        "&pageSize=200";
+      var out = [];
+      var nextUrl = first;
+      var seen = {};
+      var safety = 50;
+      var queryFailed = false;
+      while (nextUrl && safety-- > 0) {
+        if (seen[nextUrl]) break;
+        seen[nextUrl] = true;
+        var page = await raw(nextUrl).catch(function () {
+          return null;
+        });
+        if (!page) {
+          queryFailed = nextUrl === first;
+          break;
+        }
+        var items = rowsFrom(page);
+        for (var i = 0; i < items.length; i++) {
+          var row = items[i];
+          if (row && row.UserId != null && String(row.UserId) !== String(uid)) continue;
+          out.push(row);
+        }
+        var upcoming = nextPageUrl(page, nextUrl);
+        if (!upcoming || !items.length) break;
+        nextUrl = upcoming;
+      }
+      if (out.length || !queryFailed) return out;
+      var legacy = await raw(
+        "/d2l/api/le/" + LE + "/" + oid + "/content/userprogress/" + encodeURIComponent(uid) + "/"
+      ).catch(function () {
+        return null;
+      });
+      var legacyRows = rowsFrom(legacy);
+      var filtered = [];
+      for (var j = 0; j < legacyRows.length; j++) {
+        var item = legacyRows[j];
+        if (item && item.UserId != null && String(item.UserId) !== String(uid)) continue;
+        if (item && String(item.ObjectId) === String(uid) && !item.LastVisited && item.NumVisits == null) continue;
+        filtered.push(item);
+      }
+      return filtered;
+    },
     findUserByOrgDefinedId: async function (orgDefinedId) {
       var data = await raw(
         "/d2l/api/lp/" + LP + "/users/?orgDefinedId=" + encodeURIComponent(orgDefinedId)

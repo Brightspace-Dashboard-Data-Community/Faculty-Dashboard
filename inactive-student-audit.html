@@ -32,7 +32,7 @@
 
                 <div class="tool-ferpa-note" role="note">
                     <strong>FERPA:</strong> This tool lists education records for students enrolled in your courses. Use only for legitimate educational outreach at Your Institution.
-                    <strong>Note:</strong> Inactivity here is based on <em>last course login/access</em> from the classlist — not Last Date of Academic Activity.
+                    <strong>Note:</strong> Inactivity here is based on <em>last course login/access</em> from the classlist — not Last Date of Academic Activity. Last content visit is optional and does not change who is flagged.
                     For a registrar-ready activity report on one student, use
                     <a href="student-ldaa-lookup.html">Student LDAA Lookup</a>.
                     For weekly attendance by date range (class or one student), use
@@ -72,6 +72,10 @@
                 <div class="isa-results-header">
                     <h3 class="tool-panel-title" style="margin:0;">Outreach list</h3>
                     <div class="isa-results-actions">
+                        <button type="button" class="form-button form-button-secondary" id="isaContentBtn" disabled>
+                            <i class="fas fa-book-open" aria-hidden="true"></i>
+                            Load content visits
+                        </button>
                         <button type="button" class="form-button form-button-secondary" id="isaCopyEmailsBtn" disabled>
                             <i class="fas fa-copy" aria-hidden="true"></i>
                             Copy emails
@@ -91,6 +95,7 @@
     <script src="js/navigation.js"></script>
     <script src="js/course-offerings.js"></script>
     <script src="js/brightspace-api.js"></script>
+    <script src="js/ldaa-report.js"></script>
     <script src="js/inactive-student-audit.js"></script>
 </body>
 </html>

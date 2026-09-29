@@ -5,7 +5,7 @@
   "use strict";
 
   var API = global.BrightspaceApi;
-  var LE = API.LE;
+  var LE = API && API.LE;
 
   function escapeHtml(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -150,6 +150,656 @@
     );
   }
 
+  var FACULTY_WITHDRAWAL_LINE =
+    "Use this date when you submit a faculty withdrawal and when you assign a final grade of F.";
+
+  function emptyContentAccess(ouId, userId) {
+    return {
+      rows: [],
+      opened: 0,
+      total: 0,
+      visitsKnown: false,
+      timeKnown: false,
+      lastVisited: null,
+      source: "",
+      reportPath:
+        "/d2l/lms/content/reports/statistics_users_details.d2l?userId=" +
+        encodeURIComponent(userId) +
+        "&ou=" +
+        encodeURIComponent(ouId)
+    };
+  }
+
+  function isContentTopicNode(node) {
+    if (!node) return false;
+    if (node.ModuleId != null && node.TopicId == null && (node.Modules || node.Topics)) return false;
+    if (node.TopicId != null) return true;
+    if (node.Type === 1) return true;
+    if (node.TypeIdentifier === "Topic") return true;
+    if (node.TopicType != null && !node.Modules) return true;
+    return false;
+  }
+
+  function indexContentTopics(toc) {
+    var topics = [];
+    function walk(nodes, moduleName) {
+      if (!nodes || !nodes.length) return;
+      for (var i = 0; i < nodes.length; i++) {
+        var node = nodes[i];
+        var title = node.Title || node.Name || node.ShortTitle || "Untitled";
+        if (isContentTopicNode(node)) {
+          var ids = [];
+          if (node.TopicId != null) ids.push(String(node.TopicId));
+          if (node.Id != null && ids.indexOf(String(node.Id)) < 0) ids.push(String(node.Id));
+          if (node.Identifier != null && ids.indexOf(String(node.Identifier)) < 0) ids.push(String(node.Identifier));
+          topics.push({
+            id: ids[0] || "",
+            ids: ids,
+            title: title,
+            module: moduleName || ""
+          });
+          continue;
+        }
+        var children = [];
+        if (Array.isArray(node.Modules)) children = children.concat(node.Modules);
+        if (Array.isArray(node.Topics)) children = children.concat(node.Topics);
+        var nextModule = moduleName ? moduleName + " › " + title : title;
+        walk(children, nextModule);
+      }
+    }
+    var roots = [];
+    if (Array.isArray(toc)) roots = toc;
+    else if (toc && Array.isArray(toc.Modules)) roots = toc.Modules;
+    else if (toc && Array.isArray(toc.Structure)) roots = toc.Structure;
+    walk(roots, "");
+    return topics;
+  }
+
+  function progressIds(row) {
+    if (!row) return [];
+    var keys = ["ObjectId", "TopicId", "ContentObjectId", "Id"];
+    var ids = [];
+    for (var i = 0; i < keys.length; i++) {
+      if (row[keys[i]] == null || row[keys[i]] === "") continue;
+      var id = String(row[keys[i]]);
+      if (ids.indexOf(id) < 0) ids.push(id);
+    }
+    return ids;
+  }
+
+  function firstNumber(row, keys) {
+    if (!row) return null;
+    for (var i = 0; i < keys.length; i++) {
+      if (row[keys[i]] == null || row[keys[i]] === "") continue;
+      var n = Number(row[keys[i]]);
+      if (!isNaN(n)) return n;
+    }
+    return null;
+  }
+
+  function formatDuration(value) {
+    if (value == null || value === "") return "";
+    if (typeof value === "string" && /[a-z:]/i.test(value)) return String(value).trim();
+    var n = Number(value);
+    if (isNaN(n) || n < 0) return "";
+    var sec = Math.round(n);
+    var h = Math.floor(sec / 3600);
+    var m = Math.floor((sec % 3600) / 60);
+    var s = sec % 60;
+    function pad(x) {
+      return x < 10 ? "0" + x : String(x);
+    }
+    if (!h && !m && !s) return "";
+    return h + ":" + pad(m) + ":" + pad(s);
+  }
+
+  function parseLooseDate(text) {
+    if (text == null) return null;
+    var t = String(text).trim();
+    if (!t || /^(n\/a|na|none|never|not visited|—|-)$/i.test(t)) return null;
+    var d = new Date(t);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString();
+  }
+
+  function parseVisitCell(text) {
+    if (text == null) return null;
+    var raw = String(text).replace(/,/g, "").trim();
+    if (!raw || !/^\d+(\.\d+)?$/.test(raw)) return null;
+    return Number(raw);
+  }
+
+  function normName(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function headerIndex(headers, pattern, avoid) {
+    for (var i = 0; i < headers.length; i++) {
+      if (avoid && avoid.test(headers[i])) continue;
+      if (pattern.test(headers[i])) return i;
+    }
+    return -1;
+  }
+
+  function rowsFromHeaderGrid(grid) {
+    if (!grid || grid.length < 2) return null;
+    var headerAt = -1;
+    for (var h = 0; h < Math.min(grid.length, 4); h++) {
+      var joined = grid[h].join(" ");
+      if (/visit/i.test(joined) && /topic|content|module|name|item/i.test(joined)) {
+        headerAt = h;
+        break;
+      }
+    }
+    if (headerAt < 0) return null;
+    var headers = grid[headerAt];
+    var lastIdx = headerIndex(headers, /last/i);
+    var topicIdx = headerIndex(headers, /topic|content|name|item/i, /last|visit|time/i);
+    var moduleIdx = headerIndex(headers, /module|folder|unit/i, /last|visit|time/i);
+    var visitIdx = headerIndex(headers, /visit/i, /last/i);
+    var timeIdx = headerIndex(headers, /time/i, /last/i);
+    if (topicIdx < 0) topicIdx = 0;
+    if (moduleIdx === topicIdx) moduleIdx = -1;
+    var rows = [];
+    var currentModule = "";
+    var visitsKnown = false;
+    var timeKnown = false;
+    for (var r = headerAt + 1; r < grid.length; r++) {
+      var cells = grid[r];
+      var filled = [];
+      for (var c = 0; c < cells.length; c++) {
+        if (cells[c]) filled.push(cells[c]);
+      }
+      if (!filled.length) continue;
+      var visitVal = visitIdx >= 0 ? parseVisitCell(cells[visitIdx]) : null;
+      var timeVal = timeIdx >= 0 ? formatDuration(cells[timeIdx]) : "";
+      var lastRaw = lastIdx >= 0 ? cells[lastIdx] : "";
+      if (filled.length === 1 && visitVal == null && !lastRaw) {
+        currentModule = filled[0];
+        continue;
+      }
+      var title = cells[topicIdx] || filled[0];
+      if (!title) continue;
+      if (visitVal != null) visitsKnown = true;
+      if (timeVal) timeKnown = true;
+      rows.push({
+        module: moduleIdx >= 0 && cells[moduleIdx] ? cells[moduleIdx] : currentModule,
+        title: title,
+        visits: visitVal,
+        timeSpent: timeVal,
+        date: parseLooseDate(lastRaw),
+        dateLabel: lastRaw || ""
+      });
+    }
+    if (!rows.length) return null;
+    return { rows: rows, visitsKnown: visitsKnown, timeKnown: timeKnown, source: "statistics" };
+  }
+
+  function parseCsvGrid(text) {
+    var rows = [];
+    var row = [];
+    var cell = "";
+    var inQuotes = false;
+    var s = String(text || "").replace(/^\uFEFF/, "").trim();
+    if (!s || s.charAt(0) === "<") return [];
+    var firstLine = s.split(/\r?\n/)[0] || "";
+    if (!/visit/i.test(firstLine) || !/topic|content|module|name/i.test(firstLine)) return [];
+    var tabCount = (firstLine.match(/\t/g) || []).length;
+    var commaCount = (firstLine.match(/,/g) || []).length;
+    var delimiter = tabCount > commaCount ? "\t" : ",";
+    for (var i = 0; i < s.length; i++) {
+      var ch = s.charAt(i);
+      if (inQuotes) {
+        if (ch === '"') {
+          if (s.charAt(i + 1) === '"') {
+            cell += '"';
+            i++;
+          } else inQuotes = false;
+        } else cell += ch;
+      } else if (ch === '"') inQuotes = true;
+      else if (ch === delimiter) {
+        row.push(cell.trim());
+        cell = "";
+      } else if (ch === "\n") {
+        row.push(cell.trim());
+        if (row.join("")) rows.push(row);
+        row = [];
+        cell = "";
+      } else if (ch !== "\r") cell += ch;
+    }
+    if (cell || row.length) {
+      row.push(cell.trim());
+      if (row.join("")) rows.push(row);
+    }
+    return rows;
+  }
+
+  function statisticsPath(ouId, userId) {
+    return (
+      "/d2l/lms/content/reports/statistics_users_details.d2l?userId=" +
+      encodeURIComponent(userId) +
+      "&ou=" +
+      encodeURIComponent(ouId)
+    );
+  }
+
+  function decodeStatsText(value) {
+    return String(value || "")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function statsRowFromLabels(labels, isModule, currentModule) {
+    if (!labels || labels.length < 4) return null;
+    var title = labels[0];
+    if (!title) return null;
+    var visitsRaw = labels[labels.length - 3];
+    var timeRaw = labels[labels.length - 2];
+    var lastRaw = labels[labels.length - 1];
+    var moduleName = isModule ? title : currentModule;
+    var visits = parseVisitCell(visitsRaw);
+    var timeSpent = timeRaw && timeRaw !== "-" && timeRaw !== "—" ? timeRaw : "";
+    var date = parseLooseDate(lastRaw);
+    return {
+      module: moduleName,
+      title: isModule ? "Entire module" : title,
+      isModule: !!isModule,
+      visits: visits,
+      timeSpent: timeSpent,
+      date: date,
+      dateLabel: !date && lastRaw && lastRaw !== "-" && lastRaw !== "—" ? lastRaw : "",
+      opened: (visits != null && visits > 0) || !!date
+    };
+  }
+
+  function rowsFromStatsTable(table) {
+    if (!table || !table.querySelectorAll) return null;
+    var trs = table.querySelectorAll("tr");
+    var rows = [];
+    var currentModule = "";
+    for (var r = 0; r < trs.length; r++) {
+      var tr = trs[r];
+      if (tr.querySelector("th")) continue;
+      var labels = tr.querySelectorAll("label");
+      var texts = [];
+      for (var i = 0; i < labels.length; i++) {
+        var text = (labels[i].textContent || "").replace(/\s+/g, " ").trim();
+        if (text) texts.push(text);
+      }
+      var isModule = /\bd_ggl1\b/.test(tr.className || "");
+      if (isModule && texts[0]) currentModule = texts[0];
+      var row = statsRowFromLabels(texts, isModule, currentModule);
+      if (row) rows.push(row);
+    }
+    if (!rows.length) return null;
+    return { rows: rows, visitsKnown: true, timeKnown: true, source: "statistics", outline: true };
+  }
+
+  function findStatsTable(doc) {
+    if (!doc || !doc.querySelectorAll) return null;
+    var tables = doc.querySelectorAll("table");
+    for (var i = 0; i < tables.length; i++) {
+      var heads = tables[i].querySelectorAll("th");
+      var joined = "";
+      for (var h = 0; h < heads.length; h++) joined += " " + (heads[h].textContent || "");
+      if (/title/i.test(joined) && /visits/i.test(joined) && /last visited/i.test(joined)) return tables[i];
+    }
+    return null;
+  }
+
+  function parseStatisticsMarkup(html) {
+    if (!html || !/last visited/i.test(html) || !/>\s*Visits\s*</i.test(html)) return null;
+    var headerAt = html.search(/last visited/i);
+    var start = html.lastIndexOf("<table", headerAt);
+    var end = html.indexOf("</table>", headerAt);
+    if (start < 0 || end < 0) return null;
+    var table = html.slice(start, end);
+    var rowRe = /<tr\b([^>]*)>([\s\S]*?)<\/tr>/gi;
+    var rows = [];
+    var currentModule = "";
+    var match;
+    while ((match = rowRe.exec(table))) {
+      var attrs = match[1] || "";
+      var body = match[2] || "";
+      if (/<th\b/i.test(body)) continue;
+      var labels = [];
+      var labelRe = /<label\b[^>]*>([\s\S]*?)<\/label>/gi;
+      var labelMatch;
+      while ((labelMatch = labelRe.exec(body))) {
+        var text = decodeStatsText(labelMatch[1]);
+        if (text) labels.push(text);
+      }
+      var isModule = /\bd_ggl1\b/.test(attrs);
+      if (isModule && labels[0]) currentModule = labels[0];
+      var row = statsRowFromLabels(labels, isModule, currentModule);
+      if (row) rows.push(row);
+    }
+    if (!rows.length) return null;
+    return { rows: rows, visitsKnown: true, timeKnown: true, source: "statistics", outline: true };
+  }
+
+  function loadStatisticsFrame(path) {
+    return new Promise(function (resolve) {
+      if (typeof document === "undefined" || !document.body) {
+        resolve(null);
+        return;
+      }
+      var iframe = document.createElement("iframe");
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.tabIndex = -1;
+      iframe.title = "Content statistics";
+      iframe.style.cssText =
+        "position:absolute;width:1px;height:1px;left:-9999px;top:0;border:0;opacity:0;pointer-events:none;";
+      var settled = false;
+      var poll;
+      var giveUp;
+      function finish(value) {
+        if (settled) return;
+        settled = true;
+        if (poll) window.clearInterval(poll);
+        if (giveUp) window.clearTimeout(giveUp);
+        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+        resolve(value);
+      }
+      function tryRead() {
+        var doc;
+        try {
+          doc = iframe.contentDocument;
+        } catch (e) {
+          finish(null);
+          return;
+        }
+        if (!doc) return;
+        var table = findStatsTable(doc);
+        if (!table) return;
+        finish(rowsFromStatsTable(table));
+      }
+      iframe.onload = function () {
+        tryRead();
+      };
+      poll = window.setInterval(tryRead, 300);
+      giveUp = window.setTimeout(function () {
+        finish(null);
+      }, 15000);
+      document.body.appendChild(iframe);
+      iframe.src = path;
+    });
+  }
+
+  function parseContentStatisticsHtml(html) {
+    if (!html || !/<table[\s>]/i.test(html) || typeof DOMParser === "undefined") return null;
+    var parsed;
+    try {
+      parsed = new DOMParser().parseFromString(html, "text/html");
+    } catch (e) {
+      return null;
+    }
+    var tables = parsed.querySelectorAll("table");
+    var best = null;
+    for (var t = 0; t < tables.length; t++) {
+      var trs = tables[t].querySelectorAll("tr");
+      var grid = [];
+      for (var r = 0; r < trs.length; r++) {
+        var cells = trs[r].querySelectorAll("th, td");
+        var line = [];
+        for (var c = 0; c < cells.length; c++) {
+          line.push((cells[c].textContent || "").replace(/\s+/g, " ").trim());
+        }
+        grid.push(line);
+      }
+      var found = rowsFromHeaderGrid(grid);
+      if (found && (!best || found.rows.length > best.rows.length)) best = found;
+    }
+    return best;
+  }
+
+  function downloadHrefFromHtml(html) {
+    if (!html || typeof DOMParser === "undefined") return "";
+    var parsed;
+    try {
+      parsed = new DOMParser().parseFromString(html, "text/html");
+    } catch (e) {
+      return "";
+    }
+    var links = parsed.querySelectorAll("a[href]");
+    for (var i = 0; i < links.length; i++) {
+      var text = (links[i].textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+      var href = links[i].getAttribute("href") || "";
+      var looksLikeDownload = text === "download" || text.indexOf("download") >= 0 || /csv|export/i.test(href);
+      if (!looksLikeDownload) continue;
+      if (!/statistics|content\/reports|export|\.csv/i.test(href) && text.indexOf("download") < 0) continue;
+      try {
+        var url = new URL(href, window.location.origin + "/d2l/lms/content/reports/statistics_users_details.d2l");
+        if (url.origin !== window.location.origin) continue;
+        if (url.pathname.indexOf("/d2l/") !== 0) continue;
+        return url.pathname + url.search;
+      } catch (e) {
+        /* skip */
+      }
+    }
+    return "";
+  }
+
+  async function loadContentStatistics(ouId, userId) {
+    var path = statisticsPath(ouId, userId);
+    var fromFrame = null;
+    try {
+      fromFrame = await loadStatisticsFrame(path);
+    } catch (e) {
+      fromFrame = null;
+    }
+    if (fromFrame && fromFrame.rows && fromFrame.rows.length) return fromFrame;
+
+    var html = "";
+    try {
+      var res = await fetch(path, {
+        credentials: "include",
+        headers: { Accept: "text/html,application/xhtml+xml" }
+      });
+      if (res.ok) html = await res.text();
+    } catch (e) {
+      html = "";
+    }
+    var fromMarkup = parseStatisticsMarkup(html);
+    if (fromMarkup && fromMarkup.rows.length) return fromMarkup;
+    if (html && typeof DOMParser !== "undefined") {
+      try {
+        var parsedDoc = new DOMParser().parseFromString(html, "text/html");
+        var table = findStatsTable(parsedDoc);
+        var fromDoc = rowsFromStatsTable(table);
+        if (fromDoc && fromDoc.rows.length) return fromDoc;
+      } catch (e) {
+        /* fall through */
+      }
+    }
+    var fromCsv = rowsFromHeaderGrid(parseCsvGrid(html));
+    if (fromCsv) {
+      fromCsv.source = "statistics";
+      return fromCsv;
+    }
+    return parseContentStatisticsHtml(html);
+  }
+
+  function takeStatMatch(stats, title, moduleName) {
+    var n = normName(title);
+    var m = normName(moduleName);
+    if (!n) return null;
+    for (var pass = 0; pass < 2; pass++) {
+      for (var i = 0; i < stats.length; i++) {
+        var row = stats[i];
+        if (row._used) continue;
+        var sn = normName(row.title);
+        var sm = normName(row.module);
+        var titleMatch = pass === 0 ? sn === n : sn.indexOf(n) >= 0 || n.indexOf(sn) >= 0;
+        if (!titleMatch) continue;
+        if (m && sm && sm !== m && m.indexOf(sm) < 0 && sm.indexOf(m) < 0) continue;
+        row._used = true;
+        return row;
+      }
+    }
+    return null;
+  }
+
+  async function collectContentAccess(ouId, userId, toc) {
+    var access = emptyContentAccess(ouId, userId);
+    var catalog = indexContentTopics(toc);
+    var statsPack = null;
+    var progressRows = [];
+    try {
+      statsPack = await loadContentStatistics(ouId, userId);
+    } catch (e) {
+      statsPack = null;
+    }
+    try {
+      progressRows = asArray(await API.contentUserProgress(ouId, userId));
+    } catch (e) {
+      progressRows = [];
+    }
+
+    var progressById = {};
+    for (var p = 0; p < progressRows.length; p++) {
+      var prow = progressRows[p];
+      var pids = progressIds(prow);
+      if (!pids.length) continue;
+      var prog = {
+        visits: firstNumber(prow, ["NumRealVisits", "NumVisits", "VisitCount", "Visits", "TotalVisits"]),
+        date:
+          prow.LastVisited ||
+          prow.LastAccessed ||
+          prow.LastVisitDate ||
+          prow.DateAccessed ||
+          prow.CompletedDate ||
+          prow.DateCompleted ||
+          null,
+        time: formatDuration(prow.TotalTime || prow.TimeSpent || prow.Duration),
+        read: !!(prow.IsRead || prow.Visited || prow.IsVisited || prow.Completed || prow.IsComplete)
+      };
+      for (var pi = 0; pi < pids.length; pi++) progressById[pids[pi]] = prog;
+    }
+
+    var stats = (statsPack && statsPack.rows) || [];
+    var rows = [];
+    var outline = !!(statsPack && statsPack.outline && stats.length);
+    if (outline) {
+      rows = stats;
+      access.source = "statistics";
+      access.outline = true;
+    } else if (catalog.length) {
+      for (var i = 0; i < catalog.length; i++) {
+        var topic = catalog[i];
+        var prog = {};
+        var topicIds = topic.ids && topic.ids.length ? topic.ids : topic.id ? [topic.id] : [];
+        for (var idn = 0; idn < topicIds.length; idn++) {
+          if (progressById[topicIds[idn]]) {
+            prog = progressById[topicIds[idn]];
+            break;
+          }
+        }
+        var stat = takeStatMatch(stats, topic.title, topic.module);
+        var visits = stat && stat.visits != null ? stat.visits : prog.visits != null ? prog.visits : null;
+        var date = prog.date || (stat && stat.date) || null;
+        var timeSpent = (stat && stat.timeSpent) || prog.time || "";
+        var opened = (visits != null && visits > 0) || !!date || !!prog.read;
+        rows.push({
+          module: (stat && stat.module) || topic.module || "",
+          title: topic.title,
+          visits: visits,
+          timeSpent: timeSpent,
+          date: date,
+          dateLabel: (stat && stat.dateLabel) || "",
+          opened: opened
+        });
+      }
+      for (var s = 0; s < stats.length; s++) {
+        if (stats[s]._used) continue;
+        rows.push({
+          module: stats[s].module || "",
+          title: stats[s].title,
+          visits: stats[s].visits,
+          timeSpent: stats[s].timeSpent || "",
+          date: stats[s].date,
+          dateLabel: stats[s].dateLabel || "",
+          opened: (stats[s].visits != null && stats[s].visits > 0) || !!stats[s].date
+        });
+      }
+      access.source = statsPack ? "statistics" : progressRows.length ? "userprogress" : "";
+    } else if (stats.length) {
+      for (var j = 0; j < stats.length; j++) {
+        rows.push({
+          module: stats[j].module || "",
+          title: stats[j].title,
+          visits: stats[j].visits,
+          timeSpent: stats[j].timeSpent || "",
+          date: stats[j].date,
+          dateLabel: stats[j].dateLabel || "",
+          opened: (stats[j].visits != null && stats[j].visits > 0) || !!stats[j].date
+        });
+      }
+      access.source = "statistics";
+    } else {
+      var ids = Object.keys(progressById);
+      for (var k = 0; k < ids.length; k++) {
+        var item = progressById[ids[k]];
+        var openedOnly = (item.visits != null && item.visits > 0) || !!item.date || item.read;
+        if (!openedOnly) continue;
+        rows.push({
+          module: "",
+          title: "Topic " + ids[k],
+          visits: item.visits,
+          timeSpent: item.time || "",
+          date: item.date,
+          dateLabel: "",
+          opened: true
+        });
+      }
+      access.source = rows.length ? "userprogress" : "";
+    }
+
+    var opened = 0;
+    var topicTotal = 0;
+    var visitsKnown = !!(statsPack && statsPack.visitsKnown);
+    var timeKnown = !!(statsPack && statsPack.timeKnown);
+    for (var n = 0; n < rows.length; n++) {
+      if (rows[n].opened || (rows[n].visits != null && rows[n].visits > 0) || rows[n].date) {
+        rows[n].opened = true;
+      }
+      if (!rows[n].isModule) {
+        topicTotal++;
+        if (rows[n].opened) opened++;
+      }
+      if (rows[n].visits != null) visitsKnown = true;
+      if (rows[n].timeSpent) timeKnown = true;
+      if (rows[n].date) access.lastVisited = maxDate(access.lastVisited, rows[n].date);
+    }
+    if (!outline) {
+      rows.sort(function (a, b) {
+        if (a.opened !== b.opened) return a.opened ? -1 : 1;
+        var ad = a.date ? new Date(a.date).getTime() : 0;
+        var bd = b.date ? new Date(b.date).getTime() : 0;
+        if (ad !== bd) return bd - ad;
+        var am = (a.module || "") + " " + a.title;
+        var bm = (b.module || "") + " " + b.title;
+        return am.localeCompare(bm);
+      });
+    }
+    access.rows = rows;
+    access.opened = opened;
+    access.total = topicTotal || rows.length;
+    access.visitsKnown = visitsKnown;
+    access.timeKnown = timeKnown;
+    return access;
+  }
+
   async function findLastAccess(ouId, userId, hintIso) {
     if (hintIso) return hintIso;
     // Prefer classlist LastAccessed (same source as Course Health / Students widgets)
@@ -201,7 +851,8 @@
       quizzes: [],
       grades: [],
       finalGrade: null,
-      thirdParty: { tools: [], hasActivity: false, lastActivityDate: null, activity: [] }
+      thirdParty: { tools: [], hasActivity: false, lastActivityDate: null, activity: [] },
+      contentAccess: emptyContentAccess(ouId, userId)
     };
 
     onProgress("Loading course access…", 5);
@@ -377,12 +1028,20 @@
       /* optional */
     }
 
-    onProgress("Checking integrated tools…", 90);
+    onProgress("Checking integrated tools…", 88);
+    var toc = null;
     try {
-      var toc = await API.contentToc(ouId);
+      toc = await API.contentToc(ouId);
       detail.thirdParty.tools = detectThirdPartyTools(toc);
     } catch (e) {
       /* optional */
+    }
+
+    onProgress("Reading content module access…", 94);
+    try {
+      detail.contentAccess = await collectContentAccess(ouId, userId, toc);
+    } catch (e) {
+      detail.contentAccess = emptyContentAccess(ouId, userId);
     }
 
     onProgress("Done", 100);
@@ -658,7 +1317,7 @@
     applyColor(doc, "setTextColor", BRAND.muted);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.text("Official report for FW process submission and final grades of F", margin, y);
+    doc.text("Official report for a faculty withdrawal and a final grade of F", margin, y);
     var genStamp =
       generatedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
       "  ·  " +
@@ -709,7 +1368,10 @@
     y += idH + 16;
 
     var hasLda = !!lda;
-    var boxH = 78;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    var useLines = doc.splitTextToSize(FACULTY_WITHDRAWAL_LINE, contentW - 36);
+    var boxH = 66 + useLines.length * 12;
     ensureSpace(boxH + 8);
     applyColor(doc, "setFillColor", hasLda ? BRAND.successBg : BRAND.alertBg);
     doc.roundedRect(margin, y, contentW, boxH, 6, 6, "F");
@@ -722,26 +1384,37 @@
     doc.text("OVERALL LAST DATE OF ACADEMIC ACTIVITY", margin + 20, y + 18);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
-    doc.text("Use this date for FW process submission and final grades of F.", margin + 20, y + 32);
+    doc.text(useLines, margin + 20, y + 32);
+    var dateY = y + 32 + useLines.length * 12 + 6;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(hasLda ? 16 : 14);
-    doc.text(hasLda ? fmtDateLong(lda) : "No academic activity on record", margin + 20, y + 54);
+    doc.text(hasLda ? fmtDateLong(lda) : "No academic activity on record", margin + 20, dateY);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
     if (hasLda) {
-      doc.text(recencyLabel(lda) + "  ·  Academic events only (login is not counted)", margin + 20, y + 68);
+      doc.text(
+        recencyLabel(lda) + "  ·  Academic events only (login and content views are not counted)",
+        margin + 20,
+        dateY + 14
+      );
     } else {
       applyColor(doc, "setTextColor", BRAND.muted);
-      doc.text("No discussion, assignment, quiz, or integrated-tool gradebook activity was found.", margin + 20, y + 68);
+      doc.text(
+        "No discussion, assignment, quiz, or integrated-tool gradebook activity was found.",
+        margin + 20,
+        dateY + 14
+      );
     }
     y += boxH + 16;
 
     sectionTitle("Academic activity");
+    var contentAccess = detail.contentAccess || emptyContentAccess("", "");
     var tableRows = [
       ["Last discussion post", detail.lastDiscussion, true],
       ["Last assignment submitted", detail.lastAssignment, true],
       ["Last quiz submitted", detail.lastQuiz, true],
-      ["Last course access (login)", detail.lastLogin, false]
+      ["Last course access (login)", detail.lastLogin, false],
+      ["Last content module access", contentAccess.lastVisited, false]
     ];
     var rowH = 22;
     ensureSpace(20 + tableRows.length * rowH);
@@ -837,8 +1510,8 @@
       if (!items || !items.length) return;
       sectionTitle(title);
       var sorted = sortByDateDesc(items, "date");
-      var shown = sorted.slice(0, 8);
       var headerH = 18;
+      var dateW = 120;
       ensureSpace(headerH + 20);
       applyColor(doc, "setFillColor", BRAND.green);
       doc.rect(margin, y, contentW, headerH, "F");
@@ -848,28 +1521,104 @@
       doc.text("ITEM", margin + 10, y + 12);
       doc.text("DATE", pageW - margin - 10, y + 12, { align: "right" });
       y += headerH;
-      for (var i = 0; i < shown.length; i++) {
-        ensureSpace(18);
+      for (var i = 0; i < sorted.length; i++) {
+        var label = nameFn(sorted[i]);
+        var lines = doc.splitTextToSize(String(label || ""), contentW - dateW - 16);
+        var rowHeight = Math.max(16, lines.length * 11 + 6);
+        ensureSpace(rowHeight);
         applyColor(doc, "setFillColor", i % 2 === 0 ? BRAND.white : [236, 242, 239]);
-        doc.rect(margin, y, contentW, 16, "F");
+        doc.rect(margin, y, contentW, rowHeight, "F");
         applyColor(doc, "setTextColor", BRAND.black);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8.5);
-        var label = nameFn(shown[i]);
-        var clipped = doc.splitTextToSize(label, contentW - 120);
-        doc.text(clipped[0], margin + 10, y + 11);
-        applyColor(doc, "setTextColor", recencyColor(shown[i].date));
+        doc.text(lines, margin + 10, y + 11);
+        applyColor(doc, "setTextColor", recencyColor(sorted[i].date));
         doc.setFont("helvetica", "bold");
-        doc.text(fmtDate(shown[i].date), pageW - margin - 10, y + 11, { align: "right" });
-        y += 16;
+        doc.text(fmtDate(sorted[i].date), pageW - margin - 10, y + 11, { align: "right" });
+        y += rowHeight;
       }
-      if (sorted.length > shown.length) {
-        ensureSpace(14);
-        applyColor(doc, "setTextColor", BRAND.muted);
-        doc.setFont("helvetica", "italic");
+      y += 8;
+    }
+
+    function contentRowLabel(row) {
+      var name = row.title || "Topic";
+      return row.module ? row.module + " — " + name : name;
+    }
+
+    function drawContentAccess() {
+      if (!contentAccess.rows || !contentAccess.rows.length) return;
+      sectionTitle("Content module access");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      applyColor(doc, "setTextColor", BRAND.muted);
+      var summary =
+        "Opened " +
+        contentAccess.opened +
+        " of " +
+        contentAccess.total +
+        " topics. Module rows are the module total from Content statistics. Content views do not count toward the last date of academic activity.";
+      if (!contentAccess.visitsKnown) {
+        summary +=
+          " Brightspace did not return a visit count, so the times-opened column is blank. Last access dates are still listed.";
+      }
+      var summaryLines = doc.splitTextToSize(summary, contentW);
+      ensureSpace(summaryLines.length * 11 + 8);
+      doc.text(summaryLines, margin, y + 10);
+      y += summaryLines.length * 11 + 12;
+
+      var showVisits = !!contentAccess.visitsKnown;
+      var showTime = !!contentAccess.timeKnown;
+      var dateW = 108;
+      var visitsW = showVisits ? 52 : 0;
+      var timeW = showTime ? 62 : 0;
+      var textW = contentW - dateW - visitsW - timeW - 20;
+      var headerH = 18;
+      ensureSpace(headerH + 20);
+      applyColor(doc, "setFillColor", BRAND.green);
+      doc.rect(margin, y, contentW, headerH, "F");
+      applyColor(doc, "setTextColor", BRAND.white);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text("MODULE / TOPIC", margin + 10, y + 12);
+      var colX = pageW - margin - 10;
+      doc.text("LAST ACCESSED", colX, y + 12, { align: "right" });
+      colX -= dateW;
+      if (showTime) {
+        doc.text("AVG TIME", colX, y + 12, { align: "right" });
+        colX -= timeW;
+      }
+      if (showVisits) {
+        doc.text("VISITS", colX, y + 12, { align: "right" });
+      }
+      y += headerH;
+
+      for (var i = 0; i < contentAccess.rows.length; i++) {
+        var row = contentAccess.rows[i];
+        var lines = doc.splitTextToSize(contentRowLabel(row), textW);
+        var rowHeight = Math.max(16, lines.length * 11 + 6);
+        ensureSpace(rowHeight);
+        applyColor(doc, "setFillColor", i % 2 === 0 ? BRAND.white : [236, 242, 239]);
+        doc.rect(margin, y, contentW, rowHeight, "F");
+        applyColor(doc, "setTextColor", row.opened ? BRAND.black : BRAND.muted);
+        doc.setFont("helvetica", row.isModule ? "bold" : "normal");
         doc.setFontSize(8);
-        doc.text("And " + (sorted.length - shown.length) + " more in Brightspace.", margin + 10, y + 10);
-        y += 16;
+        doc.text(lines, margin + 10, y + 11);
+        var valueX = pageW - margin - 10;
+        var when = row.date ? fmtDate(row.date) : row.opened ? row.dateLabel || "Date not returned" : "Not opened";
+        applyColor(doc, "setTextColor", row.date ? recencyColor(row.date) : BRAND.muted);
+        doc.setFont("helvetica", row.date ? "bold" : "italic");
+        doc.text(when, valueX, y + 11, { align: "right" });
+        valueX -= dateW;
+        doc.setFont("helvetica", "normal");
+        applyColor(doc, "setTextColor", BRAND.black);
+        if (showTime) {
+          doc.text(row.timeSpent || "—", valueX, y + 11, { align: "right" });
+          valueX -= timeW;
+        }
+        if (showVisits) {
+          doc.text(row.visits != null ? String(row.visits) : "—", valueX, y + 11, { align: "right" });
+        }
+        y += rowHeight;
       }
       y += 8;
     }
@@ -885,18 +1634,10 @@
       var score = item.score || item.score;
       return score ? n + "  ·  score " + score : n;
     });
+    drawContentAccess();
 
     if ((tp.tools && tp.tools.length) || tp.hasActivity) {
       sectionTitle("Integrated / third-party tools");
-      ensureSpace(48);
-      var tpH = 44;
-      applyColor(doc, "setFillColor", tp.hasActivity ? BRAND.successBg : [255, 248, 225]);
-      doc.roundedRect(margin, y, contentW, tpH, 5, 5, "F");
-      applyColor(doc, "setFillColor", tp.hasActivity ? BRAND.green : BRAND.recencyWarn);
-      doc.rect(margin, y, 5, tpH, "F");
-      applyColor(doc, "setTextColor", BRAND.black);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8.5);
       var toolList = (tp.tools || []).join(", ") || "Integrated tool activity in the gradebook";
       var tpLines = doc.splitTextToSize(
         (tp.hasActivity
@@ -909,7 +1650,16 @@
           ".",
         contentW - 24
       );
-      doc.text(tpLines.slice(0, 3), margin + 14, y + 16);
+      var tpH = Math.max(44, 20 + tpLines.length * 11);
+      ensureSpace(tpH + 8);
+      applyColor(doc, "setFillColor", tp.hasActivity ? BRAND.successBg : [255, 248, 225]);
+      doc.roundedRect(margin, y, contentW, tpH, 5, 5, "F");
+      applyColor(doc, "setFillColor", tp.hasActivity ? BRAND.green : BRAND.recencyWarn);
+      doc.rect(margin, y, 5, tpH, "F");
+      applyColor(doc, "setTextColor", BRAND.black);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.text(tpLines, margin + 14, y + 16);
       y += tpH + 12;
     }
 
@@ -922,11 +1672,20 @@
       y += 18;
     }
 
-    ensureSpace(58);
+    var ferpa =
+      "This report contains education records protected under the Family Educational Rights and Privacy Act. " +
+      "Use only for legitimate educational purposes at Your Institution. Do not share outside authorized college " +
+      "personnel without consent or as otherwise permitted by law. Course login and content views are informational " +
+      "and are not counted toward Last Date of Academic Activity.";
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    var ferpaLines = doc.splitTextToSize(ferpa, contentW - 28);
+    var ferpaH = 22 + ferpaLines.length * 10;
+    ensureSpace(ferpaH + 8);
     applyColor(doc, "setFillColor", BRAND.white);
-    doc.roundedRect(margin, y, contentW, 52, 5, 5, "F");
+    doc.roundedRect(margin, y, contentW, ferpaH, 5, 5, "F");
     applyColor(doc, "setFillColor", BRAND.tan);
-    doc.rect(margin, y, 5, 52, "F");
+    doc.rect(margin, y, 5, ferpaH, "F");
     applyColor(doc, "setTextColor", BRAND.green);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
@@ -934,12 +1693,7 @@
     applyColor(doc, "setTextColor", BRAND.black);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    var ferpa =
-      "This report contains education records protected under the Family Educational Rights and Privacy Act. " +
-      "Use only for legitimate educational purposes at Your Institution. Do not share outside authorized college " +
-      "personnel without consent or as otherwise permitted by law. Course login is informational and is not " +
-      "counted toward Last Date of Academic Activity.";
-    doc.text(doc.splitTextToSize(ferpa, contentW - 28), margin + 14, y + 26);
+    doc.text(ferpaLines, margin + 14, y + 26);
 
     drawFooter();
 
@@ -959,7 +1713,9 @@
     fmtDate: fmtDate,
     normalizeClasslist: normalizeClasslist,
     isStudentRole: isStudentRole,
-    escapeHtml: escapeHtml
+    escapeHtml: escapeHtml,
+    facultyWithdrawalLine: FACULTY_WITHDRAWAL_LINE,
+    contentStatistics: loadContentStatistics
   };
 
   global.BSP = global.BSP || {};

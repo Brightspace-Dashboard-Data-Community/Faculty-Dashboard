@@ -6306,8 +6306,22 @@ button.form-button.form-button-not-ready:hover,
   color: #991b1b;
   margin-top: 6px;
 }
+.ldaa-section-title {
+  margin: 1.25rem 0 0.35rem;
+  font-size: 0.95rem;
+  color: var(--primary-green, #0f5b46);
+}
+.ldaa-note {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
+.ldaa-module-row td {
+  font-weight: 700;
+  background: #f4f7f6;
+}
 .ldaa-detail-table td:first-child {
-  width: 55%;
+  width: auto;
   color: #334155;
 }
 .ldaa-detail-table td {

@@ -236,14 +236,127 @@
     );
   }
 
+  function sortByDateDesc(items) {
+    return (items || []).slice().sort(function (a, b) {
+      return new Date(b.date || 0) - new Date(a.date || 0);
+    });
+  }
+
+  function renderNamedList(title, items, nameFn) {
+    if (!items || !items.length) return "";
+    var sorted = sortByDateDesc(items);
+    return (
+      '<h4 class="ldaa-section-title">' +
+      Report.escapeHtml(title) +
+      " (" +
+      sorted.length +
+      ")</h4>" +
+      '<table class="replace-strings-table ldaa-detail-table"><thead><tr><th>Item</th><th>Date</th></tr></thead><tbody>' +
+      sorted
+        .map(function (item) {
+          return (
+            "<tr><td>" +
+            Report.escapeHtml(nameFn(item)) +
+            "</td><td>" +
+            fmtActivityCell(item.date) +
+            "</td></tr>"
+          );
+        })
+        .join("") +
+      "</tbody></table>"
+    );
+  }
+
+  function renderContentAccess(detail, courseId, userId, userName) {
+    var access = detail.contentAccess || {};
+    var rows = access.rows || [];
+    var reportPath =
+      access.reportPath ||
+      "/d2l/lms/content/reports/statistics_users_details.d2l?userId=" +
+        encodeURIComponent(userId || "") +
+        "&ou=" +
+        encodeURIComponent(courseId || "") +
+        (userName ? "&userName=" + encodeURIComponent(userName) : "");
+    var link =
+      '<p class="ldaa-note"><a href="' +
+      Report.escapeHtml(reportPath) +
+      '" target="_blank" rel="noopener noreferrer">Open Content statistics in Brightspace</a></p>';
+    if (!rows.length) {
+      return (
+        '<h4 class="ldaa-section-title">Content module access</h4>' +
+        '<p class="ldaa-note">Brightspace did not return content-module access for this student. The Content statistics page still has the web view and the download.</p>' +
+        link
+      );
+    }
+    var note = access.outline
+      ? "Opened " +
+        (access.opened || 0) +
+        " of " +
+        (access.total || rows.length) +
+        " topics. Bold rows are the module total from Content statistics. Opening content does not count toward the last date of academic activity."
+      : "Opened " +
+        (access.opened || 0) +
+        " of " +
+        (access.total || rows.length) +
+        " topics. Opening a module does not count toward the last date of academic activity.";
+    if (!access.visitsKnown) {
+      note +=
+        " Visit counts were not in the data Brightspace returned to this page. Last access dates are listed. Use the Content statistics link if you need the times-opened download.";
+    }
+    var showVisits = !!access.visitsKnown;
+    var showTime = !!access.timeKnown;
+    var head =
+      "<tr><th>Module</th><th>Topic</th>" +
+      (showVisits ? "<th>Visits</th>" : "") +
+      (showTime ? "<th>Avg time</th>" : "") +
+      "<th>Last accessed</th></tr>";
+    var body = rows
+      .map(function (row) {
+        var when = row.date
+          ? fmtActivityCell(row.date)
+          : row.opened
+            ? Report.escapeHtml(row.dateLabel || "Date not returned")
+            : "Not opened";
+        return (
+          "<tr" +
+          (row.isModule ? ' class="ldaa-module-row"' : "") +
+          "><td>" +
+          Report.escapeHtml(row.module || "—") +
+          "</td><td>" +
+          Report.escapeHtml(row.title || "Topic") +
+          "</td>" +
+          (showVisits ? "<td>" + (row.visits != null ? Report.escapeHtml(String(row.visits)) : "—") + "</td>" : "") +
+          (showTime ? "<td>" + Report.escapeHtml(row.timeSpent || "—") + "</td>" : "") +
+          "<td>" +
+          when +
+          "</td></tr>"
+        );
+      })
+      .join("");
+    return (
+      '<h4 class="ldaa-section-title">Content module access</h4>' +
+      '<p class="ldaa-note">' +
+      Report.escapeHtml(note) +
+      "</p>" +
+      '<table class="replace-strings-table ldaa-detail-table"><thead>' +
+      head +
+      "</thead><tbody>" +
+      body +
+      "</tbody></table>" +
+      link
+    );
+  }
+
   function renderDetail(student, detail, courseLabel) {
     var host = $("ldaaDetailContent");
     var lda = Report.overallLda(detail);
+    var contentAccess = detail.contentAccess || {};
     var rows = [
       ["Last discussion post", detail.lastDiscussion, true],
       ["Last assignment submitted", detail.lastAssignment, true],
       ["Last quiz submitted", detail.lastQuiz, true],
-      ["Last course access (login)", detail.lastLogin, false]
+      ["Last course access (login)", detail.lastLogin, false],
+      ["Last content module access", contentAccess.lastVisited, false]
     ];
 
     host.innerHTML =
@@ -276,7 +389,9 @@
       "</tbody></table>" +
       '<div class="ldaa-overall" role="region" aria-label="Overall LDA">' +
       '<div class="ldaa-overall-label">Overall Last Date of Academic Activity</div>' +
-      '<div style="font-size:0.85rem;color:#991b1b;margin-top:4px">Use this date for FW process submission and final grades of <strong>F</strong>.</div>' +
+      '<div style="font-size:0.85rem;color:#991b1b;margin-top:4px">' +
+      Report.escapeHtml(Report.facultyWithdrawalLine || "Use this date when you submit a faculty withdrawal and when you assign a final grade of F.") +
+      "</div>" +
       '<div class="ldaa-overall-date">' +
       (lda ? Report.fmtDate(lda) : "No academic activity on record") +
       "</div></div>" +
@@ -294,7 +409,17 @@
         ? '<p style="background:#f8fafc;padding:10px 14px;border-radius:8px"><strong>Final grade:</strong> ' +
           Report.escapeHtml(detail.finalGrade) +
           "</p>"
-        : "");
+        : "") +
+      renderNamedList("Discussion posts", detail.discussions, function (item) {
+        return [item.forum, item.topic].filter(Boolean).join(" — ") || "Discussion post";
+      }) +
+      renderNamedList("Assignments submitted", detail.assignments, function (item) {
+        return item.name || "Assignment";
+      }) +
+      renderNamedList("Quiz attempts", detail.quizzes, function (item) {
+        return item.score ? (item.name || "Quiz") + " · score " + item.score : item.name || "Quiz";
+      }) +
+      renderContentAccess(detail, state.courseId, student.UserId || student.Identifier, student.DisplayName);
 
     $("ldaaPdfBtn").addEventListener("click", onGeneratePdf);
   }

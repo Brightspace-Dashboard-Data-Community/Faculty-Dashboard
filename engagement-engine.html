@@ -7,6 +7,7 @@
 <!-- Privacy mask must load before engine fetches so classlist names are harvested -->
 <script src="js/pii-mask.js"></script>
 <script src="js/pdf-brand.js"></script>
+<script src="js/ldaa-report.js"></script>
 <!--
   ================================================================
   Institution ENGAGEMENT DASHBOARD FOR FACULTY — Brightspace Content Topic
@@ -5317,21 +5318,23 @@ async function loadStatisticsData(data, classMembers) {
           } catch { /* skip folder */ }
         }
 
-        // 3. Content access / progress (if available)
+        // 3. Content last visits from the Content statistics page
         try {
-          const progress = await contentUserProgress(studentId);
-          const progArr = Array.isArray(progress) ? progress : (progress?.Objects || []);
-          for (const p of progArr) {
-            const dt = p.DateCompleted || p.LastVisited || p.DateAccessed;
-            if (!dt) continue;
-            saEvents.push({
-              date: new Date(dt),
-              type: 'content',
-              label: 'Accessed: ' + (p.Title || p.TopicName || 'Content').substring(0, 25),
-              color: EVENT_COLORS.content
-            });
+          if (window.LdaaReport && LdaaReport.contentStatistics && OU_ID) {
+            const pack = await LdaaReport.contentStatistics(OU_ID, studentId);
+            const statRows = (pack && pack.rows) || [];
+            for (const row of statRows) {
+              if (!row || row.isModule || !row.date) continue;
+              const label = row.module ? row.module + ' — ' + row.title : row.title;
+              saEvents.push({
+                date: new Date(row.date),
+                type: 'content',
+                label: 'Opened: ' + String(label || 'Content').substring(0, 40),
+                color: EVENT_COLORS.content
+              });
+            }
           }
-        } catch { /* content progress may not be available */ }
+        } catch { /* content statistics may not be available */ }
 
         // 4. Grades received
         try {
@@ -5515,29 +5518,27 @@ async function loadActivityTrackerData(data, classMembers) {
       }
       console.log('[ActivityTracker] Found', subCount, 'submissions for student', studentId);
 
-      // 3. Content access / progress
+      // 3. Content last visits from the Content statistics page
       try {
-        const progress = await contentUserProgress(studentId);
-        console.log('[ActivityTracker] contentUserProgress response type:', typeof progress, Array.isArray(progress) ? 'array(' + progress.length + ')' : '');
-        const progArr = Array.isArray(progress) ? progress : (progress?.Objects || progress?.Items || []);
-        if (progArr.length) {
-          console.log('[ActivityTracker] First progress entry keys:', Object.keys(progArr[0]).join(', '));
+        if (window.LdaaReport && LdaaReport.contentStatistics && OU_ID) {
+          const pack = await LdaaReport.contentStatistics(OU_ID, studentId);
+          const statRows = (pack && pack.rows) || [];
+          let contentCount = 0;
+          for (const row of statRows) {
+            if (!row || row.isModule || !row.date) continue;
+            contentCount++;
+            const title = row.module ? row.module + ' — ' + row.title : row.title;
+            activities.push({
+              date: new Date(row.date),
+              type: 'content',
+              title: String(title || 'Content').substring(0, 60),
+              detail: row.visits != null ? row.visits + ' visits' : 'Visited',
+              url: null
+            });
+          }
+          console.log('[ActivityTracker] Found', contentCount, 'content statistics entries for student', studentId);
         }
-        let contentCount = 0;
-        for (const p of progArr) {
-          const dt = p.DateCompleted || p.LastVisited || p.DateAccessed || p.CompletedDate || p.LastModifiedDate;
-          if (!dt) continue;
-          contentCount++;
-          activities.push({
-            date: new Date(dt),
-            type: 'content',
-            title: (p.Title || p.TopicName || p.Name || 'Content Item').substring(0, 60),
-            detail: p.IsComplete || p.Completed || p.CompletedDate ? 'Completed' : 'Visited',
-            url: null
-          });
-        }
-        console.log('[ActivityTracker] Found', contentCount, 'content progress entries for student', studentId);
-      } catch(e) { console.warn('[ActivityTracker] contentUserProgress failed:', e.message || e); }
+      } catch(e) { console.warn('[ActivityTracker] content statistics failed:', e.message || e); }
 
       // 4. Grades
       try {

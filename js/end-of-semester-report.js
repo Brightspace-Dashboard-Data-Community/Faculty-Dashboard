@@ -997,37 +997,66 @@
     var visitAvailable = false;
     var visitSource = "";
     var visitFailures = 0;
+    var success = 0;
 
-    if (topics.length && studentIds.length) {
+    if (topics.length && studentIds.length && window.LdaaReport && window.LdaaReport.contentStatistics) {
       var visitMap = {};
-      var sample = await mapPool(studentIds, 4, async function (uid, idx) {
-        if (onProgress && idx % 5 === 0) {
-          onProgress("Reading content visits " + (idx + 1) + " of " + studentIds.length + "…");
+      function normVisitName(value) {
+        return String(value || "")
+          .toLowerCase()
+          .replace(/&/g, " ")
+          .replace(/[^a-z0-9]+/g, " ")
+          .trim();
+      }
+      var sample = await mapPool(studentIds, 1, async function (uid, idx) {
+        if (onProgress) {
+          onProgress("Reading content statistics " + (idx + 1) + " of " + studentIds.length + "…");
         }
-        var data = await BrightspaceFetchOptional(
-          "/d2l/api/le/" + API_VERSION_LE + "/" + orgUnitId + "/content/userprogress/" + uid + "/"
-        );
-        if (!data) {
+        var pack = null;
+        try {
+          pack = await window.LdaaReport.contentStatistics(orgUnitId, uid);
+        } catch (e) {
+          pack = null;
+        }
+        var statRows = pack && pack.rows ? pack.rows : [];
+        if (!statRows.length) {
           visitFailures++;
           return null;
         }
-        var rows = asArray(data);
         var seen = {};
-        for (var i = 0; i < rows.length; i++) {
-          if (!progressWasVisited(rows[i])) continue;
-          var tid = topicIdFromProgress(rows[i]);
-          if (!tid || seen[tid]) continue;
-          seen[tid] = true;
-          visitMap[tid] = (visitMap[tid] || 0) + 1;
+        for (var i = 0; i < statRows.length; i++) {
+          var stat = statRows[i];
+          if (!stat || stat.isModule) continue;
+          if (!(stat.visits > 0 || stat.date || stat.opened)) continue;
+          var title = normVisitName(stat.title);
+          if (!title || title === "entire module") continue;
+          var moduleName = normVisitName(stat.module);
+          var hits = [];
+          for (var t = 0; t < topics.length; t++) {
+            if (normVisitName(topics[t].title) !== title) continue;
+            hits.push(topics[t]);
+          }
+          if (moduleName && hits.length > 1) {
+            var narrowed = [];
+            for (var h = 0; h < hits.length; h++) {
+              if (normVisitName(hits[h].path).indexOf(moduleName) >= 0) narrowed.push(hits[h]);
+            }
+            if (narrowed.length) hits = narrowed;
+          }
+          for (var m = 0; m < hits.length; m++) {
+            var tid = hits[m].id;
+            if (!tid || seen[tid]) continue;
+            seen[tid] = true;
+            visitMap[tid] = (visitMap[tid] || 0) + 1;
+          }
         }
         return true;
       });
-      var success = 0;
       for (var p = 0; p < sample.length; p++) if (sample[p]) success++;
-      visitAvailable = success > 0 && success >= Math.min(3, studentIds.length) * 0.3;
+      visitAvailable = success > 0 && success * 2 >= studentIds.length;
       if (visitAvailable) {
         applyVisitMap(topics, visitMap, null);
-        visitSource = "userprogress";
+        visitSource = "statistics";
       }
     }
     return {
@@ -1035,6 +1064,7 @@
       topics: topics,
       visitAvailable: visitAvailable,
       visitSource: visitSource,
+      visitStudents: success,
       visitFailures: visitFailures
     };
   }
@@ -1348,12 +1378,13 @@
     }
 
     if (content.visitAvailable && content.topics.length) {
+      var visitBase = content.visitStudents || enrolled;
       var lowVisit = content.topics
         .filter(function (t) {
           return !t.hidden && t.id;
         })
         .map(function (t) {
-          t.visitRate = enrolled ? (t.visited / enrolled) * 100 : 0;
+          t.visitRate = visitBase ? (t.visited / visitBase) * 100 : 0;
           return t;
         })
         .filter(function (t) {
@@ -1377,7 +1408,7 @@
       }
       var highVisit = content.topics
         .filter(function (t) {
-          return !t.hidden && enrolled && t.visited / enrolled >= 0.8;
+          return !t.hidden && visitBase && t.visited / visitBase >= 0.8;
         })
         .sort(function (x, y) {
           return y.visited - x.visited;
@@ -1399,7 +1430,7 @@
       add(
         "low",
         "Content visit data was limited",
-        "The content table of contents loaded, but Brightspace did not return reliable per-student topic visits for this course. Structure recommendations still apply; visit rates could not be calculated."
+        "The content outline loaded, but the Content statistics page did not return topic visits for enough students. Structure recommendations still apply; visit rates could not be calculated."
       );
     }
 
@@ -1495,7 +1526,11 @@
     if (content.visitAvailable) {
       for (var t = 0; t < content.topics.length; t++) {
         if (content.topics[t].hidden) continue;
-        topicVisitRates.push(studentIds.length ? (content.topics[t].visited / studentIds.length) * 100 : 0);
+        topicVisitRates.push(
+          (content.visitStudents || studentIds.length)
+            ? (content.topics[t].visited / (content.visitStudents || studentIds.length)) * 100
+            : 0
+        );
       }
     }
 

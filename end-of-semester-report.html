@@ -37,7 +37,7 @@
                     The report pulls Brightspace gradebook, assignment, quiz, discussion, content, and last-access data,
                     then summarizes patterns for course redesign. Counts and averages only — no roster names.
                     <strong>Beta:</strong> last-access buckets are measured against the course end date (or last due date if Brightspace does not return an end date), not “days since today.” After a term ends, students typically cannot log in.
-                    Brightspace does not expose true clickstream to this dashboard; “what students looked at” is content visits and tool use.
+                    Topic visit rates come from the Brightspace Content statistics page, one student at a time. That pass can take a minute on a large class.
                 </p>
 
                 <div class="tool-ferpa-note" role="note">
@@ -85,6 +85,7 @@
     <script src="js/navigation.js"></script>
     <script src="js/course-offerings.js"></script>
     <script src="js/pdf-brand.js"></script>
+    <script src="js/ldaa-report.js"></script>
     <script src="js/end-of-semester-report.js"></script>
 </body>
 </html>
