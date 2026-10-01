@@ -24,6 +24,19 @@
     return api ? api.getActiveCode() : "26/FA";
   }
 
+  // Semester changes start a new request. A slower request for the previous
+  // term must not paint after the new one, or the average stays on the old term.
+  var metricsRequestSeq = 0;
+
+  function startMetricsRequest() {
+    metricsRequestSeq += 1;
+    return metricsRequestSeq;
+  }
+
+  function metricsRequestCurrent(requestId) {
+    return requestId === metricsRequestSeq;
+  }
+
   var SEMESTERS = semesterApi()
     ? semesterApi().getSemestersForSelect()
     : [
@@ -159,9 +172,10 @@
   // =========================
   // GET CURRENT SEMESTER COURSES (active term only — see js/semester-config.js)
   // =========================
-  async function getCurrentSemesterCourses() {
+  async function getCurrentSemesterCourses(semesterCode) {
+    var termCode = semesterCode || viewingSemesterCode();
     console.log(
-      "[Summary Metrics] Starting getCurrentSemesterCourses() - Loading " + viewingSemesterCode() + " courses only"
+      "[Summary Metrics] Starting getCurrentSemesterCourses() - Loading " + termCode + " courses only"
     );
     var allItems = [];
     var allCourseItems = []; // Track all course items before filtering
@@ -199,11 +213,11 @@
             
             // Only include active-semester courses where user is Instructor (roleId === 102)
             // Exclude MERGED and CXLD courses from analytics
-            if (sem === viewingSemesterCode() && roleId === 102 && !isMergedOrCancelledCourse(item)) {
+            if (sem === termCode && roleId === 102 && !isMergedOrCancelledCourse(item)) {
               allItems.push(item);
               console.log("[Summary Metrics] Added course: " + (item.OrgUnit.Name || "Unknown") + " (" + code + ") - Semester: " + sem + " - RoleId: " + (roleId || "null"));
             } else {
-              if (sem !== viewingSemesterCode()) {
+              if (sem !== termCode) {
                 console.log("[Summary Metrics] Skipped course (wrong semester): " + (item.OrgUnit.Name || "Unknown") + " (" + code + ") - Semester: " + (sem || "none"));
               } else if (roleId !== 102) {
                 console.log("[Summary Metrics] Skipped course (not Instructor role): " + (item.OrgUnit.Name || "Unknown") + " (" + code + ") - RoleId: " + (roleId || "null"));
@@ -223,13 +237,13 @@
       }
     }
 
-    console.log("[Summary Metrics] Total " + viewingSemesterCode() + " Instructor courses found: " + allItems.length);
+    console.log("[Summary Metrics] Total " + termCode + " Instructor courses found: " + allItems.length);
     if (allCourseItems.length > allItems.length) {
       console.log(
         "[Summary Metrics] Note: " +
           (allCourseItems.length - allItems.length) +
           " courses were filtered out (not " +
-          viewingSemesterCode() +
+          termCode +
           " semester or not Instructor role)"
       );
     }
@@ -990,6 +1004,12 @@
         if (!gradeValue || gradeValue.GradeObjectType !== 7) {
           continue;
         }
+
+        // Brightspace sends a default grade object before anything is assessed.
+        // LastModified stays null in that case, even when a points ratio is present.
+        if (gradeValue.LastModified === null) {
+          continue;
+        }
         
         // Get userId from User.Identifier (nested structure) or fallback to item.UserId
         var userId = String(user.Identifier || item.UserId || ""); // CRITICAL: Convert to string
@@ -1034,7 +1054,7 @@
     
     if (courses.length === 0) {
       console.log("[Summary Metrics] No courses to process");
-      return 0;
+      return null;
     }
     
     // Process all courses (not limited)
@@ -1088,8 +1108,18 @@
       return avg;
     }
     
-    console.log("[Summary Metrics] getAverageCourseGrade: No grades found, returning 0");
-    return 0;
+    console.log("[Summary Metrics] getAverageCourseGrade: No assessed grades found");
+    return null;
+  }
+
+  function avgGradeLabel(avg) {
+    if (avg === null || avg === undefined || avg === "") return "—";
+    return String(avg) + "%";
+  }
+
+  function avgGradeSubtitle(metrics) {
+    if (!metrics || metrics.avgGrade === null || metrics.avgGrade === undefined) return "No grades yet";
+    return metrics.courseName || "Overall average";
   }
 
   // =========================
@@ -1293,10 +1323,10 @@
 
     row2.appendChild(renderMetricBox(
       "Avg Course Grade",
-      metrics.avgGrade + "%",
+      avgGradeLabel(metrics.avgGrade),
       "fa-chart-line",
       "#0f5b46",
-      metrics.courseName || "Overall average"
+      avgGradeSubtitle(metrics)
     ));
 
     row2.appendChild(renderMetricBox(
@@ -1514,9 +1544,84 @@
       renderWelcomeBox(welcomeContainer, userInfo);
       console.log("[Summary Metrics] Welcome box rendered");
 
+      function showPendingMetrics(semesterCode) {
+        metricsContainer1.innerHTML = "";
+        metricsContainer1.classList.add("clickable");
+        metricsContainer1.appendChild(renderMetricBox(
+          "Total Courses",
+          "…",
+          "fa-book",
+          "#0f5b46",
+          semesterCode,
+          function() {
+            window.location.href = "mycourses.html";
+          }
+        ));
+
+        metricsContainer2.innerHTML = "";
+        metricsContainer2.classList.add("clickable");
+        metricsContainer2.appendChild(renderMetricBox(
+          "Total Students",
+          "…",
+          "fa-users",
+          "#2d9d7a",
+          "Loading…",
+          function() {
+            window.location.href = "students.html";
+          }
+        ));
+
+        metricsContainer3.innerHTML = "";
+        metricsContainer3.classList.add("clickable");
+        metricsContainer3.appendChild(renderMetricBox(
+          "Total Ungraded",
+          "…",
+          "fa-tasks",
+          "#f80",
+          "Loading…",
+          function() {
+            window.location.href = "ungraded.html";
+          }
+        ));
+
+        row2Container.innerHTML = "";
+        var pendingRow = el("div", {
+          id: "summary-row-2",
+          className: "summary-row-2"
+        }, []);
+        var pendingCards = [
+          ["Avg Course Grade", "fa-chart-line", "#0f5b46"],
+          ["Assignments", "fa-file-alt", "#c00"],
+          ["Discussions", "fa-comments", "#f80"],
+          ["Quizzes", "fa-question-circle", "#c00"]
+        ];
+        for (var p = 0; p < pendingCards.length; p++) {
+          var pendingBox = el("div", { className: "summary-box" }, []);
+          pendingBox.appendChild(renderMetricBox(
+            pendingCards[p][0],
+            "…",
+            pendingCards[p][1],
+            pendingCards[p][2],
+            "Loading…"
+          ));
+          pendingRow.appendChild(pendingBox);
+        }
+        row2Container.appendChild(pendingRow);
+      }
+
       async function refreshSemesterData() {
-      console.log("[Summary Metrics] Fetching current semester courses (" + viewingSemesterCode() + ")...");
-      var currentCourses = await getCurrentSemesterCourses();
+      var requestId = startMetricsRequest();
+      var semesterCode = viewingSemesterCode();
+      var courseSelect = document.getElementById("course-filter-select");
+      if (courseSelect) {
+        courseSelect.onchange = null;
+        courseSelect.disabled = true;
+      }
+      showPendingMetrics(semesterCode);
+
+      console.log("[Summary Metrics] Fetching current semester courses (" + semesterCode + ")...");
+      var currentCourses = await getCurrentSemesterCourses(semesterCode);
+      if (!metricsRequestCurrent(requestId)) return;
       console.log("[Summary Metrics] Current semester courses fetched: " + currentCourses.length);
       
       // Store courses in localStorage for drill-down pages
@@ -1590,7 +1695,16 @@
         
         if (coursesToProcess.length === 0) {
           console.warn("[Summary Metrics] No courses found for selection:", courseId);
-          return null;
+          return {
+            avgGrade: null,
+            totalAssignments: 0,
+            totalDiscussions: 0,
+            totalQuizzes: 0,
+            ungradedAssignments: 0,
+            unreadDiscussions: 0,
+            ungradedQuizzes: 0,
+            courseName: "No grades yet"
+          };
         }
         
         // Keep boxes visible, they will be updated with data when ready
@@ -1612,7 +1726,7 @@
         var ungradedAssignments = results[3].status === "fulfilled" ? results[3].value : 0;
         var unreadDiscussions = results[4].status === "fulfilled" ? results[4].value : 0;
         var ungradedQuizzes = results[5].status === "fulfilled" ? results[5].value : 0;
-        var avgGrade = results[6].status === "fulfilled" ? results[6].value : 0;
+        var avgGrade = results[6].status === "fulfilled" ? results[6].value : null;
         
         return {
           avgGrade: avgGrade,
@@ -1640,10 +1754,10 @@
         var gradeBox = el("div", { className: "summary-box" }, []);
         gradeBox.appendChild(renderMetricBox(
           "Avg Course Grade",
-          metrics.avgGrade + "%",
+          avgGradeLabel(metrics.avgGrade),
           "fa-chart-line",
           "#0f5b46",
-          metrics.courseName
+          avgGradeSubtitle(metrics)
         ));
         row2.appendChild(gradeBox);
 
@@ -1714,7 +1828,7 @@
         totalCourses,
         "fa-book",
         "#0f5b46",
-        viewingSemesterCode(),
+        semesterCode,
         function() {
           window.location.href = "mycourses.html";
         }
@@ -1728,11 +1842,13 @@
       var results = await Promise.allSettled([
         getTotalStudents(currentCourses)
       ]);
+      if (!metricsRequestCurrent(requestId)) return;
 
       var totalStudents = results[0].status === "fulfilled" ? results[0].value : 0;
       
       // Calculate bottom row metrics first to get ungraded counts
       var bottomMetrics = await calculateCourseMetrics("all");
+      if (!metricsRequestCurrent(requestId)) return;
       
       // Calculate totalUngraded by summing assignments, discussions, and quizzes needing attention
       var totalUngraded = 0;
@@ -1785,11 +1901,14 @@
       }
       
       // Bind course selection (assignment avoids duplicate listeners on semester refresh)
-      if (courseSelect) {
+      if (courseSelect && metricsRequestCurrent(requestId)) {
+        courseSelect.disabled = false;
         courseSelect.onchange = async function() {
+          var filterRequestId = startMetricsRequest();
           var selectedCourseId = courseSelect.value;
           console.log("[Summary Metrics] Course selection changed to:", selectedCourseId);
           var metrics = await calculateCourseMetrics(selectedCourseId);
+          if (!metricsRequestCurrent(filterRequestId) || !metrics) return;
           if (metrics) {
             // Update Total Ungraded box with sum of assignments, discussions, and quizzes
             var totalUngraded = (metrics.ungradedAssignments || 0) + 

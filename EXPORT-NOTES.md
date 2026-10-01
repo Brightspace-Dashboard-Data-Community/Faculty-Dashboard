@@ -1,6 +1,6 @@
 # Export notes
 
-Prepared 2026-09-29 for GitHub upload.
+Prepared 2026-10-01 for GitHub upload.
 
 The working Faculty Dashboard was not modified. This folder is a sanitized copy.
 Files copied: 186.
@@ -34,6 +34,7 @@ Files copied: 186.
 - `example-email`: 1
 - `flag-outline`: 2
 - `forms-host`: 18
+- `future-term-ou-prose`: 1
 - `helpdesk-host`: 12
 - `intranet-host`: 62
 - `intranet-label`: 23
@@ -66,6 +67,7 @@ Files copied: 186.
 - `term-ou-fall`: 1
 - `term-ou-spring`: 1
 - `term-ou-winter`: 1
+- `term-ou-winter-2027`: 1
 - `traccloud`: 1
 - `training-course-ou`: 2
 - `widget-screenshots`: 5

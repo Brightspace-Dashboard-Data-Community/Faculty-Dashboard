@@ -2,9 +2,19 @@
 
 Product history for the Faculty Dashboard. This file lives in the working copy. Running `python3 scripts/prepare-github-upload.py` copies it into `github-upload/`, which is the folder to commit and push.
 
-Add new entries at the top. The prepare script does not invent history; it only publishes what is written here, plus a fresh `EXPORT-NOTES.md` describing what was removed for the public copy.
+Add new entries at the top, under a heading with the full date (`## October 1, 2026`). That heading is when the change was recorded. The prepare script does not invent history; it only publishes what is written here, plus a fresh `EXPORT-NOTES.md` describing what was removed for the public copy.
 
-## 2026-09-29
+## October 1, 2026
+
+Home summary metrics follow the semester picker. Switching terms clears the cards to a pending state, and a slower request for the previous term cannot paint over the term faculty just selected.
+
+The average course grade skips Brightspace final-grade rows that have not been assessed. When a course has no assessed grades, the card shows an em dash and "No grades yet" instead of 0%.
+
+## September 30, 2026
+
+Winter 2027 course shells are in Brightspace. The future term for 27/WI now uses the Winter 2027 term id from semester config, so tools that read the future term id can reach those offerings. Faculty still pick Winter 2027 from the semester menu; Fall 2026 stays the current term.
+
+## September 29, 2026
 
 Student LDAA reports now list every activity row, and content-module visits come from the Brightspace Content statistics page. The same reader is used where other tools were missing visit dates.
 
@@ -22,7 +32,7 @@ Content views stay informational. They are not part of the faculty-withdrawal da
 - The engagement engine student calendar shows each content topic’s last visit.
 - Inactive Student Audit adds a last content visit column. The inactivity flag is still course login, not content views.
 
-## 2026-09-28
+## September 28, 2026
 
 First recorded public snapshot.
 
