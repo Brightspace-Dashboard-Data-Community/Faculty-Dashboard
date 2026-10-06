@@ -1,6 +1,6 @@
 # Export notes
 
-Prepared 2026-10-01 for GitHub upload.
+Prepared 2026-10-06 for GitHub upload.
 
 The working Faculty Dashboard was not modified. This folder is a sanitized copy.
 Files copied: 186.

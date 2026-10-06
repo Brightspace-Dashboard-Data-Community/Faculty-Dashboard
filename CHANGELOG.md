@@ -2,7 +2,13 @@
 
 Product history for the Faculty Dashboard. This file lives in the working copy. Running `python3 scripts/prepare-github-upload.py` copies it into `github-upload/`, which is the folder to commit and push.
 
-Add new entries at the top, under a heading with the full date (`## October 1, 2026`). That heading is when the change was recorded. The prepare script does not invent history; it only publishes what is written here, plus a fresh `EXPORT-NOTES.md` describing what was removed for the public copy.
+Add new entries at the top, under a heading with the full date (`## October 6, 2026`). That heading is when the change was recorded. The prepare script does not invent history; it only publishes what is written here, plus a fresh `EXPORT-NOTES.md` describing what was removed for the public copy.
+
+## October 6, 2026
+
+Office Hours Chat now has waiting-room sound and notification controls for instructors. Sound and Notify sit in the green header with Open or Close Office Hours, and each button shows whether that alert is on. Sound and notifications are separate. When waiting-room sound is off, the widget shows “Waiting-room sound is off.”
+
+The Course Widgets guide describes those controls. The closed and open screenshots were replaced so they match the widget.
 
 ## October 1, 2026
 
